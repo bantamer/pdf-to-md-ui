@@ -12,10 +12,11 @@ import os
 
 from PyInstaller.utils.hooks import collect_all
 
-# Optional: drop a 256x256 icon.ico next to this spec to brand the executable.
-ICON = "icon.ico" if os.path.exists("icon.ico") else None
-
 odl_datas, odl_binaries, odl_hidden = collect_all("opendataloader_pdf")
+
+# Optional: drop a 256x256 icon.ico next to this spec and it gets picked up.
+# Without the file PyInstaller would abort, so keep it optional.
+app_icon = "icon.ico" if os.path.exists("icon.ico") else None
 
 a = Analysis(
     ["gui.py"],
@@ -55,7 +56,7 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False,          # no console window for non-technical users
-    icon=ICON,
+    icon=app_icon,
 )
 
 coll = COLLECT(

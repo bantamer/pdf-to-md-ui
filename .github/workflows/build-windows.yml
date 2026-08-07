@@ -34,15 +34,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
+      # zip-6 rather than the older --compress=2, which JDK 21 deprecates.
       - name: Build trimmed JRE
         run: |
           jlink --add-modules java.base,java.desktop,java.logging,java.naming,java.xml `
-                --strip-debug --no-header-files --no-man-pages --compress=2 `
+                --strip-debug --no-header-files --no-man-pages --compress=zip-6 `
                 --output jre
           jre\bin\java.exe -version
 
       - name: Build application
         run: pyinstaller --noconfirm app.spec
+
+      # The installer ships one folder, and the app looks for the runtime next
+      # to its executable — same layout build.bat produces locally.
+      - name: Place the JRE next to the executable
+        run: Copy-Item -Recurse -Force jre "dist\PDF to Markdown\jre"
 
       - name: Verify the jar was bundled
         shell: pwsh
