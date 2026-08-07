@@ -7,8 +7,12 @@
 ; runtime in jre\ (see BUILD.md).
 
 #define AppName "PDF to Markdown"
-#define AppVersion "1.0.0"
 #define AppExe "PDF to Markdown.exe"
+
+; CI passes the version with /DAppVersion=...; this is the local fallback.
+#ifndef AppVersion
+  #define AppVersion "0.0.0-dev"
+#endif
 
 [Setup]
 AppName={#AppName}

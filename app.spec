@@ -8,7 +8,12 @@
 #  * onedir, not onefile: onefile unpacks the whole bundle to a temp folder on
 #    every launch, which adds seconds of startup for no benefit here.
 
+import os
+
 from PyInstaller.utils.hooks import collect_all
+
+# Optional: drop a 256x256 icon.ico next to this spec to brand the executable.
+ICON = "icon.ico" if os.path.exists("icon.ico") else None
 
 odl_datas, odl_binaries, odl_hidden = collect_all("opendataloader_pdf")
 
@@ -50,7 +55,7 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False,          # no console window for non-technical users
-    icon="icon.ico",        # drop a 256x256 .ico here, or remove this line
+    icon=ICON,
 )
 
 coll = COLLECT(

@@ -1,0 +1,85 @@
+name: Build Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 3.12 rather than the newest release: PySide6 and opendataloader-pdf
+      # both have prebuilt wheels for it, so no toolchain is needed.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # Needed for jlink, not for running the app.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Build trimmed JRE
+        run: |
+          jlink --add-modules java.base,java.desktop,java.logging,java.naming,java.xml `
+                --strip-debug --no-header-files --no-man-pages --compress=2 `
+                --output jre
+          jre\bin\java.exe -version
+
+      - name: Build application
+        run: pyinstaller --noconfirm app.spec
+
+      - name: Verify the jar was bundled
+        shell: pwsh
+        run: |
+          $jars = Get-ChildItem -Path "dist" -Recurse -Filter *.jar
+          if ($jars.Count -eq 0) {
+            Write-Error "No .jar found in dist/ - collect_all did not pick up the opendataloader-pdf backend."
+          }
+          $jars | ForEach-Object { Write-Host $_.FullName }
+
+      # Inno Setup ships with the windows runner image, but it is not on PATH
+      # and the location has moved between image versions.
+      - name: Locate Inno Setup
+        id: inno
+        shell: pwsh
+        run: |
+          $iscc = Get-ChildItem "C:\Program Files (x86)\Inno Setup*\ISCC.exe",
+                                "C:\Program Files\Inno Setup*\ISCC.exe" `
+                                -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $iscc) {
+            choco install innosetup --no-progress -y
+            $iscc = Get-ChildItem "C:\Program Files (x86)\Inno Setup*\ISCC.exe" | Select-Object -First 1
+          }
+          "path=$($iscc.FullName)" >> $env:GITHUB_OUTPUT
+
+      - name: Build installer
+        run: |
+          & "${{ steps.inno.outputs.path }}" /DAppVersion="${{ github.ref_type == 'tag' && github.ref_name || format('0.0.{0}', github.run_number) }}" installer.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDF-to-Markdown-Setup
+          path: Output/*.exe
+          retention-days: 30
+
+      - name: Attach installer to the release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Output/*.exe
