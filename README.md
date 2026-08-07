@@ -29,10 +29,15 @@ pip install -r requirements.txt
 python gui.py
 ```
 
-## Build a Windows installer
+## Build a Windows executable
 
-See [BUILD.md](BUILD.md). Short version: build on Windows (PyInstaller does not
-cross-compile), bundle a trimmed JRE with `jlink`, wrap it with Inno Setup.
+On Windows, double-click [build.bat](build.bat): it sets up a virtualenv,
+bundles a trimmed JRE with `jlink`, runs PyInstaller and — if Inno Setup is
+installed — produces `Output\PDF-to-Markdown-Setup.exe`. The app itself ends up
+in `dist\PDF to Markdown\`; copy the whole folder, not just the exe.
+
+PyInstaller does not cross-compile, so a Windows build needs Windows. See
+[BUILD.md](BUILD.md) for the manual steps and the prerequisites.
 
 ## Layout
 
@@ -40,5 +45,6 @@ cross-compile), bundle a trimmed JRE with `jlink`, wrap it with Inno Setup.
 |---|---|
 | `gui.py` | Window, drag & drop, conversion worker thread |
 | `theme.py` | Colour palettes and generated stylesheet |
+| `build.bat` | One-click Windows build: venv, JRE, exe, installer |
 | `app.spec` | PyInstaller build definition |
 | `installer.iss` | Inno Setup installer script |

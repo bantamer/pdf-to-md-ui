@@ -3,8 +3,8 @@
 ; Produces a single Setup.exe that installs the app, the bundled JRE and a
 ; desktop shortcut. Compile with:  iscc installer.iss
 ;
-; Expects the PyInstaller output in dist\PDF to Markdown\ and a trimmed
-; runtime in jre\ (see BUILD.md).
+; Expects the PyInstaller output in dist\PDF to Markdown\, with the trimmed
+; jre\ runtime already copied inside it — build.bat does both (see BUILD.md).
 
 #define AppName "PDF to Markdown"
 #define AppVersion "1.0.0"
@@ -33,7 +33,6 @@ Name: "desktopicon"; Description: "Создать ярлык на рабочем
 
 [Files]
 Source: "dist\{#AppName}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "jre\*"; DestDir: "{app}\jre"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}"
