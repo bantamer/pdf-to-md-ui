@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# PyInstaller output
+build/
+dist/
+*.manifest
+
+# Bundled runtime produced by jlink (see BUILD.md)
+jre/
+
+# Inno Setup output
+Output/
+
+.DS_Store
