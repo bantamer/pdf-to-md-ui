@@ -50,12 +50,14 @@ jobs:
       - name: Place the JRE next to the executable
         run: Copy-Item -Recurse -Force jre "dist\PDF to Markdown\jre"
 
-      - name: Verify the jar was bundled
+      # Look for the backend jar by name: the bundled JRE always contributes a
+      # jrt-fs.jar, so "any .jar exists" would pass even on a broken bundle.
+      - name: Verify the backend jar was bundled
         shell: pwsh
         run: |
-          $jars = Get-ChildItem -Path "dist" -Recurse -Filter *.jar
+          $jars = Get-ChildItem -Path "dist" -Recurse -Filter "opendataloader-pdf*.jar"
           if ($jars.Count -eq 0) {
-            Write-Error "No .jar found in dist/ - collect_all did not pick up the opendataloader-pdf backend."
+            Write-Error "opendataloader-pdf jar missing from dist/ - collect_all did not pick up the backend."
           }
           $jars | ForEach-Object { Write-Host $_.FullName }
 
