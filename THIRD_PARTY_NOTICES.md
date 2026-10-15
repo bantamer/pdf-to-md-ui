@@ -12,6 +12,7 @@ program under the GPL v3.
 | [veraPDF](https://verapdf.org) `ChunkParser.class` in `patches/` | Memory fix for plot-heavy PDFs, see [patches/README.md](patches/README.md) | MPL-2.0 (veraPDF is dual-licensed GPL-3.0+ / MPL-2.0+), © veraPDF Consortium | [ChunkParser.java at v1.31.169](https://github.com/veraPDF/veraPDF-validation/blob/v1.31.169/wcag-validation/src/main/java/org/verapdf/gf/model/factory/chunks/ChunkParser.java) |
 | [Qt for Python (PySide6)](https://www.qt.io/qt-for-python) and Qt 6 | The window | LGPL-3.0 (also offered under GPL-2.0 / GPL-3.0), © The Qt Company Ltd. | [code.qt.io](https://code.qt.io/cgit/pyside/pyside-setup.git/) |
 | [Python](https://www.python.org) | Runs the program | PSF License Agreement | [python.org](https://www.python.org/downloads/source/) |
+| [OpenSSL](https://www.openssl.org) 3 (comes with Python) | HTTPS for the update check | Apache-2.0, © The OpenSSL Project Authors | [GitHub](https://github.com/openssl/openssl) |
 | [PyInstaller](https://pyinstaller.org) bootloader | Starts the bundled Python | GPL-2.0-or-later with an exception that allows distributing programs built with it under any licence | [GitHub](https://github.com/pyinstaller/pyinstaller) |
 | [Eclipse Temurin](https://adoptium.net) (OpenJDK) runtime, in `jre/` | Runs the opendataloader-pdf jar | GPL-2.0 with the Classpath Exception; notices in `jre/legal/` | [adoptium.net](https://adoptium.net) |
 

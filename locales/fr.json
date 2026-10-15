@@ -17,11 +17,12 @@
   "menu.theme_light": "Clair",
   "menu.theme_dark": "Sombre",
   "menu.show_log": "Afficher le journal",
+  "menu.auto_updates": "Rechercher les mises à jour au démarrage",
   "menu.reset": "Réinitialiser les paramètres…",
   "menu.help": "&Aide",
   "menu.guide": "Guide d'utilisation",
   "menu.report": "Signaler un problème",
-  "menu.downloads": "Téléchargements et mises à jour",
+  "menu.check_updates": "Rechercher les mises à jour…",
   "menu.about": "À propos de {app}",
 
   "reset.confirm": "Rétablir tous les paramètres par défaut — formats, options, dossier des résultats, thème et langue ?\n\nLa liste des fichiers est conservée.",
@@ -32,6 +33,12 @@
   "about.license": "Logiciel libre sous licence GNU General Public License v3. Il est fourni sans aucune garantie.",
   "about.third_party": "Composants tiers",
   "about.source": "Code source",
+
+  "update.available": "La version {version} est disponible",
+  "update.link_tooltip": "Ouvrir la page de téléchargement",
+  "update.ask": "La version {version} est disponible — vous avez la {current}. Ouvrir la page de téléchargement ?",
+  "update.latest": "Vous avez la dernière version ({version}).",
+  "update.failed": "Impossible de rechercher les mises à jour. Vérifiez la connexion Internet et réessayez.",
 
   "files.section": "Fichiers source",
   "files.drop_hint": "Déposez ici des PDF ou un dossier — ou cliquez pour choisir",

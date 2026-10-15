@@ -46,6 +46,16 @@ def dialogs(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def offline(monkeypatch):
+    """No test talks to GitHub; a check that does ask hears nothing back."""
+    import gui
+    import updates
+
+    monkeypatch.setattr(updates, "fetch_latest", lambda: None)
+    monkeypatch.setattr(gui, "_latest_release", None)
+
+
+@pytest.fixture(autouse=True)
 def delete_windows():
     """Destroy every window a test leaves behind.
 

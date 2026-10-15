@@ -53,7 +53,11 @@ your PC" on first run: click **More info → Run anyway**.
 - A standard Windows menu — **File**, **Settings**, **Help** — with the usual
   shortcuts (Ctrl+O to add files, Ctrl+Enter to convert, Esc to stop, F1 for
   this guide).
-- Light and dark theme, or follow Windows.
+- Light and dark theme, or follow Windows — title bars included.
+- Tells you when a new version is out: at startup it asks GitHub for the
+  latest release and shows a link in the corner of the window. That one
+  request is all it sends — no data about you or your files. Turn it off in
+  **Settings**, or check by hand in **Help → Check for updates**.
 - One window: files sent from Explorer while the program is open join the
   list there instead of opening a second copy. The window comes back where
   you left it, at the same size.
@@ -162,6 +166,7 @@ open — longer languages must not push the cards past the edge.
 | `gui.py` | Window, drag & drop, remembered settings, language switch |
 | `converter.py` | Running the jar: options, where each file goes, the worker thread |
 | `single_instance.py` | One window: a second launch hands its files to the first |
+| `updates.py` | Asks GitHub whether a newer release is out |
 | `i18n.py`, `locales/` | Interface languages |
 | `theme.py` | Colour palettes and generated stylesheet |
 | `patches/` | veraPDF line-art fix loaded ahead of the jar |

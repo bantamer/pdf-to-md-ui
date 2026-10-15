@@ -17,11 +17,12 @@
   "menu.theme_light": "Jasny",
   "menu.theme_dark": "Ciemny",
   "menu.show_log": "Pokazuj dziennik",
+  "menu.auto_updates": "Sprawdzaj aktualizacje przy uruchomieniu",
   "menu.reset": "Przywróć ustawienia domyślne…",
   "menu.help": "Pomo&c",
   "menu.guide": "Instrukcja",
   "menu.report": "Zgłoś problem",
-  "menu.downloads": "Pobieranie i aktualizacje",
+  "menu.check_updates": "Sprawdź aktualizacje…",
   "menu.about": "O programie {app}",
 
   "reset.confirm": "Przywrócić wszystkie ustawienia — formaty, opcje, folder wyników, motyw i język — do wartości domyślnych?\n\nLista plików pozostanie.",
@@ -32,6 +33,12 @@
   "about.license": "Wolne oprogramowanie na licencji GNU General Public License v3. Dostarczane bez jakiejkolwiek gwarancji.",
   "about.third_party": "Komponenty zewnętrzne",
   "about.source": "Kod źródłowy",
+
+  "update.available": "Dostępna jest wersja {version}",
+  "update.link_tooltip": "Otwórz stronę pobierania",
+  "update.ask": "Dostępna jest wersja {version} — masz {current}. Otworzyć stronę pobierania?",
+  "update.latest": "Masz najnowszą wersję ({version}).",
+  "update.failed": "Nie udało się sprawdzić aktualizacji. Sprawdź połączenie z internetem i spróbuj ponownie.",
 
   "files.section": "Pliki źródłowe",
   "files.drop_hint": "Przeciągnij tutaj pliki PDF lub folder — albo kliknij, aby wybrać",

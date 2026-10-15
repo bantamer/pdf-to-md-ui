@@ -17,11 +17,12 @@
   "menu.theme_light": "Chiaro",
   "menu.theme_dark": "Scuro",
   "menu.show_log": "Mostra il registro",
+  "menu.auto_updates": "Cerca aggiornamenti all’avvio",
   "menu.reset": "Ripristina le impostazioni…",
   "menu.help": "&Guida",
   "menu.guide": "Istruzioni",
   "menu.report": "Segnala un problema",
-  "menu.downloads": "Download e aggiornamenti",
+  "menu.check_updates": "Cerca aggiornamenti…",
   "menu.about": "Informazioni su {app}",
 
   "reset.confirm": "Ripristinare tutte le impostazioni — formati, opzioni, cartella dei risultati, tema e lingua — ai valori predefiniti?\n\nL'elenco dei file resta.",
@@ -32,6 +33,12 @@
   "about.license": "Software libero con licenza GNU General Public License v3. Viene fornito senza alcuna garanzia.",
   "about.third_party": "Componenti di terze parti",
   "about.source": "Codice sorgente",
+
+  "update.available": "È disponibile la versione {version}",
+  "update.link_tooltip": "Apri la pagina di download",
+  "update.ask": "È disponibile la versione {version} — hai la {current}. Aprire la pagina di download?",
+  "update.latest": "Hai l’ultima versione ({version}).",
+  "update.failed": "Impossibile cercare aggiornamenti. Controlla la connessione a internet e riprova.",
 
   "files.section": "File di origine",
   "files.drop_hint": "Trascina qui dei PDF o una cartella — oppure fai clic per scegliere",

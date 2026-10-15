@@ -17,11 +17,12 @@
   "menu.theme_light": "Light",
   "menu.theme_dark": "Dark",
   "menu.show_log": "Show log",
+  "menu.auto_updates": "Check for updates at startup",
   "menu.reset": "Reset settings…",
   "menu.help": "&Help",
   "menu.guide": "User guide",
   "menu.report": "Report a problem",
-  "menu.downloads": "Downloads and updates",
+  "menu.check_updates": "Check for updates…",
   "menu.about": "About {app}",
 
   "reset.confirm": "Reset all settings — formats, options, results folder, theme and language — to their defaults?\n\nThe file list stays.",
@@ -32,6 +33,12 @@
   "about.license": "Free software under the GNU General Public License v3. It comes with no warranty.",
   "about.third_party": "Third-party components",
   "about.source": "Source code",
+
+  "update.available": "Version {version} is available",
+  "update.link_tooltip": "Open the download page",
+  "update.ask": "Version {version} is available — you have {current}. Open the download page?",
+  "update.latest": "You have the latest version ({version}).",
+  "update.failed": "Could not check for updates. Check the internet connection and try again.",
 
   "files.section": "Source files",
   "files.drop_hint": "Drop PDFs or a folder here — or click to choose",

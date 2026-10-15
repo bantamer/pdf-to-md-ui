@@ -86,6 +86,7 @@ from converter import (
 )
 from i18n import tr
 from single_instance import SingleInstance
+from updates import UpdateCheck, is_newer
 from version import __version__
 
 APP_NAME = "PDF → Markdown"
@@ -419,6 +420,7 @@ class MainWindow(QWidget):
             if stored_theme is None
             else ("dark" if str(stored_theme).lower() in ("true", "1") else "light")
         )
+        _set_color_scheme(self.theme_mode)
         self.dark = (
             _system_prefers_dark() if self.theme_mode == "system" else self.theme_mode == "dark"
         )
@@ -428,9 +430,16 @@ class MainWindow(QWidget):
         self.tick.setInterval(500)
         self.tick.timeout.connect(self._update_elapsed)
 
+        self.update_release: dict | None = None
         self._build_ui()
         self._restore_settings()
         self._apply_theme()
+        # "As in Windows" keeps following Windows while the program is open.
+        hints = QGuiApplication.styleHints()
+        if hasattr(hints, "colorSchemeChanged"):
+            hints.colorSchemeChanged.connect(self._follow_system_theme)
+        if _latest_release is not None:  # found before a language switch
+            self.show_update(_latest_release)
         # The drop zone gives way to the file list after the first file, and the
         # list takes no drops - so without this, a second file had nowhere to
         # land. Children that do not take drops pass them up to the window.
@@ -508,9 +517,18 @@ class MainWindow(QWidget):
         text.addWidget(title)
         text.addWidget(subtitle)
 
+        # Filled in by show_update() when a newer release turns up.
+        self.update_link = QLabel()
+        self.update_link.setObjectName("UpdateLink")
+        self.update_link.setTextFormat(Qt.TextFormat.RichText)
+        self.update_link.setOpenExternalLinks(True)
+        self.update_link.setToolTip(tr("update.link_tooltip"))
+        self.update_link.hide()
+
         row = QHBoxLayout()
         row.addLayout(text)
         row.addStretch()
+        row.addWidget(self.update_link, 0, Qt.AlignmentFlag.AlignTop)
         return row
 
     def _menu_bar(self) -> QMenuBar:
@@ -572,6 +590,12 @@ class MainWindow(QWidget):
         self.act_show_log.setCheckable(True)
         self.act_show_log.setShortcut(QKeySequence("Ctrl+L"))
         self.act_show_log.toggled.connect(self._toggle_log)
+        self.act_auto_updates = settings.addAction(tr("menu.auto_updates"))
+        self.act_auto_updates.setCheckable(True)
+        self.act_auto_updates.setChecked(auto_update_check_enabled())
+        self.act_auto_updates.toggled.connect(
+            lambda on: app_settings().setValue("check_updates", on)
+        )
         settings.addSeparator()
         self.act_reset = settings.addAction(tr("menu.reset"), self._confirm_reset)
 
@@ -582,9 +606,8 @@ class MainWindow(QWidget):
             tr("menu.report"),
             lambda: QDesktopServices.openUrl(QUrl(f"{REPO_URL}/issues/new")),
         )
-        self.act_downloads = help_menu.addAction(
-            tr("menu.downloads"),
-            lambda: QDesktopServices.openUrl(QUrl(f"{REPO_URL}/releases")),
+        self.act_check_updates = help_menu.addAction(
+            tr("menu.check_updates"), lambda: check_for_updates(manual=True)
         )
         help_menu.addSeparator()
         self.act_about = help_menu.addAction(
@@ -892,10 +915,13 @@ class MainWindow(QWidget):
     def _apply_theme(self) -> None:
         palette = theme.DARK if self.dark else theme.LIGHT
         QApplication.instance().setStyleSheet(theme.build_qss(palette))
+        if self.update_release is not None:  # the link takes the accent colour
+            self.show_update(self.update_release)
 
     def _set_theme(self, mode: str) -> None:
         """"system" follows Windows; "light" or "dark" is remembered as chosen."""
         self.theme_mode = mode
+        _set_color_scheme(mode)
         if mode == "system":
             app_settings().remove("dark")
             self.dark = _system_prefers_dark()
@@ -904,6 +930,26 @@ class MainWindow(QWidget):
             app_settings().setValue("dark", self.dark)
         self._apply_theme()
         self.theme_actions[mode].setChecked(True)
+
+    def _follow_system_theme(self, *_) -> None:
+        if self.theme_mode != "system":
+            return  # a scheme the program set itself, or a theme chosen by hand
+        dark = _system_prefers_dark()
+        if dark != self.dark:
+            self.dark = dark
+            self._apply_theme()
+
+    # -- updates ----------------------------------------------------------- #
+
+    def show_update(self, release: dict) -> None:
+        """The link in the header to a newer release's download page."""
+        self.update_release = release
+        accent = (theme.DARK if self.dark else theme.LIGHT)["accent"]
+        self.update_link.setText(
+            f"<a style='color:{accent}; text-decoration:none' href='{release['url']}'>"
+            f"↑ {tr('update.available', version=release['version'])}</a>"
+        )
+        self.update_link.show()
 
     # -- menu commands ------------------------------------------------------ #
 
@@ -1494,12 +1540,84 @@ class MainWindow(QWidget):
         event.accept()
 
 
+def _set_color_scheme(mode: str) -> None:
+    """Tell Qt which theme the program shows.
+
+    Qt colours the title bars - of the window and of every dialog - and its
+    own palette by this. Left alone it follows Windows, so a light program on
+    a dark Windows got a black title bar, and the other way round. "system"
+    hands the choice back to Windows. Qt < 6.8 cannot be told.
+    """
+    hints = QGuiApplication.styleHints()
+    if not hasattr(hints, "setColorScheme"):
+        return
+    if mode == "system":
+        hints.unsetColorScheme()
+    else:
+        hints.setColorScheme(
+            Qt.ColorScheme.Dark if mode == "dark" else Qt.ColorScheme.Light
+        )
+
+
 def _system_prefers_dark() -> bool:
     hints = QGuiApplication.styleHints()
     scheme = getattr(hints, "colorScheme", None)
     if scheme is None:  # Qt < 6.5
         return True
     return scheme() == Qt.ColorScheme.Dark
+
+
+# -- update check ------------------------------------------------------------- #
+
+# A newer release found this session; a window rebuilt for another language
+# shows it again.
+_latest_release: dict | None = None
+# Checks still waiting for GitHub; held so they are not collected meanwhile.
+_update_checks: list[UpdateCheck] = []
+
+
+def auto_update_check_enabled() -> bool:
+    return str(app_settings().value("check_updates", True)).lower() in ("true", "1")
+
+
+def check_for_updates(manual: bool = False) -> None:
+    """Ask GitHub for the latest release, in the background.
+
+    At startup only a newer release is worth a word - the link in the header.
+    From the Help menu every outcome gets an answer.
+    """
+    check = UpdateCheck()
+    _update_checks.append(check)
+    check.finished.connect(lambda release: _update_checked(check, release, manual))
+    check.start()
+
+
+def _update_checked(check: UpdateCheck, release: dict | None, manual: bool) -> None:
+    global _latest_release
+    if check in _update_checks:
+        _update_checks.remove(check)
+    check.deleteLater()
+    window = _windows[-1] if _windows else None
+    if window is None:
+        return
+    newer = release is not None and is_newer(release["version"])
+    if newer:
+        _latest_release = release
+        window.show_update(release)
+    if not manual:
+        return
+    if release is None:
+        QMessageBox.warning(window, APP_NAME, tr("update.failed"))
+    elif newer:
+        answer = QMessageBox.question(
+            window,
+            APP_NAME,
+            tr("update.ask", version=release["version"], current=__version__),
+        )
+        if answer == QMessageBox.StandardButton.Yes:
+            QDesktopServices.openUrl(QUrl(release["url"]))
+    else:
+        QMessageBox.information(window, APP_NAME, tr("update.latest", version=__version__))
 
 
 # The window on screen. Switching the language replaces it, and a reference has
@@ -1586,6 +1704,8 @@ def main() -> int:
     window = open_window()
     window.add_paths(paths)
     window.show()
+    if auto_update_check_enabled():
+        check_for_updates()
     return app.exec()
 
 

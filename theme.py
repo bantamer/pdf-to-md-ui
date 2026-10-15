@@ -180,6 +180,13 @@ QLabel#Subtitle {{
     color: {p['text_muted']};
 }}
 
+QLabel#UpdateLink {{
+    background: {p['accent_soft']};
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-weight: 600;
+}}
+
 QLabel#SectionLabel {{
     font-size: 11px;
     font-weight: 600;
