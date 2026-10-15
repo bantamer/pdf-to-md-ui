@@ -367,20 +367,14 @@ QPushButton#FavoriteRemove:hover {{
     border-color: {p['danger']};
 }}
 
-/* ---- Help marks ---- */
+/* ---- Help ---- */
 
-QLabel#HelpMark {{
-    border: 1.5px solid {p['text_muted']};
-    border-radius: 9px;
-    color: {p['text_muted']};
-    font-size: 11px;
-    font-weight: 700;
-    padding: 0;
-}}
-
-QLabel#HelpMark:hover {{
-    border-color: {p['accent']};
-    color: {p['accent']};
+/* The box a (?) opens; the (?) itself is drawn in gui.HelpMark. */
+QLabel#HelpPopup {{
+    background: {p['surface']};
+    color: {p['text']};
+    border: 1px solid {p['border_strong']};
+    padding: 4px 12px;
 }}
 
 /* ---- User guide ---- */

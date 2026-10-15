@@ -4,9 +4,9 @@ favourite folders and the way to the log."""
 import json
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QLineEdit
+from PySide6.QtWidgets import QApplication, QLineEdit
 
 import gui
 import i18n
@@ -125,8 +125,68 @@ def test_every_advanced_setting_is_explained(window):
 def test_help_text_wraps_and_keeps_its_paragraphs(window):
     mark = next(m for m in marks(window) if m.accessibleDescription() == gui.tr("tables.tooltip"))
 
-    tip = mark.toolTip()
+    tip = mark.help_text
     assert tip.startswith("<p>") and tip.count("<p>") == 3
+
+
+def hover(widget, inside=True):
+    from PySide6.QtCore import QEvent, QPointF
+    from PySide6.QtGui import QEnterEvent
+
+    if inside:
+        event = QEnterEvent(QPointF(5, 5), QPointF(5, 5), QPointF(5, 5))
+        QApplication.sendEvent(widget, event)
+    else:
+        QApplication.sendEvent(widget, QEvent(QEvent.Type.Leave))
+
+
+def test_hovering_opens_the_help_at_once_under_the_mark(window):
+    window.show()
+    mark = marks(window)[0]
+    popup = gui.help_popup()
+
+    hover(mark)
+
+    assert popup.isVisible(), "no waiting for a tooltip delay"
+    assert popup.text() == mark.help_text
+    below = mark.mapToGlobal(QPoint(0, mark.height()))
+    assert popup.y() >= below.y() or popup.y() + popup.height() <= mark.mapToGlobal(QPoint(0, 0)).y()
+
+    hover(mark, inside=False)
+    assert not popup.isVisible()
+
+
+def test_the_help_does_not_come_up_a_second_time(window):
+    """Qt's own tooltip used to open again at the pointer - the jump."""
+    mark = marks(window)[0]
+
+    assert mark.toolTip() == ""
+
+
+def test_folding_more_options_closes_its_help(window):
+    window.show()
+    window.more_btn.setChecked(True)
+    mark = next(m for m in marks(window) if window.advanced.isAncestorOf(m))
+    hover(mark)
+    assert gui.help_popup().isVisible()
+
+    window.more_btn.setChecked(False)
+
+    assert not gui.help_popup().isVisible()
+
+
+def test_mark_is_drawn_as_one_icon(window):
+    """Ring and "?" are painted together; the "?" sits in the middle."""
+    mark = marks(window)[0]
+    image = mark.grab().toImage()
+    side = gui.HelpMark.SIZE
+    ink = [(x, y) for x in range(4, side - 4) for y in range(4, side - 4)
+           if image.pixelColor(x, y).alpha() > 128 and image.pixelColor(x, y) != image.pixelColor(side // 2, 1)]
+    xs = [x for x, _ in ink]
+    ys = [y for _, y in ink]
+    assert ink, "no question mark drawn"
+    assert abs((min(xs) + max(xs)) / 2 - (side - 1) / 2) <= 1.5
+    assert abs((min(ys) + max(ys)) / 2 - (side - 1) / 2) <= 1.5
 
 
 def test_help_text_is_escaped():

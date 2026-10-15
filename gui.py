@@ -18,6 +18,7 @@ from PySide6.QtCore import (
     QElapsedTimer,
     QPoint,
     QPointF,
+    QRectF,
     qVersion,
     QEvent,
     QObject,
@@ -32,11 +33,13 @@ from PySide6.QtGui import (
     QActionGroup,
     QColor,
     QDesktopServices,
+    QFont,
     QFontMetrics,
     QGuiApplication,
     QIcon,
     QKeySequence,
     QPainter,
+    QPainterPath,
     QPen,
     QPixmap,
     QShortcut,
@@ -69,10 +72,11 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSpinBox,
     QTextBrowser,
-    QToolTip,
     QVBoxLayout,
     QWidget,
 )
+
+import shiboken6
 
 import i18n
 import theme
@@ -387,34 +391,134 @@ def help_html(text: str) -> str:
     return "".join(f"<p>{html.escape(part)}</p>" for part in text.split("\n\n"))
 
 
-class HelpMark(QLabel):
-    """The (?) after a setting: pointing at it explains the setting.
+class HelpPopup(QLabel):
+    """The explanation box a (?) opens. One for the whole program.
 
-    The explanation opens at once, without the usual tooltip delay, and a
-    click opens it too - on a touchpad that is easier than hovering.
+    Its own window rather than QToolTip: Qt's tooltip came up again by itself
+    a moment later, at the mouse pointer, so the box jumped and seemed slow.
+    This one opens at once, in one place under the mark, and stays put until
+    the mouse leaves the mark.
     """
 
+    WIDTH = 360
+
+    def __init__(self):
+        super().__init__(
+            None, Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint
+        )
+        self.setObjectName("HelpPopup")
+        self.setWordWrap(True)
+        self.setTextFormat(Qt.TextFormat.RichText)
+        self.setFixedWidth(self.WIDTH)
+        self.owner: QWidget | None = None
+
+    def show_for(self, mark: QWidget, text: str) -> None:
+        self.owner = mark
+        self.setText(text)
+        self.adjustSize()
+        self.setFixedHeight(self.heightForWidth(self.WIDTH))
+        # Under the mark, left edges lined up; above it, or shifted left,
+        # when the screen ends first.
+        screen = (mark.screen() or QGuiApplication.primaryScreen()).availableGeometry()
+        below = mark.mapToGlobal(QPoint(0, mark.height() + 6))
+        x = min(below.x(), screen.right() - self.width() - 4)
+        y = below.y()
+        if y + self.height() > screen.bottom():
+            y = mark.mapToGlobal(QPoint(0, 0)).y() - self.height() - 6
+        self.move(max(x, screen.left() + 4), max(y, screen.top() + 4))
+        self.show()
+        self.raise_()
+
+    def hide_for(self, mark: QWidget) -> None:
+        if self.owner is mark:
+            self.hide()
+            self.owner = None
+
+
+_help_popup: HelpPopup | None = None
+
+
+def help_popup() -> HelpPopup:
+    """The shared popup, made again if Qt has deleted it (a top-level
+    widget goes when the application's windows are torn down)."""
+    global _help_popup
+    if _help_popup is None or not shiboken6.isValid(_help_popup):
+        _help_popup = HelpPopup()
+    return _help_popup
+
+
+class HelpMark(QWidget):
+    """The (?) after a setting: pointing at it explains the setting.
+
+    Drawn as one icon - the ring and the question mark from the same pen,
+    the mark centred on its actual outline - rather than a "?" in a
+    bordered label, where the character sat off-centre in its ring.
+    """
+
+    SIZE = 18
+
     def __init__(self, text: str):
-        super().__init__("?")
-        self.setObjectName("HelpMark")
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setFixedSize(18, 18)
-        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        super().__init__()
+        self.setFixedSize(self.SIZE, self.SIZE)
         self.setCursor(Qt.CursorShape.WhatsThisCursor)
-        self.setToolTip(help_html(text))
+        self.help_text = help_html(text)
+        self.setAccessibleName("?")
         self.setAccessibleDescription(text)
+        self._hovered = False
+
+    def _palette(self) -> dict:
+        return theme.DARK if getattr(self.window(), "dark", False) else theme.LIGHT
+
+    def paintEvent(self, event):
+        palette = self._palette()
+        color = QColor(palette["accent"] if self._hovered else palette["text_muted"])
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        ring = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+        if self._hovered:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(color)
+            painter.drawEllipse(ring)
+            glyph = QColor("#ffffff")
+        else:
+            painter.setPen(QPen(color, 1.5))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawEllipse(ring.adjusted(0.5, 0.5, -0.5, -0.5))
+            glyph = color
+        font = QFont(self.font())
+        font.setPixelSize(12)
+        font.setBold(True)
+        path = QPainterPath()
+        path.addText(0, 0, font, "?")
+        box = path.boundingRect()
+        path.translate(ring.center() - box.center())
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(glyph)
+        painter.drawPath(path)
+        painter.end()
 
     def show_help(self) -> None:
-        QToolTip.showText(
-            self.mapToGlobal(QPoint(0, self.height() + 4)), self.toolTip(), self
-        )
+        help_popup().show_for(self, self.help_text)
 
     def enterEvent(self, event):
+        self._hovered = True
+        self.update()
         self.show_help()
         super().enterEvent(event)
 
+    def leaveEvent(self, event):
+        self._hovered = False
+        self.update()
+        help_popup().hide_for(self)
+        super().leaveEvent(event)
+
     def mousePressEvent(self, event):
         self.show_help()
+
+    def hideEvent(self, event):
+        # "More options" folded away under the pointer, or the window closed.
+        help_popup().hide_for(self)
+        super().hideEvent(event)
 
 
 def with_help(widget: QWidget, key: str) -> QWidget:
@@ -1141,6 +1245,8 @@ class MainWindow(QWidget):
     def _apply_theme(self) -> None:
         palette = theme.DARK if self.dark else theme.LIGHT
         QApplication.instance().setStyleSheet(theme.build_qss(palette))
+        for mark in self.findChildren(HelpMark):  # drawn, not styled
+            mark.update()
         self.details_link.setText(
             f"<a style='color:{palette['accent']}' href='#log'>{tr('status.details')}</a>"
         )
