@@ -157,6 +157,12 @@ QListWidget {{
     padding: 4px;
 }}
 
+/* Files dragged over the window land in the list: show it, like the drop zone. */
+QListWidget[dragActive="true"] {{
+    background: {p['accent_soft']};
+    border: 2px dashed {p['accent']};
+}}
+
 QListWidget::item {{
     padding: 7px 10px;
     border-radius: 6px;

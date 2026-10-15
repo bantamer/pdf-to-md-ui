@@ -118,3 +118,55 @@ def test_theme_follows_system_until_chosen_by_hand(qapp, settings_file):
     w.close()
 
     assert gui.MainWindow().dark is (not was)
+
+
+def _drop(window, *paths):
+    from PySide6.QtCore import QMimeData, QPoint, QPointF, Qt, QUrl
+    from PySide6.QtGui import QDragEnterEvent, QDropEvent
+
+    mime = QMimeData()
+    mime.setUrls([QUrl.fromLocalFile(str(p)) for p in paths])
+    enter = QDragEnterEvent(
+        QPoint(10, 10), Qt.DropAction.CopyAction, mime,
+        Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+    )
+    window.dragEnterEvent(enter)
+    assert enter.isAccepted()
+    drop = QDropEvent(
+        QPointF(10, 10), Qt.DropAction.CopyAction, mime,
+        Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+    )
+    window.dropEvent(drop)
+
+
+def test_a_second_file_can_be_dropped(window, tmp_path):
+    """The drop zone hides after the first file; the window takes the rest."""
+    first, second = tmp_path / "a.pdf", tmp_path / "b.pdf"
+    for p in (first, second):
+        p.write_bytes(b"%PDF")
+    _drop(window, first)
+    assert window.drop.isHidden() and not window.file_list.isHidden()
+
+    _drop(window, second)
+
+    assert window.inputs == [str(first), str(second)]
+    # Drops on the list reach the window only if the list does not keep them.
+    assert window.acceptDrops()
+    assert not window.file_list.acceptDrops()
+    assert not window.file_list.viewport().acceptDrops()
+    assert window.file_list.property("dragActive") is False
+
+
+def test_files_added_mid_run_do_not_enable_convert(window, tmp_path):
+    first, second = tmp_path / "a.pdf", tmp_path / "b.pdf"
+    for p in (first, second):
+        p.write_bytes(b"%PDF")
+    window.add_paths([str(first)])
+    window.thread = object()  # a run in progress
+    window._set_busy(True, 1)
+
+    window.add_paths([str(second)])
+
+    assert not window.run_btn.isEnabled()
+    assert window.inputs == [str(first), str(second)]
+    window.thread = None

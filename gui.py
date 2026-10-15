@@ -311,6 +311,10 @@ class MainWindow(QWidget):
         self._build_ui()
         self._restore_settings()
         self._apply_theme()
+        # The drop zone gives way to the file list after the first file, and the
+        # list takes no drops - so without this, a second file had nowhere to
+        # land. Children that do not take drops pass them up to the window.
+        self.setAcceptDrops(True)
         # Open at the natural content height where the screen allows it, but
         # never demand more than a small laptop can give.
         natural = self.sizeHint().height()
@@ -808,12 +812,41 @@ class MainWindow(QWidget):
         self.file_list.setVisible(has_files)
         self.clear_btn.setVisible(has_files)
         self.drop.setVisible(not has_files)
+        if self._busy():
+            # Files added mid-run wait for the next one; re-enabling Convert
+            # here would let a second run start on top of the first.
+            return
         self.run_btn.setEnabled(has_files)
         self._set_status(
             tr("status.ready", count=len(self.inputs))
             if has_files
             else tr("status.empty")
         )
+
+    def _busy(self) -> bool:
+        return self.thread is not None
+
+    # -- drag & drop onto the whole window -------------------------------- #
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+            self._highlight_list(True)
+
+    def dragLeaveEvent(self, event):
+        self._highlight_list(False)
+
+    def dropEvent(self, event):
+        self._highlight_list(False)
+        paths = [u.toLocalFile() for u in event.mimeData().urls() if u.isLocalFile()]
+        if paths:
+            self.add_paths(paths)
+            event.acceptProposedAction()
+
+    def _highlight_list(self, active: bool) -> None:
+        self.file_list.setProperty("dragActive", active)
+        self.file_list.style().unpolish(self.file_list)
+        self.file_list.style().polish(self.file_list)
 
     def _toggle_advanced(self, shown: bool) -> None:
         self.advanced.setVisible(shown)
