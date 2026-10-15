@@ -90,10 +90,6 @@
   "options.section": "Options",
 
   "images.label": "Images :",
-  "images.external": "Fichiers séparés",
-  "images.embedded": "Intégrer au document",
-  "images.off": "Ne pas enregistrer",
-  "images.tooltip": "Fichiers séparés — images PNG ou JPEG à côté du document, liées depuis le texte.\n\nIntégrer au document — les images vont dans le fichier .md en Base64 : un seul fichier autonome, mais plusieurs fois plus gros.\n\nNe pas enregistrer — texte et tableaux seulement ; le plus rapide.",
   "images.hint": "L'extraction des images est la partie la plus lourde du travail : chaque illustration est rendue à nouveau. Sur des documents ordinaires, cela ne se remarque pas, mais les fiches techniques comptent des dizaines de pages de graphiques, et celles-ci peuvent prendre des minutes.",
 
   "dpi.label": "Résolution :",

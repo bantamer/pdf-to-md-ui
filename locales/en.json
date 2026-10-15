@@ -90,10 +90,10 @@
   "options.section": "Options",
 
   "images.label": "Images:",
-  "images.external": "Save as separate files",
-  "images.embedded": "Embed in the document",
-  "images.off": "Don't save",
-  "images.tooltip": "Save as separate files — PNG or JPEG images next to the document, linked from the text.\n\nEmbed in the document — the images go inside the .md file as Base64: one self-contained file, but several times bigger.\n\nDon't save — text and tables only; the fastest choice.",
+  "images.files": "Separate files",
+  "images.inside": "In the document",
+  "images.none": "Don't save",
+  "images.tooltip": "Separate files — PNG or JPEG images next to the document, linked from the text.\n\nIn the document — the images go inside the .md file as Base64: one self-contained file, but several times bigger.\n\nDon't save — text and tables only; the fastest choice.",
   "images.hint": "Extracting images is the heaviest part of the job: every illustration is rendered again. On ordinary documents you won't notice, but datasheets can have dozens of pages of plots, and those can take minutes.",
 
   "dpi.label": "Resolution:",

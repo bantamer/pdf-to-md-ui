@@ -91,7 +91,7 @@ def test_window_builds_in_every_language(qapp, settings_file, code):
     try:
         assert w.run_btn.text() == table["action.convert"]
         assert w.format_boxes["pdf"].text() == table["format.pdf"]
-        assert w.image_mode.itemText(0) == table["images.external"]
+        assert w.image_mode.itemText(0) == i18n.tr("images.files")
         assert w.language_actions[code].isChecked()
         assert w._collect_options()["format"] == "markdown"
     finally:

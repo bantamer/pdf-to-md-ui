@@ -90,10 +90,6 @@
   "options.section": "Opciones",
 
   "images.label": "Imágenes:",
-  "images.external": "Guardar como archivos aparte",
-  "images.embedded": "Incrustar en el documento",
-  "images.off": "No guardar",
-  "images.tooltip": "Guardar como archivos aparte — imágenes PNG o JPEG junto al documento, enlazadas desde el texto.\n\nIncrustar en el documento — las imágenes van dentro del archivo .md en Base64: un único archivo autónomo, pero varias veces más grande.\n\nNo guardar — solo texto y tablas; lo más rápido.",
   "images.hint": "Extraer las imágenes es la parte más pesada del trabajo: cada ilustración se vuelve a renderizar. En documentos normales no se nota, pero las hojas de datos tienen decenas de páginas de gráficas, y esas pueden tardar minutos.",
 
   "dpi.label": "Resolución:",

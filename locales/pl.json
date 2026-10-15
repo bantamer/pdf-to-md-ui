@@ -90,10 +90,6 @@
   "options.section": "Opcje",
 
   "images.label": "Obrazy:",
-  "images.external": "Zapisuj jako osobne pliki",
-  "images.embedded": "Osadź w dokumencie",
-  "images.off": "Nie zapisuj",
-  "images.tooltip": "Zapisuj jako osobne pliki — obrazy PNG lub JPEG obok dokumentu, w tekście odnośniki do nich.\n\nOsadź w dokumencie — obrazy wewnątrz pliku .md jako Base64: jeden samodzielny plik, ale kilka razy większy.\n\nNie zapisuj — tylko tekst i tabele; najszybciej.",
   "images.hint": "Wyodrębnianie obrazów to najcięższa część pracy: każda ilustracja jest renderowana od nowa. Przy zwykłych dokumentach różnicy nie widać, ale noty katalogowe mają dziesiątki stron wykresów i ich konwersja może trwać minuty.",
 
   "dpi.label": "Rozdzielczość:",

@@ -90,10 +90,6 @@
   "options.section": "Opzioni",
 
   "images.label": "Immagini:",
-  "images.external": "Salva come file separati",
-  "images.embedded": "Incorpora nel documento",
-  "images.off": "Non salvare",
-  "images.tooltip": "Salva come file separati — immagini PNG o JPEG accanto al documento, collegate dal testo.\n\nIncorpora nel documento — le immagini finiscono nel file .md in Base64: un unico file autonomo, ma molte volte più grande.\n\nNon salvare — solo testo e tabelle; la scelta più veloce.",
   "images.hint": "L'estrazione delle immagini è la parte più pesante del lavoro: ogni illustrazione viene renderizzata di nuovo. Nei documenti normali non si nota, ma i datasheet hanno decine di pagine di grafici, e quelle possono richiedere minuti.",
 
   "dpi.label": "Risoluzione:",

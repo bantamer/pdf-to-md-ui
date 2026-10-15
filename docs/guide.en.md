@@ -43,8 +43,8 @@ You can tick several formats at once.
 
 ## Options
 
-- **Images** — save as separate files, embed in the document, or don't save.
-  Images are the slowest part of the work.
+- **Images** — **Separate files**, **In the document** (inside the .md, one
+  big file) or **Don't save**. Images are the slowest part of the work.
 - **Resolution** — how sharp the images are. 96 DPI is usually enough for
   plots.
 - **Pages** — e.g. `1-12` or `1,3,5-7`. Empty means all pages.

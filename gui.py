@@ -534,6 +534,54 @@ def with_help(widget: QWidget, key: str) -> QWidget:
     return box
 
 
+# Every setting's box is this wide, in Options and in More options alike.
+FIELD_WIDTH = 166
+# Label column: as wide as the longest label, but no wider than this - a
+# longer one wraps onto a second line instead of pushing the boxes apart.
+LABEL_MAX_WIDTH = 116
+
+
+def settings_grid(rows: list, checks: list, labels: list[QLabel]) -> QGridLayout:
+    """Two even columns: label, box, (?) | label, box, (?).
+
+    `rows` holds pairs of (label key, widget, help key) - either may be None -
+    or a bare widget that spans the whole width. `checks` are (checkbox, help
+    key) pairs laid out two to a line, each starting where the labels start.
+    The labels are collected so the window can give them all one width, which
+    lines Options and More options up with each other.
+    """
+    grid = QGridLayout()
+    grid.setContentsMargins(0, 0, 0, 0)
+    grid.setHorizontalSpacing(6)
+    grid.setVerticalSpacing(8)
+    # 0 label, 1 box, 2 (?), 3 gap between the halves, 4 label, 5 box, 6 (?)
+    grid.setColumnMinimumWidth(3, 16)
+    grid.setColumnStretch(3, 1)
+    grid.setColumnStretch(7, 1)
+    row = 0
+    for item in rows:
+        if isinstance(item, QWidget):
+            grid.addWidget(item, row, 0, 1, 8)
+            row += 1
+            continue
+        for side, cell in enumerate(item):
+            if cell is None:
+                continue
+            key, widget, help_key = cell
+            base = side * 4
+            label = QLabel(tr(key))
+            label.setWordWrap(True)
+            labels.append(label)
+            widget.setFixedWidth(FIELD_WIDTH)
+            grid.addWidget(label, row, base)
+            grid.addWidget(widget, row, base + 1)
+            grid.addWidget(HelpMark(tr(help_key)), row, base + 2)
+        row += 1
+    for i, (box, help_key) in enumerate(checks):
+        grid.addWidget(with_help(box, help_key), row + i // 2, (i % 2) * 4, 1, 3)
+    return grid
+
+
 def eye_icon(open_: bool) -> QIcon:
     """The password field's show/hide button: an eye, struck through or not."""
     size = 32
@@ -570,21 +618,6 @@ def reset_button(tooltip_key: str) -> QPushButton:
     button.setObjectName("Small")
     button.setToolTip(tr(tooltip_key))
     return button
-
-
-def field_row(*pairs, spacing: int = 10) -> QHBoxLayout:
-    """A row of (label, widget) pairs; a bare widget is added as-is."""
-    row = QHBoxLayout()
-    row.setSpacing(spacing)
-    for item in pairs:
-        if isinstance(item, tuple):
-            text, widget = item
-            row.addWidget(QLabel(text))
-            row.addWidget(widget)
-        else:
-            row.addWidget(item)
-    row.addStretch()
-    return row
 
 
 class AboutDialog(QDialog):
@@ -672,7 +705,7 @@ class MainWindow(QWidget):
         super().__init__()
         self.setObjectName("Root")
         self.setWindowTitle(APP_NAME)
-        self.setMinimumWidth(720)
+        self.setMinimumWidth(760)
 
         self.inputs: list[str] = []
         self.thread: QThread | None = None
@@ -704,6 +737,7 @@ class MainWindow(QWidget):
         self.update_release: dict | None = None
         self._guide: GuideDialog | None = None
         self.favorites = load_favorites()
+        self._form_labels: list[QLabel] = []
         self._build_ui()
         # What every option looks like untouched - the "Reset" buttons go back
         # to this. Taken before the saved settings are applied on top.
@@ -714,6 +748,7 @@ class MainWindow(QWidget):
         self._restore_settings()
         self._sync_format_options()
         self._apply_theme()
+        self._align_labels()
         # "As in Windows" keeps following Windows while the program is open.
         hints = QGuiApplication.styleHints()
         if hasattr(hints, "colorSchemeChanged"):
@@ -764,7 +799,7 @@ class MainWindow(QWidget):
         scroll.setWidget(body)
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
-        # Layouts are made to fit 720 px in every language; should a future
+        # Layouts are made to fit 760 px in every language; should a future
         # translation still overflow, a scroll bar beats silently clipped
         # buttons.
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -949,10 +984,9 @@ class MainWindow(QWidget):
 
         # -- images: the single setting that decides how long a datasheet takes
         self.image_mode = QComboBox()
-        self.image_mode.addItem(tr("images.external"), "external")
-        self.image_mode.addItem(tr("images.embedded"), "embedded")
-        self.image_mode.addItem(tr("images.off"), "off")
-        self.image_mode.setFixedWidth(256)
+        self.image_mode.addItem(tr("images.files"), "external")
+        self.image_mode.addItem(tr("images.inside"), "embedded")
+        self.image_mode.addItem(tr("images.none"), "off")
         self.image_mode.currentIndexChanged.connect(self._toggle_image_dpi)
 
         # Worth trying before turning images off entirely: 96 DPI keeps the
@@ -961,18 +995,15 @@ class MainWindow(QWidget):
         self.image_dpi.setRange(36, 600)
         self.image_dpi.setValue(IMAGE_DPI_DEFAULT)
         self.image_dpi.setSuffix(" DPI")
-        self.image_dpi.setFixedWidth(130)
 
         self.pages_edit = QLineEdit()
         self.pages_edit.setPlaceholderText(tr("pages.placeholder"))
-        self.pages_edit.setFixedWidth(140)
 
         self.timeout_spin = QSpinBox()
         self.timeout_spin.setRange(0, 36000)
         self.timeout_spin.setValue(30)
         self.timeout_spin.setSuffix(tr("timeout.suffix"))
         self.timeout_spin.setSpecialValueText(tr("timeout.none"))
-        self.timeout_spin.setFixedWidth(150)
 
         self.opt_struct = QCheckBox(tr("struct.label"))
         self.opt_sanitize = QCheckBox(tr("sanitize.label"))
@@ -983,16 +1014,22 @@ class MainWindow(QWidget):
         for box in self.format_boxes.values():
             box.toggled.connect(self._sync_format_options)
 
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(24)
-        grid.setVerticalSpacing(6)
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.addWidget(with_help(self.opt_struct, "struct.tooltip"), 0, 0)
-        grid.addWidget(with_help(self.opt_sanitize, "sanitize.tooltip"), 0, 1)
-        grid.addWidget(with_help(self.opt_page_sep, "page_sep.tooltip"), 1, 0)
-        grid.addWidget(with_help(self.opt_plain_md, "plain_md.tooltip"), 1, 1)
-        grid.setColumnStretch(0, 1)
-        grid.setColumnStretch(1, 1)
+        grid = settings_grid(
+            [
+                (("images.label", self.image_mode, "images.tooltip"),
+                 ("dpi.label", self.image_dpi, "dpi.tooltip")),
+                hint(tr("images.hint")),
+                (("pages.label", self.pages_edit, "pages.tooltip"),
+                 ("timeout.label", self.timeout_spin, "timeout.tooltip")),
+            ],
+            [
+                (self.opt_struct, "struct.tooltip"),
+                (self.opt_sanitize, "sanitize.tooltip"),
+                (self.opt_page_sep, "page_sep.tooltip"),
+                (self.opt_plain_md, "plain_md.tooltip"),
+            ],
+            self._form_labels,
+        )
 
         self.more_btn = QPushButton(tr("advanced.button") + "  ▾")
         self.more_btn.setObjectName("Ghost")
@@ -1011,15 +1048,6 @@ class MainWindow(QWidget):
             section_row(tr("formats.section"), self.reset_main_btn),
             formats,
             section(tr("options.section")),
-            field_row(
-                (tr("images.label"), with_help(self.image_mode, "images.tooltip")),
-                (tr("dpi.label"), with_help(self.image_dpi, "dpi.tooltip")),
-            ),
-            hint(tr("images.hint")),
-            field_row(
-                (tr("pages.label"), with_help(self.pages_edit, "pages.tooltip")),
-                (tr("timeout.label"), with_help(self.timeout_spin, "timeout.tooltip")),
-            ),
             grid,
             more_row,
             self._advanced_panel(),
@@ -1033,34 +1061,28 @@ class MainWindow(QWidget):
         self.reading_order = QComboBox()
         self.reading_order.addItem("xycut", "xycut")
         self.reading_order.addItem(tr("reading_order.off"), "off")
-        self.reading_order.setMinimumWidth(120)
 
         self.table_method = QComboBox()
         self.table_method.addItem(tr("tables.default"), "default")
         self.table_method.addItem(tr("tables.cluster"), "cluster")
-        self.table_method.setMinimumWidth(120)
 
         self.image_format = QComboBox()
         self.image_format.addItem("PNG", "png")
         self.image_format.addItem("JPEG", "jpeg")
-        self.image_format.setMinimumWidth(120)
 
         self.threads_spin = QSpinBox()
         self.threads_spin.setRange(1, max(1, os.cpu_count() or 1))
         self.threads_spin.setValue(1)
-        self.threads_spin.setMinimumWidth(120)
 
         self.space_ratio = QDoubleSpinBox()
         self.space_ratio.setRange(0.01, 1.00)
         self.space_ratio.setSingleStep(0.01)
         self.space_ratio.setDecimals(2)
         self.space_ratio.setValue(SPACE_RATIO_DEFAULT)
-        self.space_ratio.setMinimumWidth(120)
 
         self.password_edit = QLineEdit()
         self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_edit.setPlaceholderText(tr("password.placeholder"))
-        self.password_edit.setMinimumWidth(120)
         self.password_eye = self.password_edit.addAction(
             eye_icon(open_=True), QLineEdit.ActionPosition.TrailingPosition
         )
@@ -1074,56 +1096,34 @@ class MainWindow(QWidget):
         self.hybrid = QComboBox()
         self.hybrid.addItem(tr("hybrid.off"), None)
         self.hybrid.addItem("docling-fast", "docling-fast")
-        self.hybrid.setMinimumWidth(120)
         self.hybrid.currentIndexChanged.connect(self._toggle_hybrid)
 
         self.hybrid_url = QLineEdit()
         self.hybrid_url.setPlaceholderText(HYBRID_DEFAULT_URL)
-        self.hybrid_url.setMinimumWidth(120)
         self.hybrid_url.setEnabled(False)
 
-        grid = QGridLayout(panel)
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(14)
-        grid.setVerticalSpacing(8)
-        rows = [
-            (tr("reading_order.label"), self.reading_order, "reading_order.tooltip",
-             tr("tables.label"), self.table_method, "tables.tooltip"),
-            (tr("image_format.label"), self.image_format, "image_format.tooltip",
-             tr("threads.label"), self.threads_spin, "threads.tooltip"),
-            (tr("password.label"), self.password_edit, "password.tooltip",
-             tr("hybrid.label"), self.hybrid, "hybrid.tooltip"),
-            (tr("space_ratio.label"), self.space_ratio, "space_ratio.tooltip",
-             tr("hybrid_url.label"), self.hybrid_url, "hybrid_url.tooltip"),
-        ]
-        for r, (l1, w1, h1, l2, w2, h2) in enumerate(rows):
-            grid.addWidget(QLabel(l1), r, 0)
-            grid.addWidget(with_help(w1, h1), r, 1)
-            grid.addWidget(QLabel(l2), r, 2)
-            grid.addWidget(with_help(w2, h2), r, 3)
-        grid.setColumnStretch(4, 1)
-
-        # Fields give way to long labels rather than push the card past the
-        # window: French and Spanish labels run a good third longer.
-        for field in (w for row in rows for w in (row[1], row[4])):
-            field.setMaximumWidth(200)
-
-        # Two columns, like the checkboxes above: three in a row ran past the
-        # window in the longer languages.
-        checks = QGridLayout()
-        checks.setHorizontalSpacing(24)
-        checks.setVerticalSpacing(6)
-        for i, (box, key) in enumerate(
-            (
+        grid = settings_grid(
+            [
+                (("reading_order.label", self.reading_order, "reading_order.tooltip"),
+                 ("tables.label", self.table_method, "tables.tooltip")),
+                (("image_format.label", self.image_format, "image_format.tooltip"),
+                 ("threads.label", self.threads_spin, "threads.tooltip")),
+                (("password.label", self.password_edit, "password.tooltip"),
+                 ("hybrid.label", self.hybrid, "hybrid.tooltip")),
+                (("space_ratio.label", self.space_ratio, "space_ratio.tooltip"),
+                 ("hybrid_url.label", self.hybrid_url, "hybrid_url.tooltip")),
+            ],
+            [
                 (self.opt_line_breaks, "line_breaks.tooltip"),
                 (self.opt_header_footer, "header_footer.tooltip"),
                 (self.opt_strikethrough, "strikethrough.tooltip"),
-            )
-        ):
-            checks.addWidget(with_help(box, key), i // 2, i % 2)
-        checks.setColumnStretch(0, 1)
-        checks.setColumnStretch(1, 1)
-        grid.addLayout(checks, len(rows), 0, 1, 5)
+            ],
+            self._form_labels,
+        )
+        outer = QVBoxLayout(panel)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(8)
+        outer.addLayout(grid)
 
         self.reset_advanced_btn = reset_button("reset.advanced_tooltip")
         self.reset_advanced_btn.clicked.connect(
@@ -1132,7 +1132,7 @@ class MainWindow(QWidget):
         reset_row = QHBoxLayout()
         reset_row.addStretch()
         reset_row.addWidget(self.reset_advanced_btn)
-        grid.addLayout(reset_row, len(rows) + 1, 0, 1, 5)
+        outer.addLayout(reset_row)
         return panel
 
     def _output_card(self) -> QFrame:
@@ -1705,6 +1705,18 @@ class MainWindow(QWidget):
     def _toggle_advanced(self, shown: bool) -> None:
         self.advanced.setVisible(shown)
         self.more_btn.setText(tr("advanced.button") + ("  ▴" if shown else "  ▾"))
+
+    def _align_labels(self) -> None:
+        """One label width for both grids, so Options and More options line
+        up. Measured with the styled font - the stylesheet sets the size, so
+        this has to come after the theme is applied."""
+        widths = []
+        for label in self._form_labels:
+            label.ensurePolished()
+            widths.append(label.fontMetrics().horizontalAdvance(label.text()))
+        width = min(LABEL_MAX_WIDTH, max(widths) + 2)
+        for label in self._form_labels:
+            label.setFixedWidth(width)
 
     def _sync_format_options(self, *_) -> None:
         """Grey out what the ticked formats would ignore."""
