@@ -66,6 +66,11 @@ Press **More options** for the settings you rarely need: reading order, table
 detection, image format, PDF password, AI mode and others. Usually there is
 no need to touch them — each is explained under its **?**.
 
+**Drop hidden text** — for results that go to an AI: drops text you cannot
+see on the page (invisible, white on white, microscopic, outside the page).
+It takes about twice as long and sometimes swallows thin symbols such as a
+minus sign in a formula, so it is off by default.
+
 The password for encrypted PDFs is never saved. The eye button in the
 password field shows what you typed.
 

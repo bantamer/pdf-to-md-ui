@@ -154,6 +154,9 @@
   "strikethrough.label": "Mark strikethrough text",
   "strikethrough.tooltip": "Marks crossed-out text: ~~like this~~ in Markdown, <del> in HTML. Experimental.",
 
+  "hidden_text.label": "Drop hidden text",
+  "hidden_text.tooltip": "For results that go to an AI. A PDF can carry text the reader never sees — invisible, white on white, microscopic, outside the page, in hidden layers — sometimes with instructions meant for the AI. This drops all of it.\n\nThe price: about twice as slow, and some thin symbols go too — on a Microchip datasheet the minus and equals signs vanished from formulas. That is why it is off by default.",
+
   "hybrid.label": "AI mode:",
   "hybrid.off": "Off",
   "hybrid.tooltip": "Sends the difficult pages — complex tables, scans — to a separate AI server (docling) for better recognition; the rest is converted as usual.\n\nThe server is installed and started separately: pip install \"opendataloader-pdf[hybrid]\", then opendataloader-pdf-hybrid --port 5002. If it doesn't answer, the program tells you before starting.",
@@ -210,6 +213,8 @@
   "run.no_java": "Java not found. Install Java 11 or newer, or reinstall the program — the right Java comes with it.",
   "run.patch_on": "veraPDF patch: on",
   "run.patch_off": "veraPDF patch: not applied to this version",
+  "run.hidden_on": "hidden text: dropped",
+  "run.hidden_partial": "hidden text: this opendataloader-pdf version can only drop tiny, off-page and hidden-layer text; invisible and same-colour text stays",
   "run.inputs": "Input files: {count}",
   "run.output": "Results folder: {path}",
   "run.java": "Java: {path} · JVM memory up to {heap} MB",

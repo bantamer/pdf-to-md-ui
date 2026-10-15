@@ -97,6 +97,18 @@ jobs:
           }
           $patch | ForEach-Object { Write-Host $_.FullName }
 
+      # The hidden-text switch (patches/README.md): without it "Drop hidden
+      # text" quietly leaves invisible and white-on-white text in.
+      - name: Verify the hidden-text patch was bundled
+        shell: pwsh
+        run: |
+          $patch = Get-ChildItem -Path "dist" -Recurse -Filter "FilterConfig.class" |
+                   Where-Object { $_.FullName -like "*patches*hidden-text*" }
+          if (-not $patch) {
+            Write-Error "patches/hidden-text missing from dist/ - check the datas entry in app.spec."
+          }
+          $patch | ForEach-Object { Write-Host $_.FullName }
+
       # Inno Setup ships with the windows runner image, but it is not on PATH
       # and the location has moved between image versions.
       - name: Locate Inno Setup

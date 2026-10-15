@@ -104,6 +104,7 @@ HELP_KEYS = [
     "threads.tooltip", "password.tooltip", "hybrid.tooltip",
     "space_ratio.tooltip", "hybrid_url.tooltip",
     "line_breaks.tooltip", "header_footer.tooltip", "strikethrough.tooltip",
+    "hidden_text.tooltip",
 ]
 
 
@@ -120,7 +121,7 @@ def test_every_setting_has_its_question_mark(window):
 def test_every_advanced_setting_is_explained(window):
     advanced = [m for m in marks(window) if window.advanced.isAncestorOf(m)]
 
-    assert len(advanced) == 11
+    assert len(advanced) == 12
 
 
 def test_help_text_wraps_and_keeps_its_paragraphs(window):
@@ -531,3 +532,16 @@ def test_timeout_saved_by_the_old_counter_still_loads(qapp, settings_file):
 
     gui.app_settings().setValue("options/timeout", 45)  # not on the list
     assert gui.MainWindow().timeout_box.currentData() == "30"
+
+
+# -- hidden text --------------------------------------------------------------------------------- #
+
+
+def test_hidden_text_is_kept_unless_asked(window):
+    assert not window.opt_hidden.isChecked(), "off by default: slower, and thin symbols go"
+    assert window._collect_options()["content_safety_off"] == gui.CONTENT_SAFETY_OFF
+
+    window.opt_hidden.setChecked(True)
+    options = window._collect_options()
+
+    assert options["content_safety_off"] is None, "every built-in filter stays on"

@@ -110,3 +110,31 @@ def test_plain_markdown_without_separators(tmp_path, qapp):
     assert "<table" not in md
     assert re.search(r"^\|.*TEST CONDITIONS.*\|\s*$", md, re.M), "the table is gone"
     assert "---- page" not in md
+
+
+@pytest.mark.parametrize("drop", [False, True])
+def test_hidden_text(tmp_path, qapp, drop):
+    """Invisible, white, microscopic and off-page text: kept by default, gone
+    with "Drop hidden text" - the visible paragraph stays either way."""
+    from tests.pdfgen import HIDDEN_MARKERS, VISIBLE_TEXT, hidden_text_pdf
+
+    pdf = hidden_text_pdf(tmp_path / "hidden.pdf")
+    out = tmp_path / "out"
+    options = {
+        "format": "markdown",
+        "content_safety_off": None if drop else converter.CONTENT_SAFETY_OFF,
+        "image_output": "off",
+    }
+    worker = ConvertWorker(
+        [Job(str(pdf), str(out), "hidden.pdf")], str(out), options, 120,
+        converter.supported_option_names(), filter_hidden=drop,
+    )
+    result = {}
+    worker.finished.connect(result.update)
+    worker.run()
+    assert result["ok"] == 1, result
+    md = (out / "hidden.md").read_text(encoding="utf-8")
+
+    assert VISIBLE_TEXT in md
+    for kind, marker in HIDDEN_MARKERS.items():
+        assert (marker in md) is (not drop), kind

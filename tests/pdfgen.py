@@ -15,6 +15,31 @@ def dense_line_pdf(path: Path, strokes: int) -> Path:
         x = 50 + (i % 500) * 1.0
         y = 780 - (i // 500) * 6.0
         ops.append(f"{x:.1f} {y:.1f} m {x + 0.8:.1f} {y - 3:.1f} l S")
+    return _one_page_pdf(path, ops)
+
+
+# Markers the hidden-text test looks for in the converted output.
+HIDDEN_MARKERS = {
+    "invisible": "HIDDENINVISIBLE",  # text render mode 3: neither filled nor stroked
+    "white": "HIDDENWHITE",  # white on the white page
+    "tiny": "HIDDENTINY",  # half a point high
+    "off_page": "HIDDENOFFPAGE",  # placed outside the page
+}
+VISIBLE_TEXT = "Output voltage accuracy is two percent"
+
+
+def hidden_text_pdf(path: Path) -> Path:
+    ops = [
+        f"BT /F1 12 Tf 50 780 Td ({VISIBLE_TEXT}) Tj ET",
+        f"BT /F1 12 Tf 3 Tr 50 740 Td ({HIDDEN_MARKERS['invisible']}) Tj ET",
+        f"BT 1 1 1 rg /F1 12 Tf 50 700 Td ({HIDDEN_MARKERS['white']}) Tj ET",
+        f"BT /F1 0.5 Tf 50 660 Td ({HIDDEN_MARKERS['tiny']}) Tj ET",
+        f"BT /F1 12 Tf -900 400 Td ({HIDDEN_MARKERS['off_page']}) Tj ET",
+    ]
+    return _one_page_pdf(path, ops)
+
+
+def _one_page_pdf(path: Path, ops: list[str]) -> Path:
     content = "\n".join(ops).encode("ascii")
 
     objects = [

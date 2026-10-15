@@ -6,6 +6,7 @@ the patch, opendataloader-pdf 2.5.13 needs well over 256 MB for it; with the
 patch, 64 MB is enough. The tests run it in 128 MB.
 """
 
+import os
 import subprocess
 import zipfile
 
@@ -129,3 +130,38 @@ def test_patch_still_needed(dense_pdf, tmp_path):
         "opendataloader-pdf now handles dense line art without the patch: "
         "remove patches/verapdf - see patches/README.md"
     )
+
+
+# -- the hidden-text switch (patches/hidden-text) ------------------------------------------------- #
+
+
+def test_hidden_text_patch_fits_the_pinned_jar():
+    assert converter.hidden_text_patch(converter.jar_path()), (
+        "patches/hidden-text no longer matches the bundled FilterConfig - "
+        "see patches/README.md"
+    )
+
+
+def test_hidden_text_switch_only_when_asked():
+    jar = converter.jar_path()
+
+    plain = converter.java_command("java", jar, ["in.pdf"])
+    asked = converter.java_command("java", jar, ["in.pdf"], filter_hidden=True)
+
+    assert converter.HIDDEN_PROPERTY not in plain
+    assert str(converter.HIDDEN_PATCH_ROOT) not in " ".join(plain)
+    assert converter.HIDDEN_PROPERTY in asked
+    classpath = asked[asked.index("-cp") + 1].split(os.pathsep)
+    assert classpath[0] == str(converter.HIDDEN_PATCH_ROOT) and classpath[-1] == jar
+
+
+def test_hidden_text_switch_skips_a_jar_it_does_not_fit(tmp_path):
+    jar = tmp_path / "other.jar"
+    with zipfile.ZipFile(jar, "w") as z:
+        z.writestr("META-INF/MANIFEST.MF", "Main-Class: x.Main\n")
+        z.writestr(converter.HIDDEN_PATCHED_CLASS, b"another release")
+
+    command = converter.java_command("java", str(jar), ["in.pdf"], filter_hidden=True)
+
+    assert converter.HIDDEN_PROPERTY not in command
+    assert command[-3:-1] == ["-jar", str(jar)]

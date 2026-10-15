@@ -150,6 +150,20 @@ PATCH_TARGETS = {
 
 _PATCH_CACHE: dict[str, tuple[str, str] | None] = {}
 
+# The hidden-text switch (patches/README.md). opendataloader-pdf can drop text
+# a reader cannot see - it renders the page and compares the text with what is
+# behind it - but 2.5.13 leaves that filter off and its CLI can only switch it
+# off. This FilterConfig takes its default from a system property instead.
+HIDDEN_PATCH_ROOT = Path(__file__).resolve().parent / "patches" / "hidden-text"
+HIDDEN_PATCHED_CLASS = "org/opendataloader/pdf/api/FilterConfig.class"
+HIDDEN_PROPERTY = "-Dopendataloader.filterHiddenText=true"
+# FilterConfig as shipped in opendataloader-pdf 2.5.13, the source the patch
+# was compiled from. Another jar gets no patch: its FilterConfig may differ.
+HIDDEN_PATCH_TARGETS = {
+    "fdb56dd194bc4bf8cab83b07b12d50b43ff30bb97c8b2b4d5befeeb1d48f7c51",
+}
+_HIDDEN_CACHE: dict[str, bool] = {}
+
 
 def verapdf_patch(jar: str) -> tuple[str, str] | None:
     """(classpath folder, main class) when the patch applies to this jar."""
@@ -177,14 +191,60 @@ def verapdf_patch(jar: str) -> tuple[str, str] | None:
     return result
 
 
-def java_command(java: str, jar: str, args: list[str]) -> list[str]:
-    """The full command line for one conversion. Tests swap this out."""
+def _main_class(jar: str) -> str | None:
+    try:
+        with zipfile.ZipFile(jar) as z:
+            manifest = z.read("META-INF/MANIFEST.MF").decode("utf-8", "replace")
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return None
+    return next(
+        (
+            line.split(":", 1)[1].strip()
+            for line in manifest.splitlines()
+            if line.startswith("Main-Class:")
+        ),
+        None,
+    )
+
+
+def hidden_text_patch(jar: str) -> bool:
+    """True when the hidden-text switch fits this jar."""
+    if jar not in _HIDDEN_CACHE:
+        fits = False
+        try:
+            if (HIDDEN_PATCH_ROOT / HIDDEN_PATCHED_CLASS).is_file():
+                with zipfile.ZipFile(jar) as z:
+                    bundled = hashlib.sha256(z.read(HIDDEN_PATCHED_CLASS)).hexdigest()
+                fits = bundled in HIDDEN_PATCH_TARGETS and _main_class(jar) is not None
+        except (OSError, KeyError, zipfile.BadZipFile):
+            fits = False
+        _HIDDEN_CACHE[jar] = fits
+    return _HIDDEN_CACHE[jar]
+
+
+def java_command(
+    java: str, jar: str, args: list[str], filter_hidden: bool = False
+) -> list[str]:
+    """The full command line for one conversion. Tests swap this out.
+
+    filter_hidden: also drop invisible and same-colour text, through the
+    hidden-text patch - when it fits this jar; otherwise nothing changes here
+    and the caller says so in the log.
+    """
     command = [java, "-Djava.awt.headless=true", "-Dapple.awt.UIElement=true"]
+    folders: list[str] = []
+    main = None
+    if filter_hidden and hidden_text_patch(jar):
+        command.append(HIDDEN_PROPERTY)
+        folders.append(str(HIDDEN_PATCH_ROOT))
+        main = _main_class(jar)
     patch = verapdf_patch(jar)
     if patch:
-        # Classpath order decides which ChunkParser loads: ours, then the jar.
-        folder, main = patch
-        return [*command, "-cp", folder + os.pathsep + jar, main, *args]
+        folders.append(patch[0])
+        main = patch[1]
+    if folders and main:
+        # Classpath order decides which class loads: the patches, then the jar.
+        return [*command, "-cp", os.pathsep.join([*folders, jar]), main, *args]
     return [*command, "-jar", jar, *args]
 
 
@@ -429,6 +489,7 @@ class ConvertWorker(QObject):
         options: dict,
         timeout: int,
         supported: set[str] | None,
+        filter_hidden: bool = False,
     ):
         super().__init__()
         self.jobs = jobs
@@ -436,6 +497,7 @@ class ConvertWorker(QObject):
         self.options = options
         self.timeout = timeout  # seconds; 0 = no limit
         self.supported = supported
+        self.filter_hidden = filter_hidden
 
         self._lock = threading.Lock()
         self._process: subprocess.Popen | None = None
@@ -486,6 +548,10 @@ class ConvertWorker(QObject):
         heap = max_heap_mb()
         self._emit(f"opendataloader-pdf {odl_version()}")
         self._emit(tr("run.patch_on") if verapdf_patch(jar) else tr("run.patch_off"))
+        if self.filter_hidden:
+            self._emit(
+                tr("run.hidden_on") if hidden_text_patch(jar) else tr("run.hidden_partial")
+            )
         self._emit(tr("run.inputs", count=len(self.jobs)))
         self._emit(tr("run.output", path=self.output_root))
         self._emit(tr("run.java", path=java, heap=heap))
@@ -549,7 +615,7 @@ class ConvertWorker(QObject):
     def _run_one(self, java: str, jar: str, job: Job, options: dict, heap: int) -> str:
         """Return "ok", "error", "timeout" or "cancelled"."""
         args = build_args(job.pdf, job.output_dir, options, self.supported)
-        command = java_command(java, jar, args)
+        command = java_command(java, jar, args, filter_hidden=self.filter_hidden)
 
         env = os.environ.copy()
         env.setdefault("JAVA_TOOL_OPTIONS", f"-Xmx{heap}m")

@@ -1120,6 +1120,7 @@ class MainWindow(QWidget):
         self.opt_line_breaks = QCheckBox(tr("line_breaks.label"))
         self.opt_header_footer = QCheckBox(tr("header_footer.label"))
         self.opt_strikethrough = QCheckBox(tr("strikethrough.label"))
+        self.opt_hidden = QCheckBox(tr("hidden_text.label"))
 
         self.hybrid = QComboBox()
         self.hybrid.addItem(tr("hybrid.off"), None)
@@ -1145,6 +1146,7 @@ class MainWindow(QWidget):
                 (self.opt_line_breaks, "line_breaks.tooltip"),
                 (self.opt_header_footer, "header_footer.tooltip"),
                 (self.opt_strikethrough, "strikethrough.tooltip"),
+                (self.opt_hidden, "hidden_text.tooltip"),
             ],
             self._form_labels,
             self._check_grids,
@@ -1394,6 +1396,7 @@ class MainWindow(QWidget):
             self.opt_line_breaks,
             self.opt_header_footer,
             self.opt_strikethrough,
+            self.opt_hidden,
         ]
 
     def _reset_options(self, widgets: list[QWidget]) -> None:
@@ -1555,6 +1558,7 @@ class MainWindow(QWidget):
             ("keep_line_breaks", self.opt_line_breaks),
             ("include_header_footer", self.opt_header_footer),
             ("detect_strikethrough", self.opt_strikethrough),
+            ("drop_hidden_text", self.opt_hidden),
             ("hybrid", self.hybrid),
             ("hybrid_url", self.hybrid_url),
             ("advanced_open", self.more_btn),
@@ -1793,7 +1797,9 @@ class MainWindow(QWidget):
 
         options: dict = {
             "format": ",".join(formats),
-            "content_safety_off": CONTENT_SAFETY_OFF,
+            # Off for speed unless hidden text is to go: then every filter
+            # stays on, and the worker adds the hidden-text one on top.
+            "content_safety_off": None if self.opt_hidden.isChecked() else CONTENT_SAFETY_OFF,
             # TI and friends ship subset fonts without ToUnicode; the default
             # replacement is a space, so those glyphs vanish silently.
             "replace_invalid_chars": "?",
@@ -1936,7 +1942,8 @@ class MainWindow(QWidget):
         self.thread = QThread(self)
         self._sync_actions()
         self.worker = ConvertWorker(
-            jobs, output_dir, options, int(self.timeout_box.currentData()), supported
+            jobs, output_dir, options, int(self.timeout_box.currentData()), supported,
+            filter_hidden=self.opt_hidden.isChecked(),
         )
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)

@@ -51,7 +51,7 @@ def fake_java(monkeypatch):
     monkeypatch.setattr(
         converter,
         "java_command",
-        lambda java, jar, args: [sys.executable, "-c", FAKE_JAVA, *args],
+        lambda java, jar, args, **_: [sys.executable, "-c", FAKE_JAVA, *args],
     )
     return started
 
