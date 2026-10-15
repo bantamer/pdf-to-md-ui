@@ -32,12 +32,21 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
+          pip install -r requirements-dev.txt pyinstaller
+
+      # Before anything is built: the suite covers the batch loop, settings,
+      # and the converter's real output - including the veraPDF memory patch,
+      # which the installer must not ship without.
+      - name: Run tests
+        run: python -m pytest tests -q
 
       # zip-6 rather than the older --compress=2, which JDK 21 deprecates.
+      # jdk.unsupported carries sun.misc.Unsafe, which PDFBox needs to release
+      # memory-mapped files; without it every image-bearing PDF logs
+      # "SEVERE: Unmapping is not supported".
       - name: Build trimmed JRE
         run: |
-          jlink --add-modules java.base,java.desktop,java.logging,java.naming,java.xml `
+          jlink --add-modules java.base,java.desktop,java.logging,java.naming,java.xml,jdk.unsupported `
                 --strip-debug --no-header-files --no-man-pages --compress=zip-6 `
                 --output jre
           jre\bin\java.exe -version
@@ -60,6 +69,18 @@ jobs:
             Write-Error "opendataloader-pdf jar missing from dist/ - collect_all did not pick up the backend."
           }
           $jars | ForEach-Object { Write-Host $_.FullName }
+
+      # The veraPDF line-art patch (patches/README.md) has to travel with the
+      # app: without it plot-heavy datasheets run out of memory.
+      - name: Verify the veraPDF patch was bundled
+        shell: pwsh
+        run: |
+          $patch = Get-ChildItem -Path "dist" -Recurse -Filter "ChunkParser.class" |
+                   Where-Object { $_.FullName -like "*patches*" }
+          if (-not $patch) {
+            Write-Error "patches/verapdf missing from dist/ - check the datas entry in app.spec."
+          }
+          $patch | ForEach-Object { Write-Host $_.FullName }
 
       # Inno Setup ships with the windows runner image, but it is not on PATH
       # and the location has moved between image versions.
