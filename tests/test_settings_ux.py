@@ -488,3 +488,26 @@ def test_options_and_more_options_line_up(window, width):
     assert {b.width() for b in boxes} == {gui.FIELD_WIDTH}
     # The second half sits right after the first: spare width goes to the right.
     assert starts[0][4] - (starts[0][2] + 18) <= 40
+
+
+# -- resolution ------------------------------------------------------------------------------ #
+
+
+def test_resolution_is_a_list_of_usual_values(window):
+    values = [int(window.image_dpi.itemData(i)) for i in range(window.image_dpi.count())]
+
+    assert values == gui.IMAGE_DPI_CHOICES and 96 in values and 300 in values
+    assert window.image_dpi.currentData() == "144"
+    assert "image_resolution" not in window._collect_options(), "default: nothing to pass"
+
+    window.image_dpi.setCurrentIndex(window.image_dpi.findData("96"))
+    assert window._collect_options()["image_resolution"] == "96"
+
+
+def test_resolution_saved_by_the_old_counter_still_loads(qapp, settings_file):
+    """The counter stored 96 as a number; an odd value like 150 falls back."""
+    gui.app_settings().setValue("options/image_dpi", 96)
+    assert gui.MainWindow().image_dpi.currentData() == "96"
+
+    gui.app_settings().setValue("options/image_dpi", 150)
+    assert gui.MainWindow().image_dpi.currentData() == "144"

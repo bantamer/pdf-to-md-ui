@@ -120,6 +120,9 @@ FORMAT_HELP = {
     "tagged-pdf": "format.tagged_pdf_tooltip",
     "pdf": "format.pdf_tooltip",
 }
+# Image resolution choices. 144 is the converter's own default; 96 is
+# usually enough for datasheet plots; 300 and up is print quality.
+IMAGE_DPI_CHOICES = [72, 96, 120, 144, 200, 300, 600]
 # Saved destinations under "Where to save".
 FAVORITES_MAX = 5
 
@@ -1004,10 +1007,12 @@ class MainWindow(QWidget):
 
         # Worth trying before turning images off entirely: 96 DPI keeps the
         # illustrations but cuts the memory the renderer needs for them.
-        self.image_dpi = QSpinBox()
-        self.image_dpi.setRange(36, 600)
-        self.image_dpi.setValue(IMAGE_DPI_DEFAULT)
-        self.image_dpi.setSuffix(" DPI")
+        # A list of the usual values rather than a counter that crept along
+        # one DPI per click.
+        self.image_dpi = QComboBox()
+        for dpi in IMAGE_DPI_CHOICES:
+            self.image_dpi.addItem(f"{dpi} DPI", str(dpi))
+        self.image_dpi.setCurrentIndex(IMAGE_DPI_CHOICES.index(IMAGE_DPI_DEFAULT))
 
         self.pages_edit = QLineEdit()
         self.pages_edit.setPlaceholderText(tr("pages.placeholder"))
@@ -1807,8 +1812,9 @@ class MainWindow(QWidget):
         if "html" in formats and separators:
             options["html_page_separator"] = PAGE_SEPARATOR
 
-        if self.image_dpi.value() != IMAGE_DPI_DEFAULT:
-            options["image_resolution"] = str(self.image_dpi.value())
+        dpi = int(self.image_dpi.currentData())
+        if dpi != IMAGE_DPI_DEFAULT:
+            options["image_resolution"] = str(dpi)
         if round(self.space_ratio.value(), 2) != SPACE_RATIO_DEFAULT:
             options["space_ratio"] = f"{self.space_ratio.value():.2f}"
 

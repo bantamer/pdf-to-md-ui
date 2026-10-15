@@ -48,7 +48,7 @@ def test_settings_survive_a_restart(qapp, settings_file):
     first.format_boxes["json"].setChecked(True)
     first.format_boxes["pdf"].setChecked(True)
     first.image_mode.setCurrentIndex(first.image_mode.findData("off"))
-    first.image_dpi.setValue(96)
+    first.image_dpi.setCurrentIndex(first.image_dpi.findData("96"))
     first.timeout_spin.setValue(120)
     first.table_method.setCurrentIndex(first.table_method.findData("cluster"))
     first.space_ratio.setValue(0.25)
@@ -63,7 +63,7 @@ def test_settings_survive_a_restart(qapp, settings_file):
     assert second.format_boxes["pdf"].isChecked()
     assert second.format_boxes["markdown"].isChecked()
     assert second.image_mode.currentData() == "off"
-    assert second.image_dpi.value() == 96
+    assert second.image_dpi.currentData() == "96"
     assert second.timeout_spin.value() == 120
     assert second.table_method.currentData() == "cluster"
     assert abs(second.space_ratio.value() - 0.25) < 1e-9
@@ -97,7 +97,7 @@ def test_stale_stored_value_is_ignored(qapp, settings_file):
     w = gui.MainWindow()
 
     assert w.hybrid.currentData() is None
-    assert w.image_dpi.value() == gui.IMAGE_DPI_DEFAULT
+    assert w.image_dpi.currentData() == str(gui.IMAGE_DPI_DEFAULT)
     w.close()
 
 
