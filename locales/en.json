@@ -222,6 +222,7 @@
   "run.result_dir": "  results: {path}",
   "run.mkdir_failed": "  could not create the folder: {error}",
   "run.retry_no_images": "  ran past the timeout — retrying without images",
+  "run.font_cache": "  building the font cache - once per computer, can take a few minutes; the timeout waits for it",
   "run.timed_out": "  stopped by the timeout",
   "run.failed": "  conversion error, file skipped",
   "run.java_start_failed": "  could not start java: {error}",

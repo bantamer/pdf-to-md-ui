@@ -164,6 +164,15 @@ HIDDEN_PATCH_TARGETS = {
 }
 _HIDDEN_CACHE: dict[str, bool] = {}
 
+# PDFBox builds a cache of the system's fonts the first time it has to draw
+# text - image extraction and the hidden-text filter both do. On a slow disk
+# that has taken minutes. A timeout killing the JVM mid-build means the cache
+# is never written and every following file starts the build over, so the
+# clock stops while it runs (up to FONT_CACHE_GRACE, in case it never ends).
+FONT_CACHE_STARTED = "Building on-disk font cache"
+FONT_CACHE_FINISHED = "Finished building on-disk font cache"
+FONT_CACHE_GRACE = 15 * 60  # seconds
+
 
 def verapdf_patch(jar: str) -> tuple[str, str] | None:
     """(classpath folder, main class) when the patch applies to this jar."""
@@ -647,6 +656,7 @@ class ConvertWorker(QObject):
         reader.start()
 
         deadline = time.monotonic() + self.timeout if self.timeout else None
+        left_before_fonts = None  # timeout left when the font cache build began
         draining = True
         while draining:
             try:
@@ -658,6 +668,12 @@ class ConvertWorker(QObject):
                     draining = False
                 else:
                     self._emit(line.rstrip())
+                    if deadline and FONT_CACHE_STARTED in line and left_before_fonts is None:
+                        left_before_fonts = max(0.0, deadline - time.monotonic())
+                        deadline = time.monotonic() + FONT_CACHE_GRACE
+                        self._emit(tr("run.font_cache"))
+                    elif deadline and FONT_CACHE_FINISHED in line and left_before_fonts is not None:
+                        deadline = time.monotonic() + left_before_fonts
 
             with self._lock:
                 cancelled = self._cancelled

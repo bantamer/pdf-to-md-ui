@@ -29,6 +29,13 @@ if name == "slow.pdf" and not images_off:
     time.sleep(60)
 if name == "hang.pdf":
     time.sleep(60)
+if name.startswith("fonts"):
+    # PDFBox's first-run font cache build, slower than the timeout.
+    print("INFO: Building on-disk font cache, this may take a while", flush=True)
+    time.sleep(60 if name == "fonts_stuck.pdf" else 3)
+    print("INFO: Finished building on-disk font cache, found 147 fonts", flush=True)
+    if name == "fonts_then_hang.pdf":
+        time.sleep(60)
 sys.exit(0)
 """
 
@@ -145,3 +152,34 @@ def test_summary_records_every_file(qapp, fake_java, tmp_path):
 
     statuses = {Path(r["pdf"]).name: r["status"] for r in result["results"]}
     assert statuses == {"ok.pdf": "ok", "bad.pdf": "failed", "slow.pdf": "degraded"}
+
+
+def test_font_cache_build_does_not_count_against_the_timeout(qapp, fake_java, tmp_path):
+    """Killed mid-build, the cache is never written and every file starts over."""
+    result, log = run_worker(qapp, jobs_for(tmp_path, "fonts.pdf"), timeout=1)
+
+    assert result["ok"] == 1 and result["timed_out"] == []
+    assert tr("run.font_cache").strip() in log
+
+
+def test_timeout_resumes_after_the_font_cache(qapp, fake_java, tmp_path):
+    start = time.monotonic()
+    result, _ = run_worker(
+        qapp, jobs_for(tmp_path, "fonts_then_hang.pdf"), timeout=1,
+        options={"image_output": "off"},
+    )
+
+    assert result["timed_out"] == ["fonts_then_hang.pdf"]
+    assert time.monotonic() - start < 20
+
+
+def test_a_stuck_font_cache_build_still_times_out(qapp, fake_java, tmp_path, monkeypatch):
+    monkeypatch.setattr(converter, "FONT_CACHE_GRACE", 2)
+    start = time.monotonic()
+    result, _ = run_worker(
+        qapp, jobs_for(tmp_path, "fonts_stuck.pdf"), timeout=1,
+        options={"image_output": "off"},
+    )
+
+    assert result["timed_out"] == ["fonts_stuck.pdf"]
+    assert time.monotonic() - start < 20
