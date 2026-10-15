@@ -114,7 +114,7 @@ def test_theme_follows_system_until_chosen_by_hand(qapp, settings_file):
     w = gui.MainWindow()
     assert gui.app_settings().value("dark") is None
     was = w.dark
-    w._toggle_theme()
+    w._set_theme("light" if was else "dark")
     w.close()
 
     assert gui.MainWindow().dark is (not was)

@@ -74,6 +74,13 @@ def build_qss(p: dict) -> str:
         f'<path d="M2.5 7.5L6 4l3.5 3.5" stroke="{p["text_muted"]}" stroke-width="1.6"'
         ' stroke-linecap="round" stroke-linejoin="round"/></svg>',
     )
+    menu_check = _icon(
+        f"menu-check-{theme_id}",
+        '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" '
+        'viewBox="0 0 14 14" fill="none">'
+        f'<path d="M3 7.3l2.6 2.6L11 4.5" stroke="{p["accent"]}" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    )
     check = _icon(
         "check",
         '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" '
@@ -96,6 +103,68 @@ QWidget#Root, QWidget#Body {{
 QScrollArea#Scroll {{
     background: transparent;
     border: none;
+}}
+
+/* ---- Menu bar ---- */
+
+QMenuBar {{
+    background: {p['surface']};
+    border-bottom: 1px solid {p['border']};
+    padding: 2px 8px;
+}}
+
+QMenuBar::item {{
+    background: transparent;
+    padding: 6px 10px;
+    border-radius: 6px;
+}}
+
+QMenuBar::item:selected, QMenuBar::item:pressed {{
+    background: {p['surface_alt']};
+}}
+
+QMenu {{
+    background: {p['surface']};
+    border: 1px solid {p['border_strong']};
+    border-radius: 8px;
+    padding: 4px;
+}}
+
+QMenu::item {{
+    padding: 6px 28px 6px 26px;
+    border-radius: 6px;
+}}
+
+QMenu::item:selected {{
+    background: {p['accent_soft']};
+    color: {p['text']};
+}}
+
+QMenu::item:disabled {{
+    color: {p['text_muted']};
+}}
+
+QMenu::separator {{
+    height: 1px;
+    background: {p['border']};
+    margin: 4px 8px;
+}}
+
+QMenu::indicator {{
+    width: 14px;
+    height: 14px;
+    left: 6px;
+}}
+
+QMenu::indicator:checked {{
+    image: url("{menu_check}");
+}}
+
+/* Dialogs - message boxes included - otherwise take the background from
+   Windows while the text colour comes from this sheet: with Windows in dark
+   mode and the app in light, questions came out dark on dark. */
+QDialog {{
+    background: {p['bg']};
 }}
 
 /* ---- Header ---- */

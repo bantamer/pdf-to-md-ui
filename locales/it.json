@@ -1,7 +1,37 @@
 {
   "app.subtitle": "Estrazione di testo strutturato da PDF · opendataloader-pdf",
-  "header.theme_tooltip": "Tema chiaro / scuro",
-  "header.language_tooltip": "Lingua dell'interfaccia",
+
+  "menu.file": "&File",
+  "menu.add_files": "Aggiungi file…",
+  "menu.add_folder": "Aggiungi cartella…",
+  "menu.clear": "Svuota l'elenco",
+  "menu.output": "Cartella dei risultati…",
+  "menu.open_output": "Apri la cartella dei risultati",
+  "menu.convert": "Converti",
+  "menu.stop": "Interrompi",
+  "menu.exit": "Esci",
+  "menu.settings": "&Impostazioni",
+  "menu.language": "Lingua",
+  "menu.theme": "Tema",
+  "menu.theme_system": "Come in Windows",
+  "menu.theme_light": "Chiaro",
+  "menu.theme_dark": "Scuro",
+  "menu.show_log": "Mostra il registro",
+  "menu.reset": "Ripristina le impostazioni…",
+  "menu.help": "&Guida",
+  "menu.guide": "Istruzioni",
+  "menu.report": "Segnala un problema",
+  "menu.downloads": "Download e aggiornamenti",
+  "menu.about": "Informazioni su {app}",
+
+  "reset.confirm": "Ripristinare tutte le impostazioni — formati, opzioni, cartella dei risultati, tema e lingua — ai valori predefiniti?\n\nL'elenco dei file resta.",
+
+  "about.title": "Informazioni su {app}",
+  "about.version": "Versione {version}",
+  "about.description": "Converte documenti PDF — in particolare i datasheet — in Markdown, JSON, HTML o testo semplice.",
+  "about.license": "Software libero con licenza GNU General Public License v3. Viene fornito senza alcuna garanzia.",
+  "about.third_party": "Componenti di terze parti",
+  "about.source": "Codice sorgente",
 
   "files.section": "File di origine",
   "files.drop_hint": "Trascina qui dei PDF o una cartella — oppure fai clic per scegliere",
@@ -15,6 +45,7 @@
   "output.hint": "La cartella viene ricordata e proposta al prossimo avvio. Svuota il campo e i risultati torneranno accanto ai file di origine.",
 
   "formats.section": "Formati di output",
+
   "format.markdown": "Markdown",
   "format.json": "JSON",
   "format.html": "HTML",
@@ -25,46 +56,64 @@
   "format.pdf_tooltip": "Una copia del PDF originale con ogni elemento riconosciuto evidenziato sopra:\ncelle delle tabelle e i loro bordi, blocchi di testo, titoli.\nNon contiene testo — mostra perché una tabella è uscita male.\nFile nome_annotated.pdf; non richiede quasi tempo.",
 
   "options.section": "Opzioni",
+
   "images.label": "Immagini:",
   "images.external": "Salva come file separati",
   "images.embedded": "Incorpora nel documento",
   "images.off": "Non salvare",
   "images.tooltip": "File separati — PNG accanto al documento, collegati dal testo.\nIncorpora — immagini dentro il .md in Base64: un solo file\nautonomo, ma molto più grande.\nNon salvare — solo testo e tabelle.",
   "images.hint": "L'estrazione delle immagini è la parte più pesante del lavoro: ogni illustrazione viene renderizzata di nuovo. Nei documenti normali non si nota, ma i datasheet hanno decine di pagine di grafici, e quelle possono richiedere minuti.",
+
   "dpi.label": "Risoluzione:",
   "dpi.tooltip": "Risoluzione di rendering delle immagini. Più bassa — meno memoria e più veloce,\nma meno dettagliata. 144 è il valore predefinito; 96 di solito basta.",
+
   "pages.label": "Pagine:",
   "pages.placeholder": "tutte",
   "pages.tooltip": "Per esempio 1,3,5-7. Utile con i datasheet: prendi la descrizione e le tabelle\ndei parametri, saltando decine di pagine di grafici.",
+
   "timeout.label": "Timeout per file:",
   "timeout.suffix": " s",
   "timeout.none": "nessun limite",
   "timeout.tooltip": "Un file che supera il limite viene riprovato senza immagini,\ne solo dopo segnato come non riuscito.",
+
   "struct.label": "Usa i tag del PDF",
   "struct.tooltip": "Leggi la struttura incorporata del documento invece di analizzare l'impaginazione.\nPiù preciso — ma solo per i PDF che hanno davvero i tag.",
+
   "sanitize.label": "Nascondi i dati sensibili",
+
   "advanced.button": "Altre opzioni",
 
   "reading_order.label": "Ordine di lettura:",
   "reading_order.off": "disattivato",
   "reading_order.tooltip": "Un'alternativa per le pagine in cui la suddivisione ricorsiva non funziona.",
+
   "tables.label": "Tabelle:",
   "tables.default": "per linee",
   "tables.cluster": "per raggruppamento",
   "tables.tooltip": "Molti produttori disegnano tabelle con linee incomplete —\nla modalità per raggruppamento le ricompone meglio.",
+
   "image_format.label": "Formato immagini:",
+
   "threads.label": "Thread:",
   "threads.tooltip": "Più di uno elabora le pagine in parallelo (più veloce,\nma il risultato può variare leggermente su alcuni PDF).",
+
   "space_ratio.label": "Soglia spazio:",
   "space_ratio.tooltip": "Quando inserire uno spazio, come frazione della dimensione del carattere. Se la\ndistanza tra caratteri vicini è maggiore, viene inserito uno spazio.\nPiù bassa separa le parole, più alta le unisce.",
+
   "password.label": "Password del PDF:",
   "password.placeholder": "per PDF cifrati",
+
   "line_breaks.label": "Mantieni gli a capo",
+
   "header_footer.label": "Includi intestazioni e piè di pagina",
+
   "strikethrough.label": "Segna il testo barrato",
+
   "hybrid.label": "Modalità IA:",
   "hybrid.off": "Disattivata",
+
   "hybrid_url.label": "Indirizzo del server:",
+
   "hybrid.hint": "La modalità IA richiede un server installato e avviato a parte (pip install \"opendataloader-pdf[hybrid]\", poi opendataloader-pdf-hybrid --port 5002). Se il server non risponde, il programma lo segnala prima di iniziare.",
 
   "log.section": "Registro",
@@ -77,6 +126,7 @@
   "status.stopping": "Arresto…",
   "status.file_of": "File {index} di {total}",
   "status.progress": "{prefix}{name} · {seconds} s",
+
   "action.open_output": "Apri la cartella dei risultati",
   "action.cancel": "Annulla",
   "action.convert": "Converti",
@@ -85,13 +135,18 @@
   "dialog.pick_files": "Scegli i PDF",
   "dialog.pick_folder": "Scegli una cartella con PDF",
   "dialog.pick_output": "Dove salvare i risultati",
+
   "error.no_format": "Scegli almeno un formato di output.",
   "error.no_pdfs": "Nessun PDF trovato nelle cartelle selezionate.",
   "error.mkdir": "Impossibile creare la cartella dei risultati:\n{error}",
+
   "hybrid.unreachable": "La modalità IA è attiva, ma il server {url} non risponde.\n\nSi installa e si avvia a parte:\n    pip install \"opendataloader-pdf[hybrid]\"\n    opendataloader-pdf-hybrid --port 5002\n\nConvertire nel modo normale, senza la modalità IA?",
   "hybrid.log": "Modalità IA: {mode} · {url} (il server risponde)",
+
   "unsupported.message": "La versione installata di opendataloader-pdf non supporta queste impostazioni, che verranno ignorate:\n\n    {options}\n\nPer aggiornare il pacchetto: pip install -U opendataloader-pdf\n\nContinuare senza di esse?",
+
   "close.running": "Una conversione è ancora in corso. Chiudere il programma?",
+
   "java.found": "Java trovato: {path}",
   "java.version": "Versione: {version}",
   "java.missing_log": "Java non trovato.",

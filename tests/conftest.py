@@ -24,6 +24,30 @@ def english():
     i18n.set_language("en")
 
 
+@pytest.fixture(autouse=True)
+def delete_windows():
+    """Destroy every window a test leaves behind.
+
+    A closed window is only hidden; it stays in the application, and each new
+    window's stylesheet re-polishes all of them. Left to pile up, they made
+    building a window take seconds by the end of the run.
+    """
+    yield
+    from PySide6.QtCore import QCoreApplication, QEvent
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance()
+    if app is None:
+        return
+    import gui
+
+    for widget in app.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    gui._windows.clear()
+
+
 @pytest.fixture(scope="session")
 def qapp():
     from PySide6.QtWidgets import QApplication

@@ -87,7 +87,7 @@ def test_window_builds_in_every_language(qapp, settings_file, code):
         assert w.run_btn.text() == table["action.convert"]
         assert w.format_boxes["pdf"].text() == table["format.pdf"]
         assert w.image_mode.itemText(0) == table["images.external"]
-        assert w.language.currentData() == code
+        assert w.language_actions[code].isChecked()
         assert w._collect_options()["format"] == "markdown"
     finally:
         w.close()
@@ -117,5 +117,19 @@ def test_switching_language_keeps_files_and_options(qapp, settings_file, tmp_pat
 
 
 def test_language_menu_lists_every_language_in_its_own_name(window):
-    names = [window.language.itemText(i) for i in range(window.language.count())]
+    names = [a.text() for a in window.language_actions.values()]
     assert names == list(i18n.LANGUAGES.values())
+
+
+@pytest.mark.parametrize(
+    "code, close", [("ru", "Закрыть"), ("pl", "Zamknij"), ("fr", "Fermer"),
+                    ("es", "Cerrar"), ("it", "Chiudi"), ("en", "Close")]
+)
+def test_qt_standard_buttons_follow_the_language(qapp, code, close):
+    """Yes/No/Cancel/Close come from Qt's own translations, not locales/."""
+    from PySide6.QtWidgets import QDialogButtonBox
+
+    i18n.set_language(code)
+    box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+
+    assert box.button(QDialogButtonBox.StandardButton.Close).text().replace("&", "") == close

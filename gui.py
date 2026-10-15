@@ -14,6 +14,7 @@ from pathlib import Path
 
 from PySide6.QtCore import (
     QElapsedTimer,
+    qVersion,
     QEvent,
     QObject,
     QSettings,
@@ -23,13 +24,21 @@ from PySide6.QtCore import (
     QUrl,
     Signal,
 )
-from PySide6.QtGui import QDesktopServices, QGuiApplication
+from PySide6.QtGui import (
+    QActionGroup,
+    QDesktopServices,
+    QGuiApplication,
+    QKeySequence,
+    QShortcut,
+)
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
     QAbstractSpinBox,
     QApplication,
     QCheckBox,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QDoubleSpinBox,
     QFileDialog,
     QFrame,
@@ -39,6 +48,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenuBar,
     QMessageBox,
     QPlainTextEdit,
     QProgressBar,
@@ -69,8 +79,10 @@ from converter import (
     use_bundled_jre,
 )
 from i18n import tr
+from version import __version__
 
 APP_NAME = "PDF → Markdown"
+REPO_URL = "https://github.com/k1llrouz/pdf-to-md-ui"
 # (CLI format, label key). The annotated PDF is not an output format like the
 # others - it carries no extracted text - but it belongs in the same row
 # anyway: it is a file the run produces, and hiding it among the settings left
@@ -278,6 +290,44 @@ def field_row(*pairs, spacing: int = 10) -> QHBoxLayout:
     return row
 
 
+class AboutDialog(QDialog):
+    """Help → About: version, what it is built on, licence and authors."""
+
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setObjectName("About")
+        self.setWindowTitle(tr("about.title", app=APP_NAME))
+        blob = f"{REPO_URL}/blob/main"
+        # Links take the theme's accent: the default link colour all but
+        # vanished on the light background.
+        accent = (theme.DARK if getattr(parent, "dark", False) else theme.LIGHT)["accent"]
+        link = f"style='color:{accent}'"
+        self.text = QLabel(
+            f"<h2>{APP_NAME}</h2>"
+            f"<p>{tr('about.version', version=__version__)}</p>"
+            f"<p>{tr('about.description')}</p>"
+            f"<p>opendataloader-pdf {odl_version()} · Qt {qVersion()}</p>"
+            f"<p>© 2026 bantamer, k1llrouz</p>"
+            f"<p>{tr('about.license')}<br>"
+            f"<a {link} href='{blob}/LICENSE'>GNU GPL v3</a> · "
+            f"<a {link} href='{blob}/THIRD_PARTY_NOTICES.md'>{tr('about.third_party')}</a> · "
+            f"<a {link} href='{REPO_URL}'>{tr('about.source')}</a></p>"
+        )
+        self.text.setTextFormat(Qt.TextFormat.RichText)
+        self.text.setOpenExternalLinks(True)
+        self.text.setWordWrap(True)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 20, 24, 16)
+        layout.setSpacing(12)
+        layout.addWidget(self.text)
+        layout.addWidget(buttons)
+        self.setMinimumWidth(420)
+
+
 # --------------------------------------------------------------------------- #
 # Main window
 # --------------------------------------------------------------------------- #
@@ -285,6 +335,7 @@ def field_row(*pairs, spacing: int = 10) -> QHBoxLayout:
 
 class MainWindow(QWidget):
     languageChanged = Signal(str)
+    resetRequested = Signal()
 
     def __init__(self):
         super().__init__()
@@ -296,11 +347,17 @@ class MainWindow(QWidget):
         self.thread: QThread | None = None
         self.worker: ConvertWorker | None = None
         self.output_dir = ""
+        # Set when the window is replaced after Settings → Reset, so that
+        # closing it does not write the old options straight back.
+        self.skip_save = False
         stored_theme = app_settings().value("dark", None)
-        self.dark = (
-            _system_prefers_dark()
+        self.theme_mode = (
+            "system"
             if stored_theme is None
-            else str(stored_theme).lower() in ("true", "1")
+            else ("dark" if str(stored_theme).lower() in ("true", "1") else "light")
+        )
+        self.dark = (
+            _system_prefers_dark() if self.theme_mode == "system" else self.theme_mode == "dark"
         )
         self.elapsed = QElapsedTimer()
         self.current_file = ""
@@ -355,9 +412,11 @@ class MainWindow(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(22, 20, 22, 20)
         root.setSpacing(16)
+        root.setMenuBar(self._menu_bar())
         root.addLayout(self._header())
         root.addWidget(scroll, 1)
         root.addLayout(self._action_bar())
+        self._sync_actions()
 
         self._wheel_guard = WheelGuard(self)
         for widget in self.findChildren(QComboBox) + self.findChildren(QAbstractSpinBox):
@@ -379,30 +438,89 @@ class MainWindow(QWidget):
         text.addWidget(title)
         text.addWidget(subtitle)
 
-        self.theme_btn = QPushButton("☾" if not self.dark else "☀")
-        self.theme_btn.setObjectName("Ghost")
-        self.theme_btn.setToolTip(tr("header.theme_tooltip"))
-        self.theme_btn.setFixedWidth(40)
-        self.theme_btn.clicked.connect(self._toggle_theme)
-
-        self.language = QComboBox()
-        for code, name in i18n.LANGUAGES.items():
-            self.language.addItem(name, code)
-        self.language.setCurrentIndex(self.language.findData(i18n.current()))
-        self.language.setToolTip(tr("header.language_tooltip"))
-        self.language.setFixedWidth(130)
-        # Connected after the current item is set, so building the window does
-        # not count as a change of language.
-        self.language.currentIndexChanged.connect(
-            lambda: self.languageChanged.emit(self.language.currentData())
-        )
-
         row = QHBoxLayout()
         row.addLayout(text)
         row.addStretch()
-        row.addWidget(self.language, alignment=Qt.AlignmentFlag.AlignTop)
-        row.addWidget(self.theme_btn, alignment=Qt.AlignmentFlag.AlignTop)
         return row
+
+    def _menu_bar(self) -> QMenuBar:
+        """File, Settings and Help, the way a Windows program has them.
+
+        Language and theme live here now rather than as controls in the
+        window; every command that also has a button stays in step with it
+        through _sync_actions().
+        """
+        bar = QMenuBar(self)
+
+        file = bar.addMenu(tr("menu.file"))
+        self.act_add_files = file.addAction(tr("menu.add_files"), self.pick_files)
+        self.act_add_files.setShortcut(QKeySequence.StandardKey.Open)
+        self.act_add_folder = file.addAction(tr("menu.add_folder"), self.pick_folder)
+        self.act_add_folder.setShortcut(QKeySequence("Ctrl+Shift+O"))
+        self.act_clear = file.addAction(tr("menu.clear"), self.clear_inputs)
+        file.addSeparator()
+        self.act_output = file.addAction(tr("menu.output"), self.pick_output)
+        self.act_open_output = file.addAction(tr("menu.open_output"), self.open_output)
+        file.addSeparator()
+        # Qt calls the main Enter key "Return"; Windows programs say Enter.
+        # Text after a tab is what the menu shows as the shortcut, and the
+        # keys themselves - main and keypad Enter - are wired up separately.
+        self.act_convert = file.addAction(tr("menu.convert") + "	Ctrl+Enter", self.start)
+        for keys in ("Ctrl+Return", "Ctrl+Enter"):
+            QShortcut(QKeySequence(keys), self, self._convert_shortcut)
+        self.act_stop = file.addAction(tr("menu.stop"), self.cancel)
+        self.act_stop.setShortcut(QKeySequence("Esc"))
+        file.addSeparator()
+        self.act_exit = file.addAction(tr("menu.exit"), self.close)
+        self.act_exit.setShortcut(QKeySequence("Ctrl+Q"))
+
+        settings = bar.addMenu(tr("menu.settings"))
+        self.language_menu = settings.addMenu(tr("menu.language"))
+        languages = QActionGroup(self)
+        self.language_actions = {}
+        for code, name in i18n.LANGUAGES.items():
+            action = self.language_menu.addAction(name)
+            action.setCheckable(True)
+            action.setChecked(code == i18n.current())
+            action.triggered.connect(lambda _=False, c=code: self._choose_language(c))
+            languages.addAction(action)
+            self.language_actions[code] = action
+
+        theme_menu = settings.addMenu(tr("menu.theme"))
+        themes = QActionGroup(self)
+        self.theme_actions = {}
+        for mode in ("system", "light", "dark"):
+            action = theme_menu.addAction(tr(f"menu.theme_{mode}"))
+            action.setCheckable(True)
+            action.setChecked(mode == self.theme_mode)
+            action.triggered.connect(lambda _=False, m=mode: self._set_theme(m))
+            themes.addAction(action)
+            self.theme_actions[mode] = action
+
+        settings.addSeparator()
+        self.act_show_log = settings.addAction(tr("menu.show_log"))
+        self.act_show_log.setCheckable(True)
+        self.act_show_log.setShortcut(QKeySequence("Ctrl+L"))
+        self.act_show_log.toggled.connect(self._toggle_log)
+        settings.addSeparator()
+        self.act_reset = settings.addAction(tr("menu.reset"), self._confirm_reset)
+
+        help_menu = bar.addMenu(tr("menu.help"))
+        self.act_guide = help_menu.addAction(tr("menu.guide"), self._open_guide)
+        self.act_guide.setShortcut(QKeySequence.StandardKey.HelpContents)
+        self.act_report = help_menu.addAction(
+            tr("menu.report"),
+            lambda: QDesktopServices.openUrl(QUrl(f"{REPO_URL}/issues/new")),
+        )
+        self.act_downloads = help_menu.addAction(
+            tr("menu.downloads"),
+            lambda: QDesktopServices.openUrl(QUrl(f"{REPO_URL}/releases")),
+        )
+        help_menu.addSeparator()
+        self.act_about = help_menu.addAction(
+            tr("menu.about", app=APP_NAME), self._show_about
+        )
+        return bar
 
     def _files_card(self) -> QFrame:
         self.drop = DropZone()
@@ -704,13 +822,53 @@ class MainWindow(QWidget):
         palette = theme.DARK if self.dark else theme.LIGHT
         QApplication.instance().setStyleSheet(theme.build_qss(palette))
 
-    def _toggle_theme(self) -> None:
-        self.dark = not self.dark
-        self.theme_btn.setText("☀" if self.dark else "☾")
+    def _set_theme(self, mode: str) -> None:
+        """"system" follows Windows; "light" or "dark" is remembered as chosen."""
+        self.theme_mode = mode
+        if mode == "system":
+            app_settings().remove("dark")
+            self.dark = _system_prefers_dark()
+        else:
+            self.dark = mode == "dark"
+            app_settings().setValue("dark", self.dark)
         self._apply_theme()
-        # Only a theme picked by hand is remembered; until then the window
-        # keeps following the system setting.
-        app_settings().setValue("dark", self.dark)
+        self.theme_actions[mode].setChecked(True)
+
+    # -- menu commands ------------------------------------------------------ #
+
+    def _convert_shortcut(self) -> None:
+        if self.act_convert.isEnabled():
+            self.start()
+
+    def _choose_language(self, code: str) -> None:
+        if code != i18n.current():
+            self.languageChanged.emit(code)
+
+    def _confirm_reset(self) -> None:
+        answer = QMessageBox.question(self, APP_NAME, tr("reset.confirm"))
+        if answer == QMessageBox.StandardButton.Yes:
+            self.resetRequested.emit()
+
+    def _open_guide(self) -> None:
+        readme = "README.ru.md" if i18n.current() == "ru" else "README.md"
+        QDesktopServices.openUrl(QUrl(f"{REPO_URL}/blob/main/{readme}"))
+
+    def _show_about(self) -> None:
+        AboutDialog(self).exec()
+
+    def _sync_actions(self) -> None:
+        """Keep the menu commands in step with the buttons and the state."""
+        busy = self._busy()
+        has_files = bool(self.inputs)
+        self.act_convert.setEnabled(has_files and not busy)
+        self.act_stop.setEnabled(busy)
+        self.act_clear.setEnabled(has_files)
+        self.act_open_output.setEnabled(
+            bool(self.output_dir) and os.path.isdir(self.output_dir) and not busy
+        )
+        # A new window would lose the running conversion.
+        self.language_menu.setEnabled(not busy)
+        self.act_reset.setEnabled(not busy)
 
     # -- remembered settings ---------------------------------------------- #
 
@@ -812,6 +970,7 @@ class MainWindow(QWidget):
         self.file_list.setVisible(has_files)
         self.clear_btn.setVisible(has_files)
         self.drop.setVisible(not has_files)
+        self._sync_actions()
         if self._busy():
             # Files added mid-run wait for the next one; re-enabling Convert
             # here would let a second run start on top of the first.
@@ -862,6 +1021,11 @@ class MainWindow(QWidget):
         if self.log_btn.isChecked() != shown:
             self.log_btn.setChecked(shown)  # re-enters here via the signal
             return
+        if self.act_show_log.isChecked() != shown:
+            self.act_show_log.setChecked(shown)  # same, from the menu side
+            return
+        if self.log_card.isHidden() != shown:
+            return  # already in that state; resizing again would grow the window
 
         self.log_card.setVisible(shown)
         # Grow the window to make room rather than pushing the cards into the
@@ -1017,6 +1181,7 @@ class MainWindow(QWidget):
         self.tick.start()
 
         self.thread = QThread(self)
+        self._sync_actions()
         self.worker = ConvertWorker(
             jobs, output_dir, options, self.timeout_spin.value(), supported
         )
@@ -1103,14 +1268,13 @@ class MainWindow(QWidget):
         self.progress.setValue(0)
         self.run_btn.setEnabled(not busy)
         self.run_btn.setText(tr("action.converting") if busy else tr("action.convert"))
-        # A new window would lose the running conversion.
-        self.language.setEnabled(not busy)
         self.cancel_btn.setVisible(busy)
         self.cancel_btn.setEnabled(busy)
         if busy:
             self.open_btn.setVisible(False)
             self.current_file = ""
             self._set_status(tr("status.working"))
+        self._sync_actions()
 
     def _set_status(self, text: str, state: str = "") -> None:
         self.status.setText(text)
@@ -1140,7 +1304,7 @@ class MainWindow(QWidget):
 
     def _check_java(self) -> None:
         """opendataloader-pdf needs a JVM; say so early and in plain words."""
-        self.append_log(f"opendataloader-pdf {odl_version()}")
+        self.append_log(f"{APP_NAME} {__version__} · opendataloader-pdf {odl_version()}")
         java = java_executable()
         if java:
             self.append_log(tr("java.found", path=java))
@@ -1183,7 +1347,8 @@ class MainWindow(QWidget):
                 self.worker.cancel()
             self.thread.quit()
             self.thread.wait(15000)
-        self._save_settings()
+        if not self.skip_save:
+            self._save_settings()
         event.accept()
 
 
@@ -1203,8 +1368,22 @@ _windows: list[MainWindow] = []
 def open_window() -> MainWindow:
     window = MainWindow()
     window.languageChanged.connect(lambda code: switch_language(window, code))
+    window.resetRequested.connect(lambda: reset_settings(window))
     _windows.append(window)
     return window
+
+
+def _replace_window(old: MainWindow) -> MainWindow:
+    new = open_window()
+    new.add_paths(list(old.inputs))
+    new.setGeometry(old.geometry())
+    if old.isVisible():
+        new.show()
+    old.close()
+    if old in _windows:
+        _windows.remove(old)
+    old.deleteLater()
+    return new
 
 
 def switch_language(old: MainWindow, code: str) -> MainWindow:
@@ -1217,14 +1396,19 @@ def switch_language(old: MainWindow, code: str) -> MainWindow:
     old._save_settings()
     app_settings().setValue("language", code)
     i18n.set_language(code)
-    new = open_window()
-    new.add_paths(list(old.inputs))
-    new.setGeometry(old.geometry())
-    new.show()
-    old.close()
-    if old in _windows:
-        _windows.remove(old)
-    old.deleteLater()
+    return _replace_window(old)
+
+
+def reset_settings(old: MainWindow) -> MainWindow:
+    """Settings → Reset: forget every option, folder, theme and language.
+
+    The file list is the user's work rather than a setting, so it stays.
+    """
+    app_settings().clear()
+    old.skip_save = True
+    i18n.set_language(i18n.system_language())
+    new = _replace_window(old)
+    new._apply_theme()
     return new
 
 

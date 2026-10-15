@@ -1,7 +1,37 @@
 {
   "app.subtitle": "Wyodrębnianie ustrukturyzowanego tekstu z PDF · opendataloader-pdf",
-  "header.theme_tooltip": "Jasny / ciemny motyw",
-  "header.language_tooltip": "Język interfejsu",
+
+  "menu.file": "&Plik",
+  "menu.add_files": "Dodaj pliki…",
+  "menu.add_folder": "Dodaj folder…",
+  "menu.clear": "Wyczyść listę",
+  "menu.output": "Folder wyników…",
+  "menu.open_output": "Otwórz folder wyników",
+  "menu.convert": "Konwertuj",
+  "menu.stop": "Zatrzymaj",
+  "menu.exit": "Zakończ",
+  "menu.settings": "&Ustawienia",
+  "menu.language": "Język",
+  "menu.theme": "Motyw",
+  "menu.theme_system": "Jak w systemie Windows",
+  "menu.theme_light": "Jasny",
+  "menu.theme_dark": "Ciemny",
+  "menu.show_log": "Pokazuj dziennik",
+  "menu.reset": "Przywróć ustawienia domyślne…",
+  "menu.help": "Pomo&c",
+  "menu.guide": "Instrukcja",
+  "menu.report": "Zgłoś problem",
+  "menu.downloads": "Pobieranie i aktualizacje",
+  "menu.about": "O programie {app}",
+
+  "reset.confirm": "Przywrócić wszystkie ustawienia — formaty, opcje, folder wyników, motyw i język — do wartości domyślnych?\n\nLista plików pozostanie.",
+
+  "about.title": "O programie {app}",
+  "about.version": "Wersja {version}",
+  "about.description": "Zamienia dokumenty PDF — zwłaszcza noty katalogowe — na Markdown, JSON, HTML lub zwykły tekst.",
+  "about.license": "Wolne oprogramowanie na licencji GNU General Public License v3. Dostarczane bez jakiejkolwiek gwarancji.",
+  "about.third_party": "Komponenty zewnętrzne",
+  "about.source": "Kod źródłowy",
 
   "files.section": "Pliki źródłowe",
   "files.drop_hint": "Przeciągnij tutaj pliki PDF lub folder — albo kliknij, aby wybrać",
@@ -15,6 +45,7 @@
   "output.hint": "Folder zostanie zapamiętany i podstawiony przy następnym uruchomieniu. Wyczyść pole, a wyniki znów będą trafiać obok plików źródłowych.",
 
   "formats.section": "Formaty wyjściowe",
+
   "format.markdown": "Markdown",
   "format.json": "JSON",
   "format.html": "HTML",
@@ -25,46 +56,64 @@
   "format.pdf_tooltip": "Kopia oryginalnego PDF z zaznaczonymi wszystkimi rozpoznanymi elementami:\nkomórkami tabel i ich granicami, blokami tekstu, nagłówkami.\nNie zawiera tekstu — pokazuje, dlaczego tabela wyszła źle.\nPlik nazwa_annotated.pdf; prawie nie wydłuża pracy.",
 
   "options.section": "Opcje",
+
   "images.label": "Obrazy:",
   "images.external": "Zapisuj jako osobne pliki",
   "images.embedded": "Osadź w dokumencie",
   "images.off": "Nie zapisuj",
   "images.tooltip": "Osobne pliki — PNG obok dokumentu, w tekście odnośniki do nich.\nOsadzenie — obrazy wewnątrz .md jako Base64: jeden samodzielny\nplik, ale kilka razy większy.\nNie zapisuj — tylko tekst i tabele.",
   "images.hint": "Wyodrębnianie obrazów to najcięższa część pracy: każda ilustracja jest renderowana od nowa. Przy zwykłych dokumentach różnicy nie widać, ale noty katalogowe mają dziesiątki stron wykresów i ich konwersja może trwać minuty.",
+
   "dpi.label": "Rozdzielczość:",
   "dpi.tooltip": "Rozdzielczość renderowania obrazów. Niższa — mniej pamięci i szybciej,\nale mniej szczegółów. 144 to wartość domyślna; 96 zwykle wystarcza.",
+
   "pages.label": "Strony:",
   "pages.placeholder": "wszystkie",
   "pages.tooltip": "Na przykład 1,3,5-7. Przydatne przy notach katalogowych: weź opis i tabele\nparametrów, pomijając dziesiątki stron wykresów.",
+
   "timeout.label": "Limit czasu na plik:",
   "timeout.suffix": " s",
   "timeout.none": "bez limitu",
   "timeout.tooltip": "Plik, który nie zmieści się w limicie, zostanie powtórzony bez obrazów,\na dopiero potem oznaczony jako nieudany.",
+
   "struct.label": "Użyj tagów z PDF",
   "struct.tooltip": "Czytaj wbudowaną strukturę dokumentu zamiast analizować układ strony.\nDokładniej — ale tylko dla PDF, które naprawdę mają tagi.",
+
   "sanitize.label": "Ukryj dane wrażliwe",
+
   "advanced.button": "Więcej opcji",
 
   "reading_order.label": "Kolejność czytania:",
   "reading_order.off": "wyłączona",
   "reading_order.tooltip": "Rozwiązanie zapasowe dla stron, na których podział rekurencyjny zawodzi.",
+
   "tables.label": "Tabele:",
   "tables.default": "według linii",
   "tables.cluster": "według klastrów",
   "tables.tooltip": "Wielu producentów rysuje tabele z niepełnymi liniami —\ntryb klastrów składa je lepiej.",
+
   "image_format.label": "Format obrazów:",
+
   "threads.label": "Wątki:",
   "threads.tooltip": "Więcej niż jeden — strony przetwarzane równolegle (szybciej,\nale wynik dla niektórych PDF może się nieco różnić).",
+
   "space_ratio.label": "Próg spacji:",
   "space_ratio.tooltip": "Kiedy wstawiać spację, jako ułamek rozmiaru czcionki. Jeśli odstęp między\nsąsiednimi znakami jest większy, wstawiana jest spacja.\nNiższy rozdziela słowa, wyższy je skleja.",
+
   "password.label": "Hasło PDF:",
   "password.placeholder": "dla zaszyfrowanych PDF",
+
   "line_breaks.label": "Zachowaj podziały wierszy",
+
   "header_footer.label": "Uwzględnij nagłówki i stopki",
+
   "strikethrough.label": "Oznaczaj przekreślony tekst",
+
   "hybrid.label": "Tryb AI:",
   "hybrid.off": "Wyłączony",
+
   "hybrid_url.label": "Adres serwera:",
+
   "hybrid.hint": "Tryb AI wymaga osobno zainstalowanego i uruchomionego serwera (pip install \"opendataloader-pdf[hybrid]\", następnie opendataloader-pdf-hybrid --port 5002). Jeśli serwer nie odpowiada, program powie o tym przed rozpoczęciem.",
 
   "log.section": "Dziennik",
@@ -77,6 +126,7 @@
   "status.stopping": "Zatrzymuję…",
   "status.file_of": "Plik {index} z {total}",
   "status.progress": "{prefix}{name} · {seconds} s",
+
   "action.open_output": "Otwórz folder wyników",
   "action.cancel": "Anuluj",
   "action.convert": "Konwertuj",
@@ -85,13 +135,18 @@
   "dialog.pick_files": "Wybierz pliki PDF",
   "dialog.pick_folder": "Wybierz folder z plikami PDF",
   "dialog.pick_output": "Gdzie zapisać wyniki",
+
   "error.no_format": "Wybierz co najmniej jeden format wyjściowy.",
   "error.no_pdfs": "W wybranych folderach nie znaleziono żadnego pliku PDF.",
   "error.mkdir": "Nie udało się utworzyć folderu wyników:\n{error}",
+
   "hybrid.unreachable": "Tryb AI jest włączony, ale serwer {url} nie odpowiada.\n\nInstaluje się go i uruchamia osobno:\n    pip install \"opendataloader-pdf[hybrid]\"\n    opendataloader-pdf-hybrid --port 5002\n\nKonwertować w zwykły sposób, bez trybu AI?",
   "hybrid.log": "Tryb AI: {mode} · {url} (serwer odpowiada)",
+
   "unsupported.message": "Zainstalowana wersja opendataloader-pdf nie obsługuje tych ustawień, zostaną one pominięte:\n\n    {options}\n\nAktualizacja pakietu: pip install -U opendataloader-pdf\n\nKontynuować bez nich?",
+
   "close.running": "Konwersja wciąż trwa. Zamknąć program?",
+
   "java.found": "Znaleziono Javę: {path}",
   "java.version": "Wersja: {version}",
   "java.missing_log": "Nie znaleziono Javy.",

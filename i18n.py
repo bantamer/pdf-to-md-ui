@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from PySide6.QtCore import QLocale
+from PySide6.QtCore import QCoreApplication, QLibraryInfo, QLocale, QTranslator
 
 # Native names, in the order the language menu shows them.
 LANGUAGES = {
@@ -30,6 +30,7 @@ LOCALE_DIR = Path(__file__).resolve().parent / "locales"
 _current = DEFAULT
 _table: dict[str, str] = {}
 _fallback: dict[str, str] = {}
+_qt_translator: QTranslator | None = None
 
 
 def load_table(code: str) -> dict[str, str]:
@@ -45,7 +46,30 @@ def set_language(code: str | None) -> str:
     _fallback = load_table(DEFAULT)
     _table = _fallback if code == DEFAULT else load_table(code)
     _current = code
+    _install_qt_translations(code)
     return code
+
+
+def _install_qt_translations(code: str) -> None:
+    """Qt's own strings - Yes/No/Cancel/Close, the Copy/Paste menu - follow.
+
+    They come with PySide6 (qtbase_<code>.qm) and with the build; without them
+    every question box answered in English whatever the window said.
+    """
+    global _qt_translator
+    app = QCoreApplication.instance()
+    if app is None:
+        return
+    if _qt_translator is not None:
+        app.removeTranslator(_qt_translator)
+        _qt_translator = None
+    if code == DEFAULT:
+        return
+    translator = QTranslator(app)
+    folder = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+    if translator.load(f"qtbase_{code}", folder):
+        app.installTranslator(translator)
+        _qt_translator = translator
 
 
 def current() -> str:
