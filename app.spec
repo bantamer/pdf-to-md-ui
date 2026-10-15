@@ -14,8 +14,8 @@ from PyInstaller.utils.hooks import collect_all
 
 odl_datas, odl_binaries, odl_hidden = collect_all("opendataloader_pdf")
 
-# Optional: drop a 256x256 icon.ico next to this spec and it gets picked up.
-# Without the file PyInstaller would abort, so keep it optional.
+# icon.ico is drawn by tools/make_icon.py. Kept optional all the same: without
+# the file PyInstaller would abort.
 app_icon = "icon.ico" if os.path.exists("icon.ico") else None
 
 a = Analysis(
@@ -31,6 +31,9 @@ a = Analysis(
         # The licence and the notices travel with every copy handed out.
         ("LICENSE", "."),
         ("THIRD_PARTY_NOTICES.md", "."),
+        # The exe carries the icon in its resources; the window loads it
+        # from here (gui.resource).
+        ("icon.ico", "."),
     ],
     hiddenimports=odl_hidden,
     hookspath=[],

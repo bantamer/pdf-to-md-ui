@@ -138,3 +138,10 @@ def test_missing_java_is_reported_not_crashed(qapp, monkeypatch, tmp_path):
     result, _ = run_worker(qapp, jobs_for(tmp_path, "ok.pdf"))
 
     assert result["error"] == tr("run.no_java")
+
+
+def test_summary_records_every_file(qapp, fake_java, tmp_path):
+    result, _ = run_worker(qapp, jobs_for(tmp_path, "ok.pdf", "bad.pdf", "slow.pdf"), timeout=2)
+
+    statuses = {Path(r["pdf"]).name: r["status"] for r in result["results"]}
+    assert statuses == {"ok.pdf": "ok", "bad.pdf": "failed", "slow.pdf": "degraded"}

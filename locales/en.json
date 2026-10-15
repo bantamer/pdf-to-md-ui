@@ -39,6 +39,13 @@
   "files.add_folder": "Add folder",
   "files.clear": "Clear",
 
+  "list.ok": "Converted",
+  "list.degraded": "Converted without images (ran out of time)",
+  "list.failed": "Not converted — see the log",
+  "list.timed_out": "Stopped by the timeout",
+  "list.partial": "{ok} of {total} converted",
+  "list.open_hint": "Double-click to open the result",
+
   "output.section": "Where to save",
   "output.placeholder": "Folder next to the source files",
   "output.browse": "Browse…",

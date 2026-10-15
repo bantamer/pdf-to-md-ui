@@ -14,6 +14,7 @@ from pathlib import Path
 
 from PySide6.QtCore import (
     QElapsedTimer,
+    QPointF,
     qVersion,
     QEvent,
     QObject,
@@ -26,9 +27,14 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QActionGroup,
+    QColor,
     QDesktopServices,
     QGuiApplication,
+    QIcon,
     QKeySequence,
+    QPainter,
+    QPen,
+    QPixmap,
     QShortcut,
 )
 from PySide6.QtWidgets import (
@@ -79,6 +85,7 @@ from converter import (
     use_bundled_jre,
 )
 from i18n import tr
+from single_instance import SingleInstance
 from version import __version__
 
 APP_NAME = "PDF → Markdown"
@@ -99,6 +106,58 @@ FORMAT_TOOLTIPS = {
     "tagged-pdf": "format.tagged_pdf_tooltip",
     "pdf": "format.pdf_tooltip",
 }
+
+
+def resource(name: str) -> Path:
+    """A file shipped with the program - inside the bundle when frozen."""
+    base = getattr(sys, "_MEIPASS", None)
+    return Path(base) / name if base else Path(__file__).resolve().parent / name
+
+
+# Results the converter writes for each format, in the order a double-click
+# prefers them: the text first, the PDFs only when nothing else was made.
+RESULT_SUFFIXES = [
+    ("markdown", ".md"),
+    ("html", ".html"),
+    ("text", ".txt"),
+    ("json", ".json"),
+    ("pdf", "_annotated.pdf"),
+    ("tagged-pdf", "_tagged.pdf"),
+]
+
+_STATUS_COLOURS = {
+    "ok": "#1f9d5f",
+    "degraded": "#d39b1e",
+    "partial": "#d39b1e",
+    "failed": "#d13438",
+    "timed_out": "#d13438",
+}
+_status_icons: dict[str, QIcon] = {}
+
+
+def status_icon(status: str) -> QIcon:
+    """A round mark for the file list: tick, exclamation or cross."""
+    if status not in _status_icons:
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        p = QPainter(pixmap)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(_STATUS_COLOURS[status]))
+        p.drawEllipse(2, 2, 28, 28)
+        p.setPen(QPen(QColor("white"), 4, Qt.PenStyle.SolidLine,
+                      Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        if status == "ok":
+            p.drawPolyline([QPointF(9, 16.5), QPointF(14, 21.5), QPointF(23, 11)])
+        elif status in ("degraded", "partial"):
+            p.drawLine(QPointF(16, 8), QPointF(16, 18))
+            p.drawPoint(QPointF(16, 24))
+        else:
+            p.drawLine(QPointF(10.5, 10.5), QPointF(21.5, 21.5))
+            p.drawLine(QPointF(21.5, 10.5), QPointF(10.5, 21.5))
+        p.end()
+        _status_icons[status] = QIcon(pixmap)
+    return _status_icons[status]
 
 
 def app_settings() -> QSettings:
@@ -347,6 +406,10 @@ class MainWindow(QWidget):
         self.thread: QThread | None = None
         self.worker: ConvertWorker | None = None
         self.output_dir = ""
+        # Outcome of the last run per PDF, keyed by normalised path, and the
+        # formats it produced - what the file list marks and opens.
+        self.results: dict[str, dict] = {}
+        self.result_formats: list[str] = []
         # Set when the window is replaced after Settings → Reset, so that
         # closing it does not write the old options straight back.
         self.skip_save = False
@@ -377,7 +440,14 @@ class MainWindow(QWidget):
         natural = self.sizeHint().height()
         self.setMinimumHeight(min(560, natural))
         self.resize(820, min(natural, self.screen().availableGeometry().height() - 80))
-        QTimer.singleShot(0, self._check_java)
+        # Then where the user left it last time, as Windows programs do; Qt
+        # pulls it back onto the screen if that monitor is gone.
+        geometry = app_settings().value("geometry")
+        if geometry is not None:
+            self.restoreGeometry(geometry)
+        # Tied to the window, so the timer dies with it: a window replaced at
+        # once (a language switch right after start) must not run this late.
+        QTimer.singleShot(0, self, self._check_java)
 
     # -- construction ------------------------------------------------------ #
 
@@ -529,6 +599,7 @@ class MainWindow(QWidget):
 
         self.file_list = QListWidget()
         self.file_list.setVisible(False)
+        self.file_list.itemDoubleClicked.connect(self._open_result)
         self.file_list.setMaximumHeight(150)
 
         add_btn = QPushButton(tr("files.add_files"))
@@ -904,6 +975,7 @@ class MainWindow(QWidget):
 
     def _save_settings(self) -> None:
         settings = app_settings()
+        settings.setValue("geometry", self.saveGeometry())
         for key, widget in self._persisted_widgets():
             settings.setValue(f"options/{key}", widget_value(widget))
 
@@ -956,6 +1028,7 @@ class MainWindow(QWidget):
 
     def clear_inputs(self) -> None:
         self.inputs.clear()
+        self.results.clear()
         self._refresh_file_list()
 
     def _refresh_file_list(self) -> None:
@@ -963,8 +1036,9 @@ class MainWindow(QWidget):
         for path in self.inputs:
             marker = "📁" if os.path.isdir(path) else "📄"
             item = QListWidgetItem(f"{marker}  {os.path.basename(path)}")
-            item.setToolTip(path)
+            item.setData(Qt.ItemDataRole.UserRole, path)
             self.file_list.addItem(item)
+        self._apply_statuses()
 
         has_files = bool(self.inputs)
         self.file_list.setVisible(has_files)
@@ -984,6 +1058,66 @@ class MainWindow(QWidget):
 
     def _busy(self) -> bool:
         return self.thread is not None
+
+    # -- per-file outcome in the list ------------------------------------- #
+
+    def _status_of(self, path: str) -> tuple[str | None, list[dict]]:
+        """What the last run made of a list entry - a PDF or a whole folder."""
+        key = os.path.normcase(os.path.abspath(path))
+        if os.path.isdir(path):
+            prefix = key.rstrip("\\/") + os.sep
+            runs = [r for k, r in self.results.items() if k.startswith(prefix)]
+        else:
+            runs = [self.results[key]] if key in self.results else []
+        if not runs:
+            return None, []
+        good = [r for r in runs if r["status"] in ("ok", "degraded")]
+        if len(good) == len(runs):
+            degraded = any(r["status"] == "degraded" for r in runs)
+            return ("degraded" if degraded else "ok"), runs
+        if good:
+            return "partial", runs
+        timed_out = all(r["status"] == "timed_out" for r in runs)
+        return ("timed_out" if timed_out else "failed"), runs
+
+    def _apply_statuses(self) -> None:
+        for i in range(self.file_list.count()):
+            item = self.file_list.item(i)
+            path = item.data(Qt.ItemDataRole.UserRole)
+            status, runs = self._status_of(path)
+            if status is None:
+                item.setIcon(QIcon())
+                item.setToolTip(path)
+                continue
+            item.setIcon(status_icon(status))
+            good = sum(r["status"] in ("ok", "degraded") for r in runs)
+            text = (
+                tr("list.partial", ok=good, total=len(runs))
+                if status == "partial"
+                else tr(f"list.{status}")
+            )
+            tip = f"{path}\n{text}"
+            if good:
+                tip += "\n" + tr("list.open_hint")
+            item.setToolTip(tip)
+
+    def _open_result(self, item: QListWidgetItem) -> None:
+        """Double-click: the converted file itself, or its folder."""
+        path = item.data(Qt.ItemDataRole.UserRole)
+        _, runs = self._status_of(path)
+        good = [r for r in runs if r["status"] in ("ok", "degraded")]
+        if not good:
+            return
+        target = os.path.commonpath([r["output_dir"] for r in good])
+        if len(good) == 1 and not os.path.isdir(path):
+            run = good[0]
+            stem = Path(run["pdf"]).stem
+            for fmt, suffix in RESULT_SUFFIXES:
+                candidate = Path(run["output_dir"]) / (stem + suffix)
+                if fmt in self.result_formats and candidate.exists():
+                    target = str(candidate)
+                    break
+        QDesktopServices.openUrl(QUrl.fromLocalFile(target))
 
     # -- drag & drop onto the whole window -------------------------------- #
 
@@ -1167,6 +1301,9 @@ class MainWindow(QWidget):
             return
 
         self.output_dir = output_dir
+        self.results = {}
+        self.result_formats = options["format"].split(",")
+        self._apply_statuses()
         self.log_view.clear()
         if options.get("hybrid"):
             self.append_log(
@@ -1215,6 +1352,11 @@ class MainWindow(QWidget):
 
         seconds = self.elapsed.elapsed() / 1000
         ok, total = summary["ok"], summary["total"]
+        self.results = {
+            os.path.normcase(os.path.abspath(r["pdf"])): r
+            for r in summary.get("results", [])
+        }
+        self._apply_statuses()
 
         if summary["error"]:
             self._set_status(tr("summary.failed_status"), state="error")
@@ -1375,7 +1517,11 @@ def open_window() -> MainWindow:
 
 def _replace_window(old: MainWindow) -> MainWindow:
     new = open_window()
+    new.results = dict(old.results)
+    new.result_formats = list(old.result_formats)
+    new.output_dir = old.output_dir
     new.add_paths(list(old.inputs))
+    new._sync_actions()
     new.setGeometry(old.geometry())
     if old.isVisible():
         new.show()
@@ -1412,15 +1558,33 @@ def reset_settings(old: MainWindow) -> MainWindow:
     return new
 
 
+def bring_forward(paths: list[str]) -> None:
+    """Another launch handed its files over: add them and show the window."""
+    if not _windows:
+        return
+    window = _windows[-1]
+    window.add_paths(paths)
+    if window.isMinimized():
+        window.showNormal()
+    window.raise_()
+    window.activateWindow()
+
+
 def main() -> int:
     use_bundled_jre()
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
-    i18n.set_language(app_settings().value("language") or i18n.system_language())
-    window = open_window()
+    app.setWindowIcon(QIcon(str(resource("icon.ico"))))
     # app.arguments() rather than sys.argv: Qt has already taken its own
     # switches out of it.
-    window.add_paths(startup_paths(app.arguments()[1:]))
+    paths = startup_paths(app.arguments()[1:])
+    instance = SingleInstance()
+    if not instance.start(paths):
+        return 0  # handed over to the window that is already open
+    instance.received.connect(bring_forward)
+    i18n.set_language(app_settings().value("language") or i18n.system_language())
+    window = open_window()
+    window.add_paths(paths)
     window.show()
     return app.exec()
 

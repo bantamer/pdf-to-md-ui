@@ -463,7 +463,14 @@ class ConvertWorker(QObject):
             "degraded": [],
             "cancelled": False,
             "error": "",
+            # One entry per file that ran: what the file list shows next to it.
+            "results": [],
         }
+
+        def record(job: Job, status: str) -> None:
+            summary["results"].append(
+                {"pdf": job.pdf, "output_dir": job.output_dir, "status": status}
+            )
 
         jar = jar_path()
         java = java_executable()
@@ -499,6 +506,7 @@ class ConvertWorker(QObject):
             except OSError as exc:
                 self._emit(tr("run.mkdir_failed", error=exc))
                 summary["failed"].append(job.label)
+                record(job, "failed")
                 continue
 
             outcome = self._run_one(java, jar, job, self.options, heap)
@@ -515,6 +523,7 @@ class ConvertWorker(QObject):
                 if outcome == "ok":
                     summary["degraded"].append(job.label)
                     summary["ok"] += 1
+                    record(job, "degraded")
                     continue
                 if outcome == "cancelled":
                     summary["cancelled"] = True
@@ -522,12 +531,15 @@ class ConvertWorker(QObject):
 
             if outcome == "ok":
                 summary["ok"] += 1
+                record(job, "ok")
             elif outcome == "timeout":
                 summary["timed_out"].append(job.label)
                 self._emit(tr("run.timed_out"))
+                record(job, "timed_out")
             else:
                 summary["failed"].append(job.label)
                 self._emit(tr("run.failed"))
+                record(job, "failed")
 
         self._flush()
         self.finished.emit(summary)

@@ -39,6 +39,13 @@
   "files.add_folder": "Añadir carpeta",
   "files.clear": "Vaciar",
 
+  "list.ok": "Convertido",
+  "list.degraded": "Convertido sin imágenes (se agotó el tiempo)",
+  "list.failed": "No convertido — consulte el registro",
+  "list.timed_out": "Detenido por el tiempo límite",
+  "list.partial": "Convertidos {ok} de {total}",
+  "list.open_hint": "Haga doble clic para abrir el resultado",
+
   "output.section": "Dónde guardar",
   "output.placeholder": "Carpeta junto a los archivos de origen",
   "output.browse": "Examinar…",

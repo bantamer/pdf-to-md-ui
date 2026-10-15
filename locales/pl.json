@@ -39,6 +39,13 @@
   "files.add_folder": "Dodaj folder",
   "files.clear": "Wyczyść",
 
+  "list.ok": "Skonwertowano",
+  "list.degraded": "Skonwertowano bez obrazów (zabrakło czasu)",
+  "list.failed": "Nie skonwertowano — szczegóły w dzienniku",
+  "list.timed_out": "Przerwano przez limit czasu",
+  "list.partial": "Skonwertowano {ok} z {total}",
+  "list.open_hint": "Kliknij dwukrotnie, aby otworzyć wynik",
+
   "output.section": "Gdzie zapisać",
   "output.placeholder": "Folder obok plików źródłowych",
   "output.browse": "Przeglądaj…",

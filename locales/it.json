@@ -39,6 +39,13 @@
   "files.add_folder": "Aggiungi cartella",
   "files.clear": "Svuota",
 
+  "list.ok": "Convertito",
+  "list.degraded": "Convertito senza immagini (tempo esaurito)",
+  "list.failed": "Non convertito — vedi il registro",
+  "list.timed_out": "Interrotto dal timeout",
+  "list.partial": "Convertiti {ok} di {total}",
+  "list.open_hint": "Fai doppio clic per aprire il risultato",
+
   "output.section": "Dove salvare",
   "output.placeholder": "Cartella accanto ai file di origine",
   "output.browse": "Sfoglia…",

@@ -1,4 +1,4 @@
-# PDF → Markdown
+# <img src="docs/icon.png" width="40" alt="" align="top"> PDF → Markdown
 
 [Русская версия](README.ru.md)
 
@@ -24,10 +24,14 @@ your PC" on first run: click **More info → Run anyway**.
 
 ## How to use
 
-1. Drag PDFs or a whole folder into the window — or onto the program's icon.
+1. Drag PDFs or a whole folder into the window or onto the program's icon —
+   or right-click them in Explorer and pick **Open in PDF → Markdown** (on
+   Windows 11 it is under **Show more options**).
 2. Tick the output formats. Optionally choose where to save; by default the
    results go to an `output` folder next to the sources.
 3. Press **Convert**.
+4. A mark next to each file tells how it went — hover it for details.
+   Double-click a converted file to open the result.
 
 ## What it does well
 
@@ -50,6 +54,9 @@ your PC" on first run: click **More info → Run anyway**.
   shortcuts (Ctrl+O to add files, Ctrl+Enter to convert, Esc to stop, F1 for
   this guide).
 - Light and dark theme, or follow Windows.
+- One window: files sent from Explorer while the program is open join the
+  list there instead of opening a second copy. The window comes back where
+  you left it, at the same size.
 
 ### Tips for datasheets
 
@@ -154,9 +161,11 @@ open — longer languages must not push the cards past the edge.
 |---|---|
 | `gui.py` | Window, drag & drop, remembered settings, language switch |
 | `converter.py` | Running the jar: options, where each file goes, the worker thread |
+| `single_instance.py` | One window: a second launch hands its files to the first |
 | `i18n.py`, `locales/` | Interface languages |
 | `theme.py` | Colour palettes and generated stylesheet |
 | `patches/` | veraPDF line-art fix loaded ahead of the jar |
+| `tools/make_icon.py` | Draws `icon.ico` and `docs/icon.png` |
 | `tests/` | pytest suite, the `table.pdf` fixture, a generator for plot-heavy pages |
 | `build.bat`, `app.spec`, `installer.iss` | Local build, PyInstaller definition, Inno Setup installer |
 | `.github/workflows/` | Tests on every change; installer on `v*` tags |

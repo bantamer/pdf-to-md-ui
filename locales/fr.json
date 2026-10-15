@@ -39,6 +39,13 @@
   "files.add_folder": "Ajouter un dossier",
   "files.clear": "Vider",
 
+  "list.ok": "Converti",
+  "list.degraded": "Converti sans images (temps dépassé)",
+  "list.failed": "Non converti — voir le journal",
+  "list.timed_out": "Arrêté par le délai",
+  "list.partial": "{ok} sur {total} convertis",
+  "list.open_hint": "Double-cliquez pour ouvrir le résultat",
+
   "output.section": "Où enregistrer",
   "output.placeholder": "Dossier à côté des fichiers source",
   "output.browse": "Parcourir…",

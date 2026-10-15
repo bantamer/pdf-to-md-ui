@@ -25,12 +25,36 @@ def english():
 
 
 @pytest.fixture(autouse=True)
+def dialogs(monkeypatch):
+    """Message boxes are recorded, not shown.
+
+    A modal box off screen waits for a click that never comes: the run hangs,
+    or crashes when the next test tears its window down underneath it.
+    Questions are answered Yes.
+    """
+    from PySide6.QtWidgets import QMessageBox
+
+    shown = []
+
+    def record(answer):
+        return staticmethod(lambda *args, **kwargs: shown.append(args) or answer)
+
+    for name in ("critical", "information", "warning"):
+        monkeypatch.setattr(QMessageBox, name, record(QMessageBox.StandardButton.Ok))
+    monkeypatch.setattr(QMessageBox, "question", record(QMessageBox.StandardButton.Yes))
+    return shown
+
+
+@pytest.fixture(autouse=True)
 def delete_windows():
     """Destroy every window a test leaves behind.
 
     A closed window is only hidden; it stays in the application, and each new
     window's stylesheet re-polishes all of them. Left to pile up, they made
     building a window take seconds by the end of the run.
+
+    Closing does not save: this runs after settings_file has been undone, and
+    a window saving now would write to the real registry.
     """
     yield
     from PySide6.QtCore import QCoreApplication, QEvent
@@ -42,6 +66,8 @@ def delete_windows():
     import gui
 
     for widget in app.topLevelWidgets():
+        if isinstance(widget, gui.MainWindow):
+            widget.skip_save = True
         widget.close()
         widget.deleteLater()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
