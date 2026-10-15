@@ -17,7 +17,7 @@ Python и Java.
 ## Скачать
 
 Скачайте `PDF-to-Markdown-Setup.exe` со
-[страницы релизов](https://github.com/bantamer/pdf-to-md-ui/releases) и
+[страницы релизов](https://github.com/k1llrouz/pdf-to-md-ui/releases) и
 запустите. Нужна Windows 10 или 11, 64-битная. Java идёт в комплекте.
 
 Установщик не подписан цифровой подписью, поэтому при первом запуске Windows
