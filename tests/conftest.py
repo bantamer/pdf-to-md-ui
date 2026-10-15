@@ -13,6 +13,17 @@ sys.path.insert(0, str(ROOT))
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
+# English and Russian are kept complete all the time. The other languages
+# catch up in one go before a release, so strings can still change while a
+# feature is being finished; until then they show English for what is
+# missing. The release build sets RELEASE_CHECK=1 and insists on all of them.
+ALWAYS_COMPLETE = {"en", "ru"}
+RELEASE_CHECK = os.environ.get("RELEASE_CHECK") == "1"
+
+
+def must_be_complete(code: str) -> bool:
+    return RELEASE_CHECK or code in ALWAYS_COMPLETE
+
 
 @pytest.fixture(autouse=True)
 def english():

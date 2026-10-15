@@ -8,7 +8,7 @@ import pytest
 
 import gui
 import i18n
-from tests.conftest import ROOT
+from tests.conftest import ROOT, must_be_complete
 
 LANGS = list(i18n.LANGUAGES)
 EN = i18n.load_table("en")
@@ -25,12 +25,17 @@ def test_every_language_has_a_file_and_every_file_a_language():
 
 @pytest.mark.parametrize("code", LANGS)
 def test_translation_is_complete(code):
+    """Every key, for English and Russian always and for the rest at
+    release time (see ALWAYS_COMPLETE in conftest). Keys English does not
+    have, empty strings and wrong placeholders are errors in every language
+    at any time."""
     table = i18n.load_table(code)
 
-    assert set(table) == set(EN), (
-        f"{code}: missing {sorted(set(EN) - set(table))}, "
-        f"unknown {sorted(set(table) - set(EN))}"
-    )
+    unknown = sorted(set(table) - set(EN))
+    assert not unknown, f"{code}: unknown {unknown}"
+    missing = sorted(set(EN) - set(table))
+    if must_be_complete(code):
+        assert not missing, f"{code}: missing {missing}"
     for key, text in table.items():
         assert text.strip(), f"{code}: {key} is empty"
         assert placeholders(text) == placeholders(EN[key]), (

@@ -48,7 +48,11 @@ jobs:
       # Before anything is built: the suite covers the batch loop, settings,
       # and the converter's real output - including the veraPDF memory patch,
       # which the installer must not ship without.
+      # A release (a v* tag) also needs every language translated in full;
+      # in between, only English and Russian have to keep up.
       - name: Run tests
+        env:
+          RELEASE_CHECK: ${{ github.ref_type == 'tag' && '1' || '' }}
         run: python -m pytest tests -q
 
       # zip-6 rather than the older --compress=2, which JDK 21 deprecates.

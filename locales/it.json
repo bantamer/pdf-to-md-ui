@@ -114,6 +114,12 @@
   "sanitize.label": "Nascondi i dati sensibili",
   "sanitize.tooltip": "Sostituisce nel risultato indirizzi e-mail, numeri di telefono, indirizzi IP, numeri di carta e link con dei segnaposto.\n\nUtile prima di condividere il testo. Il PDF di partenza non cambia.",
 
+  "page_sep.label": "Separatori di pagina",
+  "page_sep.tooltip": "Inserisce tra le pagine una riga come «---- page 3 ----» in Markdown, testo e HTML, così si vede da quale pagina viene un passo.\n\nSe disattivato, le pagine proseguono come un unico testo continuo.",
+
+  "plain_md.label": "Tabelle in Markdown puro",
+  "plain_md.tooltip": "Scrive le tabelle con la sintassi propria del Markdown | con | barre | invece dell’HTML. Alcuni editor e siti mostrano solo quella.\n\nIl Markdown non sa unire le celle, quindi le tabelle con celle unite — come le caratteristiche elettriche di un datasheet — escono rotte o spostate. Per questo è disattivato in partenza. Riguarda solo il Markdown.",
+
   "advanced.button": "Altre opzioni",
 
   "reading_order.label": "Ordine di lettura:",

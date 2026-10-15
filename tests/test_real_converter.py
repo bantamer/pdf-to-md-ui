@@ -87,3 +87,26 @@ def test_html_output_matches(converted):
 
     assert html.count("<table") == 2
     assert "&lt;td" not in html
+
+
+def test_plain_markdown_without_separators(tmp_path, qapp):
+    """The two switches in Options: pipe tables instead of HTML, no page lines."""
+    options = {
+        "format": "markdown",
+        "content_safety_off": converter.CONTENT_SAFETY_OFF,
+        "replace_invalid_chars": "?",
+        "image_output": "off",
+    }
+    worker = ConvertWorker(
+        [Job(str(FIXTURES / "table.pdf"), str(tmp_path), "table.pdf")],
+        str(tmp_path), options, 120, converter.supported_option_names(),
+    )
+    result = {}
+    worker.finished.connect(result.update)
+    worker.run()
+    assert result["ok"] == 1, result
+    md = (tmp_path / "table.md").read_text(encoding="utf-8")
+
+    assert "<table" not in md
+    assert re.search(r"^\|.*TEST CONDITIONS.*\|\s*$", md, re.M), "the table is gone"
+    assert "---- page" not in md

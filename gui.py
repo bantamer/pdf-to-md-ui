@@ -712,6 +712,7 @@ class MainWindow(QWidget):
             for widget in self._main_option_widgets() + self._advanced_widgets()
         }
         self._restore_settings()
+        self._sync_format_options()
         self._apply_theme()
         # "As in Windows" keeps following Windows while the program is open.
         hints = QGuiApplication.styleHints()
@@ -975,6 +976,12 @@ class MainWindow(QWidget):
 
         self.opt_struct = QCheckBox(tr("struct.label"))
         self.opt_sanitize = QCheckBox(tr("sanitize.label"))
+        # On by default: that is how every result looked before the switch.
+        self.opt_page_sep = QCheckBox(tr("page_sep.label"))
+        self.opt_page_sep.setChecked(True)
+        self.opt_plain_md = QCheckBox(tr("plain_md.label"))
+        for box in self.format_boxes.values():
+            box.toggled.connect(self._sync_format_options)
 
         grid = QGridLayout()
         grid.setHorizontalSpacing(24)
@@ -982,6 +989,8 @@ class MainWindow(QWidget):
         grid.setContentsMargins(0, 0, 0, 0)
         grid.addWidget(with_help(self.opt_struct, "struct.tooltip"), 0, 0)
         grid.addWidget(with_help(self.opt_sanitize, "sanitize.tooltip"), 0, 1)
+        grid.addWidget(with_help(self.opt_page_sep, "page_sep.tooltip"), 1, 0)
+        grid.addWidget(with_help(self.opt_plain_md, "plain_md.tooltip"), 1, 1)
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
 
@@ -1339,6 +1348,8 @@ class MainWindow(QWidget):
             self.timeout_spin,
             self.opt_struct,
             self.opt_sanitize,
+            self.opt_page_sep,
+            self.opt_plain_md,
         ]
 
     def _advanced_widgets(self) -> list[QWidget]:
@@ -1505,6 +1516,8 @@ class MainWindow(QWidget):
             ("timeout", self.timeout_spin),
             ("use_struct_tree", self.opt_struct),
             ("sanitize", self.opt_sanitize),
+            ("page_separators", self.opt_page_sep),
+            ("plain_markdown_tables", self.opt_plain_md),
             ("reading_order", self.reading_order),
             ("table_method", self.table_method),
             ("image_format", self.image_format),
@@ -1693,6 +1706,12 @@ class MainWindow(QWidget):
         self.advanced.setVisible(shown)
         self.more_btn.setText(tr("advanced.button") + ("  ▴" if shown else "  ▾"))
 
+    def _sync_format_options(self, *_) -> None:
+        """Grey out what the ticked formats would ignore."""
+        ticked = {key for key, box in self.format_boxes.items() if box.isChecked()}
+        self.opt_page_sep.setEnabled(bool(ticked & {"markdown", "text", "html"}))
+        self.opt_plain_md.setEnabled("markdown" in ticked)
+
     def _toggle_image_dpi(self) -> None:
         self.image_dpi.setEnabled(self.image_mode.currentData() != "off")
 
@@ -1743,14 +1762,17 @@ class MainWindow(QWidget):
             "image_format": self.image_format.currentData(),
         }
 
+        separators = self.opt_page_sep.isChecked()
         if "markdown" in formats:
-            # Electrical Characteristics tables are built on merged cells and
-            # fall apart in plain Markdown.
-            options["markdown_with_html"] = True
-            options["markdown_page_separator"] = PAGE_SEPARATOR
-        if "text" in formats:
+            # HTML unless asked otherwise: Electrical Characteristics tables
+            # are built on merged cells and fall apart in plain Markdown.
+            if not self.opt_plain_md.isChecked():
+                options["markdown_with_html"] = True
+            if separators:
+                options["markdown_page_separator"] = PAGE_SEPARATOR
+        if "text" in formats and separators:
             options["text_page_separator"] = PAGE_SEPARATOR
-        if "html" in formats:
+        if "html" in formats and separators:
             options["html_page_separator"] = PAGE_SEPARATOR
 
         if self.image_dpi.value() != IMAGE_DPI_DEFAULT:

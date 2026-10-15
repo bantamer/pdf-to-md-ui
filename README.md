@@ -41,7 +41,8 @@ walks through everything — [English](docs/guide.en.md),
 ## What it does well
 
 - **Tables survive.** Markdown keeps tables as HTML, so merged cells — the
-  backbone of a datasheet's Electrical Characteristics — stay intact.
+  backbone of a datasheet's Electrical Characteristics — stay intact. Plain
+  Markdown tables are one tick away for editors that don't show HTML.
 - **Big files don't hang it.** Every file has a timeout, a file that runs over
   is retried without images, and **Cancel** really stops the work. One broken
   PDF never stops the rest of the batch.
@@ -162,8 +163,13 @@ nothing answers.
 Every string the user sees lives in `locales/<code>.json`; English (`en.json`)
 is the reference. To add a language, copy `en.json`, translate the values,
 leave the keys and `{placeholders}` alone, and add the code to `LANGUAGES` in
-[i18n.py](i18n.py). The tests check that every language has every key and the
-same placeholders. Check the window at its minimum width with **More options**
+[i18n.py](i18n.py). The tests check placeholders in every language.
+
+English and Russian are kept complete all the time; new strings reach Polish,
+French, Spanish and Italian in one pass before a release (until then those
+show English for what is missing). `python tools/missing_translations.py`
+lists what that pass has to cover, and the release build fails while anything
+is left. Check the window at its minimum width with **More options**
 open — longer languages must not push the cards past the edge.
 
 ### Layout

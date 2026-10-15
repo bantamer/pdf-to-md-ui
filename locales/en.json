@@ -114,6 +114,12 @@
   "sanitize.label": "Hide sensitive data",
   "sanitize.tooltip": "Replaces e-mail addresses, phone numbers, IP addresses, card numbers and web links in the result with placeholders.\n\nUseful before you share the text. The source PDF is not changed.",
 
+  "page_sep.label": "Page separators",
+  "page_sep.tooltip": "Puts a line such as “---- page 3 ----” between the pages in Markdown, text and HTML, so you can tell which page a passage came from.\n\nOff — the pages run on as one continuous text.",
+
+  "plain_md.label": "Plain Markdown tables",
+  "plain_md.tooltip": "Writes tables in Markdown's own | pipe | form instead of HTML. Some editors and sites show only that kind.\n\nMarkdown cannot merge cells, so tables with merged cells — a datasheet's Electrical Characteristics, for one — come out broken or shifted. That is why it is off by default. Affects Markdown only.",
+
   "advanced.button": "More options",
 
   "reading_order.label": "Reading order:",

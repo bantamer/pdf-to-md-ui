@@ -114,6 +114,12 @@
   "sanitize.label": "Ukryj dane wrażliwe",
   "sanitize.tooltip": "Zastępuje w wyniku adresy e-mail, numery telefonów, adresy IP, numery kart i linki symbolami zastępczymi.\n\nPrzydatne przed udostępnieniem tekstu. Źródłowy PDF się nie zmienia.",
 
+  "page_sep.label": "Separatory stron",
+  "page_sep.tooltip": "Wstawia między stronami wiersz w rodzaju „---- page 3 ----” w Markdown, tekście i HTML — widać, z której strony pochodzi fragment.\n\nBez zaznaczenia strony idą jednym ciągłym tekstem.",
+
+  "plain_md.label": "Tabele w czystym Markdown",
+  "plain_md.tooltip": "Zapisuje tabele własną składnią Markdown | z | kreskami | zamiast HTML. Niektóre edytory i strony pokazują tylko takie.\n\nMarkdown nie umie scalać komórek, więc tabele ze scalonymi komórkami — np. charakterystyki elektryczne w kartach katalogowych — wychodzą rozbite lub przesunięte. Dlatego domyślnie jest wyłączone. Dotyczy tylko Markdown.",
+
   "advanced.button": "Więcej opcji",
 
   "reading_order.label": "Kolejność czytania:",

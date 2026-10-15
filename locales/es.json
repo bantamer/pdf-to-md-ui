@@ -114,6 +114,12 @@
   "sanitize.label": "Ocultar datos sensibles",
   "sanitize.tooltip": "Sustituye en el resultado las direcciones de correo, teléfonos, direcciones IP, números de tarjeta y enlaces por marcadores.\n\nÚtil antes de compartir el texto. El PDF original no cambia.",
 
+  "page_sep.label": "Separadores de página",
+  "page_sep.tooltip": "Pone entre las páginas una línea como «---- page 3 ----» en Markdown, texto y HTML, para saber de qué página viene cada fragmento.\n\nSin marcar, las páginas siguen como un único texto continuo.",
+
+  "plain_md.label": "Tablas en Markdown puro",
+  "plain_md.tooltip": "Escribe las tablas con la sintaxis propia de Markdown | con | barras | en lugar de HTML. Algunos editores y sitios solo muestran esas.\n\nMarkdown no puede combinar celdas, así que las tablas con celdas combinadas —como las características eléctricas de una hoja de datos— salen rotas o desplazadas. Por eso viene desactivado. Solo afecta a Markdown.",
+
   "advanced.button": "Más opciones",
 
   "reading_order.label": "Orden de lectura:",

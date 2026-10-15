@@ -50,6 +50,11 @@ You can tick several formats at once.
 - **Pages** — e.g. `1-12` or `1,3,5-7`. Empty means all pages.
 - **Timeout per file** — a file that runs over is tried once more without
   images.
+- **Page separators** — a `---- page 3 ----` line between the pages; untick
+  it for one continuous text.
+- **Plain Markdown tables** — tables in Markdown's own markup instead of
+  HTML, for editors and sites that don't show HTML. Merged cells fall apart
+  that way, which is why it is off by default.
 
 Next to every setting there is a **?** — point at it for a detailed
 explanation. **Reset** puts the defaults back: one button for the formats

@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QApplication, QLineEdit
 
 import gui
 import i18n
+from tests.conftest import must_be_complete
 
 
 def pdfs(tmp_path, *names):
@@ -98,7 +99,7 @@ def test_nothing_is_removed_during_a_run(window, tmp_path):
 HELP_KEYS = [
     "format.tagged_pdf_tooltip", "format.pdf_tooltip",
     "images.tooltip", "dpi.tooltip", "pages.tooltip", "timeout.tooltip",
-    "struct.tooltip", "sanitize.tooltip",
+    "struct.tooltip", "sanitize.tooltip", "page_sep.tooltip", "plain_md.tooltip",
     "reading_order.tooltip", "tables.tooltip", "image_format.tooltip",
     "threads.tooltip", "password.tooltip", "hybrid.tooltip",
     "space_ratio.tooltip", "hybrid_url.tooltip",
@@ -197,7 +198,10 @@ def test_help_text_is_escaped():
 def test_help_is_written_in_every_language(code):
     i18n.set_language(code)
     english = json.loads((gui.Path(i18n.__file__).parent / "locales" / "en.json").read_text("utf-8"))
+    table = i18n.load_table(code)
     for key in HELP_KEYS:
+        if key not in table and not must_be_complete(code):
+            continue  # waits for the pre-release translation pass
         assert gui.tr(key) and (code == "en" or gui.tr(key) != english[key]), (code, key)
 
 
@@ -395,3 +399,65 @@ def test_details_link_goes_away_with_the_next_run(window):
     assert not window.details_link.isVisibleTo(window)
     window.thread = None
 
+
+
+# -- page separators and plain Markdown tables ------------------------------------------ #
+
+
+def tick(window, *formats):
+    for key, box in window.format_boxes.items():
+        box.setChecked(key in formats)
+
+
+def test_defaults_keep_separators_and_html_tables(window):
+    tick(window, "markdown", "text", "html")
+
+    opts = window._collect_options()
+
+    assert opts["markdown_with_html"] is True
+    for key in ("markdown_page_separator", "text_page_separator", "html_page_separator"):
+        assert opts[key] == gui.PAGE_SEPARATOR
+
+
+def test_separators_off(window):
+    tick(window, "markdown", "text", "html")
+    window.opt_page_sep.setChecked(False)
+
+    opts = window._collect_options()
+
+    assert not any(key.endswith("_page_separator") for key in opts)
+    assert opts["markdown_with_html"] is True, "tables are a separate choice"
+
+
+def test_plain_markdown_tables(window):
+    tick(window, "markdown")
+    window.opt_plain_md.setChecked(True)
+
+    opts = window._collect_options()
+
+    assert "markdown_with_html" not in opts
+    assert opts["markdown_page_separator"] == gui.PAGE_SEPARATOR
+
+
+def test_options_grey_out_when_their_formats_are_off(window):
+    tick(window, "json")
+    assert not window.opt_page_sep.isEnabled() and not window.opt_plain_md.isEnabled()
+
+    tick(window, "text")
+    assert window.opt_page_sep.isEnabled() and not window.opt_plain_md.isEnabled()
+
+    tick(window, "markdown")
+    assert window.opt_page_sep.isEnabled() and window.opt_plain_md.isEnabled()
+
+
+def test_both_are_remembered_and_reset(qapp, settings_file):
+    w = gui.MainWindow()
+    w.opt_page_sep.setChecked(False)
+    w.opt_plain_md.setChecked(True)
+    w._save_settings()
+
+    again = gui.MainWindow()
+    assert not again.opt_page_sep.isChecked() and again.opt_plain_md.isChecked()
+
+    again.reset_main_btn.click()
+    assert again.opt_page_sep.isChecked() and not again.opt_plain_md.isChecked()

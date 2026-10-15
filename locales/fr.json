@@ -114,6 +114,12 @@
   "sanitize.label": "Masquer les données sensibles",
   "sanitize.tooltip": "Remplace dans le résultat les adresses e-mail, numéros de téléphone, adresses IP, numéros de carte et liens web par des marqueurs.\n\nUtile avant de partager le texte. Le PDF source n’est pas modifié.",
 
+  "page_sep.label": "Séparateurs de pages",
+  "page_sep.tooltip": "Insère entre les pages une ligne du type « ---- page 3 ---- » en Markdown, texte et HTML, pour savoir de quelle page vient un passage.\n\nDésactivé, les pages se suivent en un seul texte continu.",
+
+  "plain_md.label": "Tableaux en Markdown pur",
+  "plain_md.tooltip": "Écrit les tableaux dans la syntaxe propre au Markdown | avec | barres | au lieu du HTML. Certains éditeurs et sites n’affichent que celle-là.\n\nLe Markdown ne sait pas fusionner les cellules : les tableaux à cellules fusionnées — les caractéristiques électriques d’une fiche technique, par exemple — sortent cassés ou décalés. C’est pourquoi l’option est désactivée par défaut. Ne concerne que le Markdown.",
+
   "advanced.button": "Plus d'options",
 
   "reading_order.label": "Ordre de lecture :",
