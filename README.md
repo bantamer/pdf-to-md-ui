@@ -1,38 +1,101 @@
 # PDF → Markdown
 
-Desktop front-end for
-[opendataloader-pdf](https://github.com/opendataloader-project/opendataloader-pdf),
-aimed at people who never open a terminal: drag PDFs in, tick the options,
-press one button.
+[Русская версия](README.ru.md)
 
-![screenshot](docs/screenshot-light.png)
+A Windows desktop app that turns PDFs — technical documents and datasheets
+especially — into Markdown, JSON, HTML or plain text. Drag files in, press one
+button. No terminal, no Python, no Java to install.
 
-## Features
+Built on [opendataloader-pdf](https://github.com/opendataloader-project/opendataloader-pdf).
 
-- Drag & drop for PDF files and whole folders — into the window, or onto the
-  exe itself (also works through "Open with")
-- Output as Markdown, JSON, HTML, plain text or tagged PDF, plus an annotated
-  PDF that paints every detected element over the original page — the way to
-  see why a table came out wrong
-- Image extraction as external files, embedded Base64 or off, with an
-  adjustable render resolution (144 DPI by default; 96 keeps the images at a
-  fraction of the memory)
-- Page ranges (`1,3,5-7`), reading order, table method, space threshold,
-  threads, PDF password
-- Per-file timeout with a working Cancel, and an automatic retry without
-  images for files that run over it
-- One file per run, so a PDF the converter chokes on no longer kills the batch
-- Folders keep their structure in the results; two files with the same name
-  never overwrite each other, and the previous run's output is not picked up as
-  new input
-- Every option is remembered between launches, except the page range and the
-  PDF password
-- Light and dark theme, follows the system setting until you pick one
-- Runs the conversion off the UI thread, with a log that unfolds on demand
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-en-dark.png">
+  <img alt="PDF → Markdown window with two datasheets converted" src="docs/screenshot-en-light.png" width="620">
+</picture>
 
-Markdown defaults are tuned for technical documents: HTML tables (merged cells
-survive), page separators, invalid characters replaced with `?` instead of being
-dropped, and the hidden/tiny/off-page text filters off.
+## Download
+
+Get `PDF-to-Markdown-Setup.exe` from the
+[Releases page](https://github.com/bantamer/pdf-to-md-ui/releases) and run it.
+Windows 10 or 11, 64-bit. Java comes with the program.
+
+The installer is not code-signed, so Windows SmartScreen may say it "protected
+your PC" on first run: click **More info → Run anyway**.
+
+## How to use
+
+1. Drag PDFs or a whole folder into the window — or onto the program's icon.
+2. Tick the output formats. Optionally choose where to save; by default the
+   results go to an `output` folder next to the sources.
+3. Press **Convert**.
+
+## What it does well
+
+- **Tables survive.** Markdown keeps tables as HTML, so merged cells — the
+  backbone of a datasheet's Electrical Characteristics — stay intact.
+- **Big files don't hang it.** Every file has a timeout, a file that runs over
+  is retried without images, and **Cancel** really stops the work. One broken
+  PDF never stops the rest of the batch.
+- **Plot-heavy datasheets convert in seconds**, thanks to a fix for a memory
+  problem in the PDF parser (see [below](#the-verapdf-memory-fix)).
+- **Nothing gets overwritten.** Folders keep their structure in the results, and
+  two files with the same name end up in separate folders.
+- **An annotated PDF** shows every detected table cell and text block on top of
+  the page — the quickest way to see why a table came out wrong.
+- Page ranges, image options, reading order, table detection method, PDF
+  password; every setting is remembered between launches.
+- Six languages — English, Русский, Polski, Français, Español, Italiano. The
+  app follows the Windows language; switch it in the top-right corner.
+- Light and dark theme.
+
+### Tips for datasheets
+
+- **Pages** — take the description and the parameter tables (`1-12`) and skip
+  dozens of pages of plots.
+- **Images** take most of the time. Try **Resolution 96 DPI** first, or
+  **Don't save** if you only need text and tables.
+- A table came out broken? Tick **Annotated PDF** to see what the converter
+  detected, and try **More options → Tables: by clusters**.
+
+## For developers
+
+### Run from source
+
+Python 3.10+ and Java 11+:
+
+```
+python -m venv .venv
+.venv\Scripts\activate           # elsewhere: source .venv/bin/activate
+pip install -r requirements.txt
+python gui.py
+```
+
+### Tests
+
+```
+pip install -r requirements-dev.txt
+python -m pytest tests
+```
+
+No window opens during the run (Qt's offscreen platform) and settings go to a
+temporary file, not the registry. Most tests replace Java with a small script,
+so timeouts, Cancel and the retry without images run in seconds;
+`test_real_converter.py` and `test_memory.py` drive the real jar and are
+skipped where Java is missing. GitHub Actions runs the suite on every push to
+`main` and every pull request.
+
+### Building
+
+Installers for sharing come from GitHub Actions: pushing a `v*` tag runs the
+tests, builds the app with an [Eclipse Temurin](https://adoptium.net) 21
+runtime and attaches `PDF-to-Markdown-Setup.exe` to the release.
+
+Locally, [build.bat](build.bat) sets up a virtualenv, trims a JRE with `jlink`,
+runs PyInstaller and — if Inno Setup is installed — builds the installer; the
+app lands in `dist\PDF to Markdown\` (copy the whole folder, not just the exe).
+It bundles whatever JDK is installed, and Oracle's licence only allows
+redistributing an unmodified JDK — so hand out the CI builds. See
+[BUILD.md](BUILD.md) for the manual steps.
 
 ### Where results go
 
@@ -47,72 +110,62 @@ The converter names every output after its input (`doc.md`, `doc_images/`,
 `doc_annotated.pdf`), so name clashes are resolved with folders: renaming the
 files would break the links from the `.md` to its images.
 
-### opendataloader-pdf version and the veraPDF patch
+### The veraPDF memory fix
 
-Pinned to **2.5.13** in `requirements.txt`. It fixed the table cells that
-2.5.1–2.5.5 wrote as `&lt;td&gt;` and dropped the `hancom-ai` hybrid backend.
-
-The same 2.5.9 release that fixed the tables brought in a veraPDF version whose
-line-art parsing needs memory out of all proportion: a 48-page TI datasheet
-went from 512 MB to about 14 GB. [patches/](patches/README.md) holds the one
-class that fixes it, loaded ahead of the jar; output is byte-for-byte the same,
-and the datasheet converts in 3 s within 1 GB again. The patch only applies to
-the exact jar it was measured against, and `tests/test_memory.py` says when it
-is no longer needed.
+`requirements.txt` pins opendataloader-pdf **2.5.13**. From 2.5.9 on, it
+bundles a veraPDF whose line-art parsing needs memory quadratic in the number
+of strokes on a page: a 48-page TI datasheet went from 512 MB to about 14 GB.
+[patches/](patches/README.md) holds the one class that fixes it, loaded ahead
+of the jar; the output is byte-for-byte the same. The patch applies only to
+the exact jar it was measured against, and `tests/test_memory.py` tells when it
+is no longer needed. Reported upstream as
+[veraPDF/veraPDF-library#1641](https://github.com/veraPDF/veraPDF-library/issues/1641).
 
 The version in use, and whether the patch is active, are printed at the top of
 the log.
 
-## Requirements
+### AI mode
 
-- Python 3.10+
-- Java 11 or newer (`opendataloader-pdf` runs a JVM under the hood)
-
-The optional AI mode needs a hybrid backend running separately:
+The optional hybrid mode needs a separately running backend:
 
 ```
 pip install "opendataloader-pdf[hybrid]"
 opendataloader-pdf-hybrid --port 5002
 ```
 
-The app probes the server before starting and offers to convert without it when
+The app checks the server before starting and offers to convert without it if
 nothing answers.
 
-## Run from source
+### Translations
 
-```
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python gui.py
-```
+Every string the user sees lives in `locales/<code>.json`; English (`en.json`)
+is the reference. To add a language, copy `en.json`, translate the values,
+leave the keys and `{placeholders}` alone, and add the code to `LANGUAGES` in
+[i18n.py](i18n.py). The tests check that every language has every key and the
+same placeholders. Check the window at its minimum width with **More options**
+open — longer languages must not push the cards past the edge.
 
-## Build a Windows executable
-
-On Windows, double-click [build.bat](build.bat): it sets up a virtualenv,
-bundles a trimmed JRE with `jlink`, runs PyInstaller and — if Inno Setup is
-installed — produces `Output\PDF-to-Markdown-Setup.exe`. The app itself ends up
-in `dist\PDF to Markdown\`; copy the whole folder, not just the exe.
-
-PyInstaller does not cross-compile, so a Windows build needs Windows. See
-[BUILD.md](BUILD.md) for the manual steps and the prerequisites.
-
-Installers for sharing come from GitHub Actions rather than a local build:
-pushing a `v*` tag runs the tests, builds the app with a Temurin 21 runtime and
-attaches `PDF-to-Markdown-Setup.exe` to the release. A local `build.bat` bundles
-whatever JDK is installed, and Oracle's licence only allows redistributing an
-unmodified JDK — a jlink-trimmed one is not. Tests also run on every pull
-request.
-
-## Layout
+### Layout
 
 | File | Purpose |
 |---|---|
-| `gui.py` | Window, drag & drop, remembered settings |
-| `converter.py` | Running the JAR: options, where each file goes, the worker thread |
+| `gui.py` | Window, drag & drop, remembered settings, language switch |
+| `converter.py` | Running the jar: options, where each file goes, the worker thread |
+| `i18n.py`, `locales/` | Interface languages |
 | `theme.py` | Colour palettes and generated stylesheet |
 | `patches/` | veraPDF line-art fix loaded ahead of the jar |
 | `tests/` | pytest suite, the `table.pdf` fixture, a generator for plot-heavy pages |
-| `build.bat` | One-click Windows build: venv, JRE, exe, installer |
-| `app.spec` | PyInstaller build definition |
-| `installer.iss` | Inno Setup installer script |
+| `build.bat`, `app.spec`, `installer.iss` | Local build, PyInstaller definition, Inno Setup installer |
+| `.github/workflows/` | Tests on every change; installer on `v*` tags |
+
+## Licence
+
+[GNU General Public License v3.0](LICENSE). You may use, share and change the
+program; anyone who distributes it, changed or not, must pass on the source
+code and the same rights. The program comes with no warranty.
+
+Third-party components and their licences:
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Authors: [bantamer](https://github.com/bantamer) (first version),
+[k1llrouz](https://github.com/k1llrouz).
