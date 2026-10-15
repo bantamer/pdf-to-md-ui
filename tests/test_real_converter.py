@@ -129,10 +129,11 @@ def test_hidden_text(tmp_path, qapp, drop):
         [Job(str(pdf), str(out), "hidden.pdf")], str(out), options, 120,
         converter.supported_option_names(), filter_hidden=drop,
     )
-    result = {}
+    result, log = {}, []
     worker.finished.connect(result.update)
+    worker.log.connect(log.append)
     worker.run()
-    assert result["ok"] == 1, result
+    assert result["ok"] == 1, "\n".join([str(result), *log])
     md = (out / "hidden.md").read_text(encoding="utf-8")
 
     assert VISIBLE_TEXT in md
