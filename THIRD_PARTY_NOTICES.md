@@ -1,0 +1,24 @@
+# Third-party components
+
+PDF → Markdown is licensed under the GNU General Public License v3.0 (see
+[LICENSE](LICENSE)). The Windows build bundles the components below, each
+under its own licence. All of them are compatible with distributing the
+program under the GPL v3.
+
+| Component | Used for | Licence | Source |
+|---|---|---|---|
+| [opendataloader-pdf](https://github.com/opendataloader-project/opendataloader-pdf) | The PDF converter itself (Python package and CLI jar) | Apache-2.0, © 2025–2026 Hancom, Inc. | [GitHub](https://github.com/opendataloader-project/opendataloader-pdf) |
+| Java libraries inside the opendataloader-pdf jar (PDFBox, Jackson, veraPDF and others) | PDF parsing | Various; listed in `opendataloader_pdf/THIRD_PARTY/` inside the installed program | See that folder |
+| [veraPDF](https://verapdf.org) `ChunkParser.class` in `patches/` | Memory fix for plot-heavy PDFs, see [patches/README.md](patches/README.md) | MPL-2.0 (veraPDF is dual-licensed GPL-3.0+ / MPL-2.0+), © veraPDF Consortium | [ChunkParser.java at v1.31.169](https://github.com/veraPDF/veraPDF-validation/blob/v1.31.169/wcag-validation/src/main/java/org/verapdf/gf/model/factory/chunks/ChunkParser.java) |
+| [Qt for Python (PySide6)](https://www.qt.io/qt-for-python) and Qt 6 | The window | LGPL-3.0 (also offered under GPL-2.0 / GPL-3.0), © The Qt Company Ltd. | [code.qt.io](https://code.qt.io/cgit/pyside/pyside-setup.git/) |
+| [Python](https://www.python.org) | Runs the program | PSF License Agreement | [python.org](https://www.python.org/downloads/source/) |
+| [PyInstaller](https://pyinstaller.org) bootloader | Starts the bundled Python | GPL-2.0-or-later with an exception that allows distributing programs built with it under any licence | [GitHub](https://github.com/pyinstaller/pyinstaller) |
+| [Eclipse Temurin](https://adoptium.net) (OpenJDK) runtime, in `jre/` | Runs the opendataloader-pdf jar | GPL-2.0 with the Classpath Exception; notices in `jre/legal/` | [adoptium.net](https://adoptium.net) |
+
+The Qt and Java runtimes are separate files in the program folder and can be
+replaced with other builds of the same version.
+
+Releases are built by GitHub Actions with the Temurin runtime. A local build
+made with `build.bat` bundles whatever JDK is installed on that machine; an
+Oracle JDK may only be redistributed unmodified, which a jlink-trimmed runtime
+is not — use Temurin for anything you hand out.
