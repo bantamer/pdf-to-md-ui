@@ -34,6 +34,8 @@ from urllib.parse import urlparse
 
 from PySide6.QtCore import QObject, Signal
 
+from i18n import tr
+
 JAR_NAME = "opendataloader-pdf-cli.jar"
 
 # Page markers help both a human reader and whatever splits the document into
@@ -466,32 +468,22 @@ class ConvertWorker(QObject):
         jar = jar_path()
         java = java_executable()
         if jar is None:
-            summary["error"] = (
-                "Пакет opendataloader-pdf не установлен "
-                "(pip install opendataloader-pdf)."
-            )
+            summary["error"] = tr("run.no_package")
             self.finished.emit(summary)
             return
         if java is None:
-            summary["error"] = (
-                "Java не найдена. Установите Java 11 или новее либо "
-                "переустановите программу — нужная версия идёт в комплекте."
-            )
+            summary["error"] = tr("run.no_java")
             self.finished.emit(summary)
             return
 
         heap = max_heap_mb()
         self._emit(f"opendataloader-pdf {odl_version()}")
-        self._emit(
-            "заплатка veraPDF: включена"
-            if verapdf_patch(jar)
-            else "заплатка veraPDF: не применяется к этой версии"
-        )
-        self._emit(f"Файлов на входе: {len(self.jobs)}")
-        self._emit(f"Папка результата: {self.output_root}")
-        self._emit(f"Java: {java} · память JVM до {heap} МБ")
+        self._emit(tr("run.patch_on") if verapdf_patch(jar) else tr("run.patch_off"))
+        self._emit(tr("run.inputs", count=len(self.jobs)))
+        self._emit(tr("run.output", path=self.output_root))
+        self._emit(tr("run.java", path=java, heap=heap))
         if self.timeout:
-            self._emit(f"Таймаут на файл: {self.timeout} с")
+            self._emit(tr("run.timeout", seconds=self.timeout))
 
         for index, job in enumerate(self.jobs, 1):
             with self._lock:
@@ -500,12 +492,12 @@ class ConvertWorker(QObject):
             self.progress.emit(index, len(self.jobs), job.label)
             self._emit(f"[{index}/{len(self.jobs)}] {job.label}")
             if os.path.normcase(job.output_dir) != os.path.normcase(self.output_root):
-                self._emit(f"  результат: {job.output_dir}")
+                self._emit(tr("run.result_dir", path=job.output_dir))
 
             try:
                 os.makedirs(job.output_dir, exist_ok=True)
             except OSError as exc:
-                self._emit(f"  не удалось создать папку: {exc}")
+                self._emit(tr("run.mkdir_failed", error=exc))
                 summary["failed"].append(job.label)
                 continue
 
@@ -517,7 +509,7 @@ class ConvertWorker(QObject):
             if outcome == "timeout" and self.options.get("image_output") != "off":
                 # Images are the expensive part; an empty result helps nobody,
                 # so retry once without them and say so afterwards.
-                self._emit("  не уложился в таймаут — повтор без картинок")
+                self._emit(tr("run.retry_no_images"))
                 retry = dict(self.options, image_output="off")
                 outcome = self._run_one(java, jar, job, retry, heap)
                 if outcome == "ok":
@@ -532,10 +524,10 @@ class ConvertWorker(QObject):
                 summary["ok"] += 1
             elif outcome == "timeout":
                 summary["timed_out"].append(job.label)
-                self._emit("  прервано по таймауту")
+                self._emit(tr("run.timed_out"))
             else:
                 summary["failed"].append(job.label)
-                self._emit("  ошибка конвертации, файл пропущен")
+                self._emit(tr("run.failed"))
 
         self._flush()
         self.finished.emit(summary)
@@ -562,7 +554,7 @@ class ConvertWorker(QObject):
                 creationflags=_no_window(),
             )
         except OSError as exc:
-            self._emit(f"  не удалось запустить java: {exc}")
+            self._emit(tr("run.java_start_failed", error=exc))
             return "error"
 
         with self._lock:
@@ -602,7 +594,7 @@ class ConvertWorker(QObject):
         with self._lock:
             self._process = None
         if code != 0:
-            self._emit(f"  java завершилась с кодом {code}")
+            self._emit(tr("run.java_exit", code=code))
             return "error"
         return "ok"
 

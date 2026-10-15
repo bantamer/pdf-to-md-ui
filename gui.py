@@ -50,6 +50,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import i18n
 import theme
 from converter import (
     CONTENT_SAFETY_OFF,
@@ -67,36 +68,25 @@ from converter import (
     supported_option_names,
     use_bundled_jre,
 )
+from i18n import tr
 
 APP_NAME = "PDF → Markdown"
+# (CLI format, label key). The annotated PDF is not an output format like the
+# others - it carries no extracted text - but it belongs in the same row
+# anyway: it is a file the run produces, and hiding it among the settings left
+# people guessing what the checkbox did.
 FORMATS = [
-    ("markdown", "Markdown"),
-    ("json", "JSON"),
-    ("html", "HTML"),
-    ("text", "Текст"),
-    ("tagged-pdf", "Tagged PDF"),
-    ("pdf", "PDF с разметкой"),
+    ("markdown", "format.markdown"),
+    ("json", "format.json"),
+    ("html", "format.html"),
+    ("text", "format.text"),
+    ("tagged-pdf", "format.tagged_pdf"),
+    ("pdf", "format.pdf"),
 ]
-
-# Not an output format like the others - it carries no extracted text - but it
-# belongs in the same row anyway: it is a file the run produces, and hiding it
-# among the settings left people guessing what the checkbox did.
-FORMAT_HINTS = {
-    "pdf": (
-        "Копия исходного PDF, поверх которой залиты распознанные элементы:\n"
-        "ячейки таблиц с их границами, текстовые блоки, заголовки.\n"
-        "Текста внутри нет — это способ увидеть, почему таблица вышла не так.\n"
-        "Файл имя_annotated.pdf; на скорость почти не влияет."
-    ),
-    "tagged-pdf": "Исходный PDF с проставленными тегами структуры.",
+FORMAT_TOOLTIPS = {
+    "tagged-pdf": "format.tagged_pdf_tooltip",
+    "pdf": "format.pdf_tooltip",
 }
-
-IMAGE_HINT = (
-    "Извлечение картинок — самая тяжёлая часть работы: каждая иллюстрация "
-    "рендерится заново. На обычных документах разница незаметна, но у "
-    "даташитов бывают десятки страниц графиков, и на них конвертация может "
-    "идти минутами."
-)
 
 
 def app_settings() -> QSettings:
@@ -182,7 +172,7 @@ class DropZone(QFrame):
         icon.setObjectName("DropIcon")
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        hint = QLabel("Перетащите сюда PDF или папку — либо нажмите, чтобы выбрать")
+        hint = QLabel(tr("files.drop_hint"))
         hint.setObjectName("DropHint")
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -294,6 +284,8 @@ def field_row(*pairs, spacing: int = 10) -> QHBoxLayout:
 
 
 class MainWindow(QWidget):
+    languageChanged = Signal(str)
+
     def __init__(self):
         super().__init__()
         self.setObjectName("Root")
@@ -351,7 +343,10 @@ class MainWindow(QWidget):
         scroll.setWidget(body)
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # Layouts are made to fit 720 px in every language; should a future
+        # translation still overflow, a scroll bar beats silently clipped
+        # buttons.
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(22, 20, 22, 20)
@@ -372,9 +367,7 @@ class MainWindow(QWidget):
     def _header(self) -> QHBoxLayout:
         title = QLabel(APP_NAME)
         title.setObjectName("Title")
-        subtitle = QLabel(
-            "Извлечение структурированного текста из PDF · opendataloader-pdf"
-        )
+        subtitle = QLabel(tr("app.subtitle"))
         subtitle.setObjectName("Subtitle")
 
         text = QVBoxLayout()
@@ -384,13 +377,26 @@ class MainWindow(QWidget):
 
         self.theme_btn = QPushButton("☾" if not self.dark else "☀")
         self.theme_btn.setObjectName("Ghost")
-        self.theme_btn.setToolTip("Светлая / тёмная тема")
+        self.theme_btn.setToolTip(tr("header.theme_tooltip"))
         self.theme_btn.setFixedWidth(40)
         self.theme_btn.clicked.connect(self._toggle_theme)
+
+        self.language = QComboBox()
+        for code, name in i18n.LANGUAGES.items():
+            self.language.addItem(name, code)
+        self.language.setCurrentIndex(self.language.findData(i18n.current()))
+        self.language.setToolTip(tr("header.language_tooltip"))
+        self.language.setFixedWidth(130)
+        # Connected after the current item is set, so building the window does
+        # not count as a change of language.
+        self.language.currentIndexChanged.connect(
+            lambda: self.languageChanged.emit(self.language.currentData())
+        )
 
         row = QHBoxLayout()
         row.addLayout(text)
         row.addStretch()
+        row.addWidget(self.language, alignment=Qt.AlignmentFlag.AlignTop)
         row.addWidget(self.theme_btn, alignment=Qt.AlignmentFlag.AlignTop)
         return row
 
@@ -403,11 +409,11 @@ class MainWindow(QWidget):
         self.file_list.setVisible(False)
         self.file_list.setMaximumHeight(150)
 
-        add_btn = QPushButton("Добавить файлы")
+        add_btn = QPushButton(tr("files.add_files"))
         add_btn.clicked.connect(self.pick_files)
-        add_folder_btn = QPushButton("Добавить папку")
+        add_folder_btn = QPushButton(tr("files.add_folder"))
         add_folder_btn.clicked.connect(self.pick_folder)
-        self.clear_btn = QPushButton("Очистить")
+        self.clear_btn = QPushButton(tr("files.clear"))
         self.clear_btn.setObjectName("Danger")
         self.clear_btn.clicked.connect(self.clear_inputs)
         self.clear_btn.setVisible(False)
@@ -419,33 +425,28 @@ class MainWindow(QWidget):
         buttons.addStretch()
         buttons.addWidget(self.clear_btn)
 
-        return card(section("Исходные файлы"), self.drop, self.file_list, buttons)
+        return card(section(tr("files.section")), self.drop, self.file_list, buttons)
 
     def _options_card(self) -> QFrame:
         self.format_boxes: dict[str, QCheckBox] = {}
         formats = QHBoxLayout()
         formats.setSpacing(14)
         for key, label in FORMATS:
-            box = QCheckBox(label)
+            box = QCheckBox(tr(label))
             box.setChecked(key == "markdown")
-            if key in FORMAT_HINTS:
-                box.setToolTip(FORMAT_HINTS[key])
+            if key in FORMAT_TOOLTIPS:
+                box.setToolTip(tr(FORMAT_TOOLTIPS[key]))
             self.format_boxes[key] = box
             formats.addWidget(box)
         formats.addStretch()
 
         # -- images: the single setting that decides how long a datasheet takes
         self.image_mode = QComboBox()
-        self.image_mode.addItem("Сохранять отдельными файлами", "external")
-        self.image_mode.addItem("Встроить в документ", "embedded")
-        self.image_mode.addItem("Не сохранять", "off")
+        self.image_mode.addItem(tr("images.external"), "external")
+        self.image_mode.addItem(tr("images.embedded"), "embedded")
+        self.image_mode.addItem(tr("images.off"), "off")
         self.image_mode.setFixedWidth(280)
-        self.image_mode.setToolTip(
-            "Отдельными файлами — PNG рядом с документом, в тексте ссылки на них.\n"
-            "Встроить — картинки внутри .md в виде Base64: один самодостаточный\n"
-            "файл, но размер вырастает в разы.\n"
-            "Не сохранять — только текст и таблицы."
-        )
+        self.image_mode.setToolTip(tr("images.tooltip"))
         self.image_mode.currentIndexChanged.connect(self._toggle_image_dpi)
 
         # Worth trying before turning images off entirely: 96 DPI keeps the
@@ -455,36 +456,24 @@ class MainWindow(QWidget):
         self.image_dpi.setValue(IMAGE_DPI_DEFAULT)
         self.image_dpi.setSuffix(" DPI")
         self.image_dpi.setFixedWidth(130)
-        self.image_dpi.setToolTip(
-            "Разрешение рендеринга картинок. Меньше — меньше расход памяти\n"
-            "и быстрее, но грубее. 144 — по умолчанию, 96 обычно достаточно."
-        )
+        self.image_dpi.setToolTip(tr("dpi.tooltip"))
 
         self.pages_edit = QLineEdit()
-        self.pages_edit.setPlaceholderText("все")
+        self.pages_edit.setPlaceholderText(tr("pages.placeholder"))
         self.pages_edit.setFixedWidth(140)
-        self.pages_edit.setToolTip(
-            "Например 1,3,5-7. Для даташитов удобно взять описание и таблицы\n"
-            "параметров, пропустив десятки страниц графиков."
-        )
+        self.pages_edit.setToolTip(tr("pages.tooltip"))
 
         self.timeout_spin = QSpinBox()
         self.timeout_spin.setRange(0, 36000)
         self.timeout_spin.setValue(30)
-        self.timeout_spin.setSuffix(" с")
-        self.timeout_spin.setSpecialValueText("без ограничения")
+        self.timeout_spin.setSuffix(tr("timeout.suffix"))
+        self.timeout_spin.setSpecialValueText(tr("timeout.none"))
         self.timeout_spin.setFixedWidth(150)
-        self.timeout_spin.setToolTip(
-            "Если файл не уложился — он будет повторён без картинок,\n"
-            "и только потом помечен как неудачный."
-        )
+        self.timeout_spin.setToolTip(tr("timeout.tooltip"))
 
-        self.opt_struct = QCheckBox("Использовать теги из PDF")
-        self.opt_struct.setToolTip(
-            "Читать встроенную структуру документа вместо анализа вёрстки.\n"
-            "Точнее — но только для PDF, где теги действительно есть."
-        )
-        self.opt_sanitize = QCheckBox("Скрыть чувствительные данные")
+        self.opt_struct = QCheckBox(tr("struct.label"))
+        self.opt_struct.setToolTip(tr("struct.tooltip"))
+        self.opt_sanitize = QCheckBox(tr("sanitize.label"))
 
         grid = QGridLayout()
         grid.setHorizontalSpacing(24)
@@ -495,7 +484,7 @@ class MainWindow(QWidget):
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
 
-        self.more_btn = QPushButton("Дополнительно  ▾")
+        self.more_btn = QPushButton(tr("advanced.button") + "  ▾")
         self.more_btn.setObjectName("Ghost")
         self.more_btn.setCheckable(True)
         self.more_btn.toggled.connect(self._toggle_advanced)
@@ -504,17 +493,17 @@ class MainWindow(QWidget):
         more_row.addStretch()
 
         return card(
-            section("Форматы вывода"),
+            section(tr("formats.section")),
             formats,
-            section("Опции"),
+            section(tr("options.section")),
             field_row(
-                ("Картинки:", self.image_mode),
-                ("Разрешение:", self.image_dpi),
+                (tr("images.label"), self.image_mode),
+                (tr("dpi.label"), self.image_dpi),
             ),
-            hint(IMAGE_HINT),
+            hint(tr("images.hint")),
             field_row(
-                ("Страницы:", self.pages_edit),
-                ("Таймаут на файл:", self.timeout_spin),
+                (tr("pages.label"), self.pages_edit),
+                (tr("timeout.label"), self.timeout_spin),
             ),
             grid,
             more_row,
@@ -528,65 +517,53 @@ class MainWindow(QWidget):
 
         self.reading_order = QComboBox()
         self.reading_order.addItem("xycut", "xycut")
-        self.reading_order.addItem("выключен", "off")
-        self.reading_order.setFixedWidth(200)
-        self.reading_order.setToolTip(
-            "Запасной вариант для страниц, где рекурсивное разрезание вырождается."
-        )
+        self.reading_order.addItem(tr("reading_order.off"), "off")
+        self.reading_order.setMinimumWidth(120)
+        self.reading_order.setToolTip(tr("reading_order.tooltip"))
 
         self.table_method = QComboBox()
-        self.table_method.addItem("по разлиновке", "default")
-        self.table_method.addItem("по кластерам", "cluster")
-        self.table_method.setFixedWidth(200)
-        self.table_method.setToolTip(
-            "У многих производителей таблицы с неполной разлиновкой —\n"
-            "режим по кластерам собирает их лучше."
-        )
+        self.table_method.addItem(tr("tables.default"), "default")
+        self.table_method.addItem(tr("tables.cluster"), "cluster")
+        self.table_method.setMinimumWidth(120)
+        self.table_method.setToolTip(tr("tables.tooltip"))
 
         self.image_format = QComboBox()
         self.image_format.addItem("PNG", "png")
         self.image_format.addItem("JPEG", "jpeg")
-        self.image_format.setFixedWidth(200)
+        self.image_format.setMinimumWidth(120)
 
         self.threads_spin = QSpinBox()
         self.threads_spin.setRange(1, max(1, os.cpu_count() or 1))
         self.threads_spin.setValue(1)
-        self.threads_spin.setFixedWidth(200)
-        self.threads_spin.setToolTip(
-            "Больше одного — страницы обрабатываются параллельно (быстрее,\n"
-            "но результат на некоторых PDF может слегка отличаться)."
-        )
+        self.threads_spin.setMinimumWidth(120)
+        self.threads_spin.setToolTip(tr("threads.tooltip"))
 
         self.space_ratio = QDoubleSpinBox()
         self.space_ratio.setRange(0.01, 1.00)
         self.space_ratio.setSingleStep(0.01)
         self.space_ratio.setDecimals(2)
         self.space_ratio.setValue(SPACE_RATIO_DEFAULT)
-        self.space_ratio.setFixedWidth(200)
-        self.space_ratio.setToolTip(
-            "Порог вставки пробела: доля от кегля. Если промежуток между\n"
-            "соседними символами больше — между ними ставится пробел.\n"
-            "Меньше — слова начинают разрываться, больше — слипаются."
-        )
+        self.space_ratio.setMinimumWidth(120)
+        self.space_ratio.setToolTip(tr("space_ratio.tooltip"))
 
         self.password_edit = QLineEdit()
         self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_edit.setPlaceholderText("для зашифрованных PDF")
-        self.password_edit.setFixedWidth(200)
+        self.password_edit.setPlaceholderText(tr("password.placeholder"))
+        self.password_edit.setMinimumWidth(120)
 
-        self.opt_line_breaks = QCheckBox("Сохранять переносы строк")
-        self.opt_header_footer = QCheckBox("Включать колонтитулы")
-        self.opt_strikethrough = QCheckBox("Отмечать зачёркнутый текст")
+        self.opt_line_breaks = QCheckBox(tr("line_breaks.label"))
+        self.opt_header_footer = QCheckBox(tr("header_footer.label"))
+        self.opt_strikethrough = QCheckBox(tr("strikethrough.label"))
 
         self.hybrid = QComboBox()
-        self.hybrid.addItem("Выключен", None)
+        self.hybrid.addItem(tr("hybrid.off"), None)
         self.hybrid.addItem("docling-fast", "docling-fast")
-        self.hybrid.setFixedWidth(200)
+        self.hybrid.setMinimumWidth(120)
         self.hybrid.currentIndexChanged.connect(self._toggle_hybrid)
 
         self.hybrid_url = QLineEdit()
         self.hybrid_url.setPlaceholderText(HYBRID_DEFAULT_URL)
-        self.hybrid_url.setFixedWidth(200)
+        self.hybrid_url.setMinimumWidth(120)
         self.hybrid_url.setEnabled(False)
 
         grid = QGridLayout(panel)
@@ -594,10 +571,14 @@ class MainWindow(QWidget):
         grid.setHorizontalSpacing(14)
         grid.setVerticalSpacing(8)
         rows = [
-            ("Порядок чтения:", self.reading_order, "Таблицы:", self.table_method),
-            ("Формат картинок:", self.image_format, "Потоков:", self.threads_spin),
-            ("Пароль PDF:", self.password_edit, "AI-режим:", self.hybrid),
-            ("Порог пробела:", self.space_ratio, "Адрес сервера:", self.hybrid_url),
+            (tr("reading_order.label"), self.reading_order,
+             tr("tables.label"), self.table_method),
+            (tr("image_format.label"), self.image_format,
+             tr("threads.label"), self.threads_spin),
+            (tr("password.label"), self.password_edit,
+             tr("hybrid.label"), self.hybrid),
+            (tr("space_ratio.label"), self.space_ratio,
+             tr("hybrid_url.label"), self.hybrid_url),
         ]
         for r, (l1, w1, l2, w2) in enumerate(rows):
             if l1:
@@ -607,21 +588,26 @@ class MainWindow(QWidget):
             grid.addWidget(w2, r, 3)
         grid.setColumnStretch(4, 1)
 
-        checks = QHBoxLayout()
-        checks.setSpacing(24)
-        checks.addWidget(self.opt_line_breaks)
-        checks.addWidget(self.opt_header_footer)
-        checks.addWidget(self.opt_strikethrough)
-        checks.addStretch()
+        # Fields give way to long labels rather than push the card past the
+        # window: French and Spanish labels run a good third longer.
+        for field in (w for row in rows for w in (row[1], row[3])):
+            field.setMaximumWidth(200)
+
+        # Two columns, like the checkboxes above: three in a row ran past the
+        # window in the longer languages.
+        checks = QGridLayout()
+        checks.setHorizontalSpacing(24)
+        checks.setVerticalSpacing(6)
+        for i, box in enumerate(
+            (self.opt_line_breaks, self.opt_header_footer, self.opt_strikethrough)
+        ):
+            checks.addWidget(box, i // 2, i % 2)
+        checks.setColumnStretch(0, 1)
+        checks.setColumnStretch(1, 1)
         grid.addLayout(checks, len(rows), 0, 1, 5)
 
         grid.addWidget(
-            hint(
-                "AI-режим требует отдельно установленного и запущенного сервера "
-                "(pip install \"opendataloader-pdf[hybrid]\", затем "
-                "opendataloader-pdf-hybrid --port 5002). Если сервер не отвечает, "
-                "программа скажет об этом до начала работы."
-            ),
+            hint(tr("hybrid.hint")),
             len(rows) + 1,
             0,
             1,
@@ -631,10 +617,10 @@ class MainWindow(QWidget):
 
     def _output_card(self) -> QFrame:
         self.output_edit = QLineEdit()
-        self.output_edit.setPlaceholderText("Папка рядом с исходными файлами")
+        self.output_edit.setPlaceholderText(tr("output.placeholder"))
         self.output_edit.setText(app_settings().value("output_dir", "", str))
         self.output_edit.editingFinished.connect(self._remember_output_dir)
-        browse = QPushButton("Обзор…")
+        browse = QPushButton(tr("output.browse"))
         browse.clicked.connect(self.pick_output)
 
         row = QHBoxLayout()
@@ -642,13 +628,9 @@ class MainWindow(QWidget):
         row.addWidget(self.output_edit, 1)
         row.addWidget(browse)
         return card(
-            section("Куда сохранить"),
+            section(tr("output.section")),
             row,
-            hint(
-                "Папка запоминается и подставляется при следующем запуске. "
-                "Очистите поле — и результат снова будет ложиться рядом "
-                "с исходными файлами."
-            ),
+            hint(tr("output.hint")),
         )
 
     def _log_card(self) -> QFrame:
@@ -662,9 +644,9 @@ class MainWindow(QWidget):
         self.log_view.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
-        self.log_view.setPlaceholderText("Здесь появится ход работы.")
+        self.log_view.setPlaceholderText(tr("log.placeholder"))
 
-        frame = card(section("Журнал"), self.log_view, expand=True)
+        frame = card(section(tr("log.section")), self.log_view, expand=True)
         # Hidden until asked for: a log is noise for the audience this app
         # targets, and it costs ~140 px of window height.
         frame.setVisible(False)
@@ -677,24 +659,24 @@ class MainWindow(QWidget):
         self.progress.setValue(0)
         self.progress.setVisible(False)
 
-        self.status = QLabel("Добавьте хотя бы один PDF.")
+        self.status = QLabel(tr("status.empty"))
         self.status.setObjectName("StatusText")
 
-        self.open_btn = QPushButton("Открыть папку результата")
+        self.open_btn = QPushButton(tr("action.open_output"))
         self.open_btn.clicked.connect(self.open_output)
         self.open_btn.setVisible(False)
 
-        self.log_btn = QPushButton("Журнал")
+        self.log_btn = QPushButton(tr("log.button"))
         self.log_btn.setObjectName("Ghost")
         self.log_btn.setCheckable(True)
         self.log_btn.toggled.connect(self._toggle_log)
 
-        self.cancel_btn = QPushButton("Отмена")
+        self.cancel_btn = QPushButton(tr("action.cancel"))
         self.cancel_btn.setObjectName("Danger")
         self.cancel_btn.clicked.connect(self.cancel)
         self.cancel_btn.setVisible(False)
 
-        self.run_btn = QPushButton("Конвертировать")
+        self.run_btn = QPushButton(tr("action.convert"))
         self.run_btn.setObjectName("Primary")
         self.run_btn.setEnabled(False)
         self.run_btn.clicked.connect(self.start)
@@ -774,13 +756,13 @@ class MainWindow(QWidget):
 
     def pick_files(self) -> None:
         paths, _ = QFileDialog.getOpenFileNames(
-            self, "Выберите PDF", str(Path.home()), "PDF (*.pdf)"
+            self, tr("dialog.pick_files"), str(Path.home()), "PDF (*.pdf)"
         )
         self.add_paths(paths)
 
     def pick_folder(self) -> None:
         path = QFileDialog.getExistingDirectory(
-            self, "Выберите папку с PDF", str(Path.home())
+            self, tr("dialog.pick_folder"), str(Path.home())
         )
         if path:
             self.add_paths([path])
@@ -788,7 +770,7 @@ class MainWindow(QWidget):
     def pick_output(self) -> None:
         path = QFileDialog.getExistingDirectory(
             self,
-            "Куда сохранить результат",
+            tr("dialog.pick_output"),
             self.output_edit.text() or str(Path.home()),
         )
         if path:
@@ -828,14 +810,14 @@ class MainWindow(QWidget):
         self.drop.setVisible(not has_files)
         self.run_btn.setEnabled(has_files)
         self._set_status(
-            f"Готово к работе: {len(self.inputs)} шт."
+            tr("status.ready", count=len(self.inputs))
             if has_files
-            else "Добавьте хотя бы один PDF."
+            else tr("status.empty")
         )
 
     def _toggle_advanced(self, shown: bool) -> None:
         self.advanced.setVisible(shown)
-        self.more_btn.setText("Дополнительно  ▴" if shown else "Дополнительно  ▾")
+        self.more_btn.setText(tr("advanced.button") + ("  ▴" if shown else "  ▾"))
 
     def _toggle_image_dpi(self) -> None:
         self.image_dpi.setEnabled(self.image_mode.currentData() != "off")
@@ -863,7 +845,7 @@ class MainWindow(QWidget):
     def _collect_options(self) -> dict | None:
         formats = [key for key, box in self.format_boxes.items() if box.isChecked()]
         if not formats:
-            QMessageBox.warning(self, APP_NAME, "Выберите хотя бы один формат вывода.")
+            QMessageBox.warning(self, APP_NAME, tr("error.no_format"))
             return None
 
         options: dict = {
@@ -928,11 +910,7 @@ class MainWindow(QWidget):
         answer = QMessageBox.question(
             self,
             APP_NAME,
-            f"AI-режим включён, но сервер {url} не отвечает.\n\n"
-            "Он ставится и запускается отдельно:\n"
-            '    pip install "opendataloader-pdf[hybrid]"\n'
-            "    opendataloader-pdf-hybrid --port 5002\n\n"
-            "Конвертировать обычным способом, без AI-режима?",
+            tr("hybrid.unreachable", url=url),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         )
         if answer != QMessageBox.StandardButton.Yes:
@@ -951,11 +929,7 @@ class MainWindow(QWidget):
         answer = QMessageBox.question(
             self,
             APP_NAME,
-            "Установленная версия opendataloader-pdf не поддерживает эти "
-            "настройки, они будут проигнорированы:\n\n    "
-            + "\n    ".join(dropped)
-            + "\n\nОбновить пакет: pip install -U opendataloader-pdf\n\n"
-            "Продолжить без них?",
+            tr("unsupported.message", options="\n    ".join(dropped)),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         )
         return answer == QMessageBox.StandardButton.Yes
@@ -976,9 +950,7 @@ class MainWindow(QWidget):
         output_dir = self._resolve_output_dir()
         jobs = plan_jobs(self.inputs, output_dir)
         if not jobs:
-            QMessageBox.warning(
-                self, APP_NAME, "В выбранных папках не нашлось ни одного PDF."
-            )
+            QMessageBox.warning(self, APP_NAME, tr("error.no_pdfs"))
             return
 
         supported = supported_option_names()
@@ -994,17 +966,18 @@ class MainWindow(QWidget):
         try:
             os.makedirs(output_dir, exist_ok=True)
         except OSError as exc:
-            QMessageBox.critical(
-                self, APP_NAME, f"Не удалось создать папку результата:\n{exc}"
-            )
+            QMessageBox.critical(self, APP_NAME, tr("error.mkdir", error=exc))
             return
 
         self.output_dir = output_dir
         self.log_view.clear()
         if options.get("hybrid"):
             self.append_log(
-                f"AI-режим: {options['hybrid']} · "
-                f"{options.get('hybrid_url') or HYBRID_DEFAULT_URL} (сервер отвечает)"
+                tr(
+                    "hybrid.log",
+                    mode=options["hybrid"],
+                    url=options.get("hybrid_url") or HYBRID_DEFAULT_URL,
+                )
             )
         self._set_busy(True, len(jobs))
         self.elapsed.start()
@@ -1025,7 +998,7 @@ class MainWindow(QWidget):
         if self.worker is not None:
             self.cancel_btn.setEnabled(False)
             self.tick.stop()  # otherwise the next tick overwrites the message
-            self._set_status("Останавливаю…")
+            self._set_status(tr("status.stopping"))
             self.worker.cancel()
 
     def on_progress(self, index: int, total: int, name: str) -> None:
@@ -1046,7 +1019,7 @@ class MainWindow(QWidget):
         ok, total = summary["ok"], summary["total"]
 
         if summary["error"]:
-            self._set_status("Не удалось", state="error")
+            self._set_status(tr("summary.failed_status"), state="error")
             self.append_log(summary["error"])
             self._toggle_log(True)  # the details are the point when it breaks
             QMessageBox.critical(self, APP_NAME, summary["error"])
@@ -1054,26 +1027,24 @@ class MainWindow(QWidget):
 
         notes = []
         if summary["degraded"]:
-            notes.append(
-                "без картинок (не укладывались во время): "
-                + ", ".join(summary["degraded"])
-            )
+            notes.append(tr("summary.degraded", files=", ".join(summary["degraded"])))
         if summary["timed_out"]:
-            notes.append("прерваны по таймауту: " + ", ".join(summary["timed_out"]))
+            notes.append(tr("summary.timed_out", files=", ".join(summary["timed_out"])))
         if summary["failed"]:
-            notes.append("с ошибкой: " + ", ".join(summary["failed"]))
+            notes.append(tr("summary.failed", files=", ".join(summary["failed"])))
 
+        elapsed = f"{seconds:.1f}"
         if summary["cancelled"]:
-            headline = f"Отменено · готово {ok} из {total}"
+            headline = tr("summary.cancelled", ok=ok, total=total)
             state = "error" if ok == 0 else ""
         elif ok == total and not notes:
-            headline = f"Готово за {seconds:.1f} с"
+            headline = tr("summary.done", seconds=elapsed)
             state = "ok"
         elif ok:
-            headline = f"Сконвертировано {ok} из {total} за {seconds:.1f} с"
+            headline = tr("summary.partial", ok=ok, total=total, seconds=elapsed)
             state = "ok"
         else:
-            headline = f"Не удалось сконвертировать ни одного файла из {total}"
+            headline = tr("summary.none", total=total)
             state = "error"
 
         self._set_status(headline, state=state)
@@ -1098,13 +1069,15 @@ class MainWindow(QWidget):
         self.progress.setRange(0, total if busy else 1)
         self.progress.setValue(0)
         self.run_btn.setEnabled(not busy)
-        self.run_btn.setText("Конвертация…" if busy else "Конвертировать")
+        self.run_btn.setText(tr("action.converting") if busy else tr("action.convert"))
+        # A new window would lose the running conversion.
+        self.language.setEnabled(not busy)
         self.cancel_btn.setVisible(busy)
         self.cancel_btn.setEnabled(busy)
         if busy:
             self.open_btn.setVisible(False)
             self.current_file = ""
-            self._set_status("Работаю…")
+            self._set_status(tr("status.working"))
 
     def _set_status(self, text: str, state: str = "") -> None:
         self.status.setText(text)
@@ -1116,9 +1089,15 @@ class MainWindow(QWidget):
         seconds = self.elapsed.elapsed() / 1000
         total = self.progress.maximum()
         done = self.progress.value()
-        prefix = f"Файл {done + 1} из {total}" if total > 1 else "Работаю"
+        prefix = (
+            tr("status.file_of", index=done + 1, total=total)
+            if total > 1
+            else tr("status.working").rstrip("…").rstrip(".")
+        )
         name = f" · {self.current_file}" if self.current_file else ""
-        self._set_status(f"{prefix}{name} · {seconds:.0f} с")
+        self._set_status(
+            tr("status.progress", prefix=prefix, name=name, seconds=f"{seconds:.0f}")
+        )
 
     def append_log(self, text: str) -> None:
         self.log_view.appendPlainText(text)
@@ -1131,7 +1110,7 @@ class MainWindow(QWidget):
         self.append_log(f"opendataloader-pdf {odl_version()}")
         java = java_executable()
         if java:
-            self.append_log(f"Java найдена: {java}")
+            self.append_log(tr("java.found", path=java))
             # The path alone does not tell which runtime actually answers; when
             # something goes wrong the version is the first thing worth knowing.
             try:
@@ -1146,23 +1125,21 @@ class MainWindow(QWidget):
                 )
                 line = (result.stderr or result.stdout or "").strip().splitlines()
                 if line:
-                    self.append_log(f"Версия: {line[0].strip()}")
+                    self.append_log(tr("java.version", version=line[0].strip()))
             except (OSError, subprocess.SubprocessError):
                 pass
             return
-        self.append_log("Java не найдена.")
+        self.append_log(tr("java.missing_log"))
         QMessageBox.warning(
             self,
             APP_NAME,
-            "Не найдена Java 11 или новее — без неё конвертация не запустится.\n\n"
-            "Если программа устанавливалась через установщик, переустановите её: "
-            "нужная версия Java идёт в комплекте.",
+            tr("java.missing"),
         )
 
     def closeEvent(self, event):
         if self.thread is not None and self.thread.isRunning():
             answer = QMessageBox.question(
-                self, APP_NAME, "Конвертация ещё идёт. Закрыть программу?"
+                self, APP_NAME, tr("close.running")
             )
             if answer != QMessageBox.StandardButton.Yes:
                 event.ignore()
@@ -1185,11 +1162,45 @@ def _system_prefers_dark() -> bool:
     return scheme() == Qt.ColorScheme.Dark
 
 
+# The window on screen. Switching the language replaces it, and a reference has
+# to live somewhere or the new one would be garbage-collected on the spot.
+_windows: list[MainWindow] = []
+
+
+def open_window() -> MainWindow:
+    window = MainWindow()
+    window.languageChanged.connect(lambda code: switch_language(window, code))
+    _windows.append(window)
+    return window
+
+
+def switch_language(old: MainWindow, code: str) -> MainWindow:
+    """Rebuild the window in another language, keeping what the user set up.
+
+    Every label is set once while the window is built, so the honest way to
+    change all of them is to build it again: options and the destination are
+    saved settings already, the file list and the geometry are carried over.
+    """
+    old._save_settings()
+    app_settings().setValue("language", code)
+    i18n.set_language(code)
+    new = open_window()
+    new.add_paths(list(old.inputs))
+    new.setGeometry(old.geometry())
+    new.show()
+    old.close()
+    if old in _windows:
+        _windows.remove(old)
+    old.deleteLater()
+    return new
+
+
 def main() -> int:
     use_bundled_jre()
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
-    window = MainWindow()
+    i18n.set_language(app_settings().value("language") or i18n.system_language())
+    window = open_window()
     # app.arguments() rather than sys.argv: Qt has already taken its own
     # switches out of it.
     window.add_paths(startup_paths(app.arguments()[1:]))

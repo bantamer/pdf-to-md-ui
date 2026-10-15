@@ -22,9 +22,16 @@ a = Analysis(
     ["gui.py"],
     pathex=[],
     binaries=odl_binaries,
-    # patches/ goes next to converter.py inside the bundle, where
-    # converter.PATCH_ROOT looks for it - see patches/README.md.
-    datas=odl_datas + [("patches", "patches")],
+    # patches/ and locales/ go next to converter.py and i18n.py inside the
+    # bundle, where PATCH_ROOT and LOCALE_DIR look for them.
+    datas=odl_datas
+    + [
+        ("patches", "patches"),
+        ("locales", "locales"),
+        # The licence and the notices travel with every copy handed out.
+        ("LICENSE", "."),
+        ("THIRD_PARTY_NOTICES.md", "."),
+    ],
     hiddenimports=odl_hidden,
     hookspath=[],
     runtime_hooks=[],

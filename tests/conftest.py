@@ -14,6 +14,16 @@ sys.path.insert(0, str(ROOT))
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
+@pytest.fixture(autouse=True)
+def english():
+    """Every test starts in English, whatever the machine's language is."""
+    import i18n
+
+    i18n.set_language("en")
+    yield
+    i18n.set_language("en")
+
+
 @pytest.fixture(scope="session")
 def qapp():
     from PySide6.QtWidgets import QApplication

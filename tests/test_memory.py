@@ -13,6 +13,7 @@ import pytest
 
 import converter
 from converter import ConvertWorker, Job
+from i18n import tr
 from tests.pdfgen import dense_line_pdf
 
 HEAP_MB = 128
@@ -102,7 +103,7 @@ def test_plot_pages_convert_in_a_small_heap(qapp, dense_pdf, tmp_path, monkeypat
     assert "OutOfMemoryError" not in text
     assert result["ok"] == 1, text[-2000:]
     assert "Typical Characteristics" in (out / "plots.md").read_text(encoding="utf-8")
-    assert "заплатка veraPDF: включена" in text
+    assert tr("run.patch_on") in text
 
 
 @needs_java

@@ -15,6 +15,7 @@ import pytest
 
 import converter
 from converter import ConvertWorker, Job
+from i18n import tr
 
 FAKE_JAVA = r"""
 import sys, time
@@ -86,7 +87,7 @@ def test_timeout_retries_without_images(qapp, fake_java, tmp_path):
 
     assert result["ok"] == 1
     assert result["degraded"] == ["slow.pdf"]
-    assert "повтор без картинок" in log
+    assert tr("run.retry_no_images").strip() in log
     assert time.monotonic() - start < 20
     assert all(p.poll() is not None for p in fake_java), "a timed-out process lives on"
 
@@ -136,4 +137,4 @@ def test_missing_java_is_reported_not_crashed(qapp, monkeypatch, tmp_path):
 
     result, _ = run_worker(qapp, jobs_for(tmp_path, "ok.pdf"))
 
-    assert "Java не найдена" in result["error"]
+    assert result["error"] == tr("run.no_java")
