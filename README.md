@@ -45,8 +45,11 @@ your PC" on first run: click **More info → Run anyway**.
 - Page ranges, image options, reading order, table detection method, PDF
   password; every setting is remembered between launches.
 - Six languages — English, Русский, Polski, Français, Español, Italiano. The
-  app follows the Windows language; switch it in the top-right corner.
-- Light and dark theme.
+  app follows the Windows language; switch it in **Settings → Language**.
+- A standard Windows menu — **File**, **Settings**, **Help** — with the usual
+  shortcuts (Ctrl+O to add files, Ctrl+Enter to convert, Esc to stop, F1 for
+  this guide).
+- Light and dark theme, or follow Windows.
 
 ### Tips for datasheets
 
