@@ -67,6 +67,13 @@ def build_qss(p: dict) -> str:
         f'<path d="M2.5 4.5L6 8l3.5-3.5" stroke="{p["text_muted"]}" stroke-width="1.6"'
         ' stroke-linecap="round" stroke-linejoin="round"/></svg>',
     )
+    arrow_up = _icon(
+        f"arrow-up-{theme_id}",
+        '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" '
+        'viewBox="0 0 12 12" fill="none">'
+        f'<path d="M2.5 7.5L6 4l3.5 3.5" stroke="{p["text_muted"]}" stroke-width="1.6"'
+        ' stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    )
     check = _icon(
         "check",
         '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" '
@@ -239,7 +246,7 @@ QPushButton#Ghost:hover {{
 
 /* ---- Inputs ---- */
 
-QLineEdit, QComboBox {{
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
     background: {p['surface_alt']};
     border: 1px solid {p['border_strong']};
     border-radius: 8px;
@@ -248,12 +255,39 @@ QLineEdit, QComboBox {{
     selection-color: #ffffff;
 }}
 
-QLineEdit:focus, QComboBox:focus {{
+QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
     border-color: {p['accent']};
 }}
 
-QLineEdit:disabled {{
+QLineEdit:disabled, QComboBox:disabled, QSpinBox:disabled,
+QDoubleSpinBox:disabled {{
     color: {p['text_muted']};
+}}
+
+/* The spin buttons are tiny and hard to hit; the field is meant to be typed
+   into, so they only need to stay out of the way. */
+QSpinBox::up-button, QSpinBox::down-button,
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {{
+    width: 16px;
+    border: none;
+    background: transparent;
+}}
+
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {{
+    width: 8px;
+    height: 8px;
+    image: url("{arrow_up}");
+}}
+
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {{
+    width: 8px;
+    height: 8px;
+    image: url("{arrow}");
+}}
+
+QLabel#Hint {{
+    color: {p['text_muted']};
+    font-size: 12px;
 }}
 
 QComboBox::drop-down {{

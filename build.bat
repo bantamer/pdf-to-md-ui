@@ -100,7 +100,10 @@ if not defined JLINK (
     echo       this script to ship Java inside the build instead.
     exit /b 0
 )
-set "JMODS=java.base,java.desktop,java.logging,java.naming,java.xml"
+rem jdk.unsupported carries sun.misc.Unsafe, which PDFBox needs to release
+rem memory-mapped files; without it every image-bearing PDF logs
+rem "SEVERE: Unmapping is not supported" and keeps the file mapped until GC.
+set "JMODS=java.base,java.desktop,java.logging,java.naming,java.xml,jdk.unsupported"
 "!JLINK!" --add-modules %JMODS% --strip-debug --no-header-files --no-man-pages --compress=2 --output jre >nul 2>nul
 if errorlevel 1 (
     rem --compress=2 was dropped in newer JDKs; retry without it.

@@ -22,7 +22,9 @@ a = Analysis(
     ["gui.py"],
     pathex=[],
     binaries=odl_binaries,
-    datas=odl_datas,
+    # patches/ goes next to converter.py inside the bundle, where
+    # converter.PATCH_ROOT looks for it - see patches/README.md.
+    datas=odl_datas + [("patches", "patches")],
     hiddenimports=odl_hidden,
     hookspath=[],
     runtime_hooks=[],

@@ -1,0 +1,120 @@
+"""The window: options it sends, settings it keeps, files it is handed."""
+
+import gui
+
+
+def test_defaults(window):
+    opts = window._collect_options()
+
+    assert opts["format"] == "markdown"
+    assert opts["markdown_with_html"] is True
+    assert opts["markdown_page_separator"] == gui.PAGE_SEPARATOR
+    assert opts["content_safety_off"] == gui.CONTENT_SAFETY_OFF
+    assert opts["replace_invalid_chars"] == "?"
+    assert opts["image_output"] == "external"
+    # Left at the CLI's own default, so not sent at all.
+    assert "image_resolution" not in opts and "space_ratio" not in opts
+    assert "hybrid" not in opts
+    assert window.timeout_spin.value() == 30
+
+
+def test_annotated_pdf_alone_is_a_valid_run(window):
+    window.format_boxes["markdown"].setChecked(False)
+    window.format_boxes["pdf"].setChecked(True)
+
+    opts = window._collect_options()
+
+    assert opts["format"] == "pdf"
+    assert "markdown_with_html" not in opts
+
+
+def test_ai_mode_always_carries_timeout_and_fallback(window):
+    window.hybrid.setCurrentIndex(window.hybrid.findData("docling-fast"))
+
+    opts = window._collect_options()
+
+    assert opts["hybrid"] == "docling-fast"
+    assert opts["hybrid_timeout"] == gui.HYBRID_TIMEOUT_MS
+    assert opts["hybrid_fallback"] is True
+
+
+def test_hancom_ai_is_gone(window):
+    """Removed upstream in 2.5.13."""
+    assert window.hybrid.findData("hancom-ai") == -1
+
+
+def test_settings_survive_a_restart(qapp, settings_file):
+    first = gui.MainWindow()
+    first.format_boxes["json"].setChecked(True)
+    first.format_boxes["pdf"].setChecked(True)
+    first.image_mode.setCurrentIndex(first.image_mode.findData("off"))
+    first.image_dpi.setValue(96)
+    first.timeout_spin.setValue(120)
+    first.table_method.setCurrentIndex(first.table_method.findData("cluster"))
+    first.space_ratio.setValue(0.25)
+    first.opt_header_footer.setChecked(True)
+    first.more_btn.setChecked(True)
+    first._save_settings()
+    first.close()
+
+    second = gui.MainWindow()
+
+    assert second.format_boxes["json"].isChecked()
+    assert second.format_boxes["pdf"].isChecked()
+    assert second.format_boxes["markdown"].isChecked()
+    assert second.image_mode.currentData() == "off"
+    assert second.image_dpi.value() == 96
+    assert second.timeout_spin.value() == 120
+    assert second.table_method.currentData() == "cluster"
+    assert abs(second.space_ratio.value() - 0.25) < 1e-9
+    assert second.opt_header_footer.isChecked()
+    assert second.advanced.isVisibleTo(second)
+    second.close()
+
+
+def test_password_and_pages_are_never_stored(qapp, settings_file):
+    w = gui.MainWindow()
+    w.password_edit.setText("hunter2")
+    w.pages_edit.setText("1-3")
+    w._save_settings()
+    w.close()
+
+    stored = settings_file.read_text(encoding="utf-8")
+    assert "hunter2" not in stored
+    assert "1-3" not in stored
+
+    again = gui.MainWindow()
+    assert again.password_edit.text() == ""
+    assert again.pages_edit.text() == ""
+    again.close()
+
+
+def test_stale_stored_value_is_ignored(qapp, settings_file):
+    """An AI mode saved by an older version (hancom-ai) must not break startup."""
+    gui.app_settings().setValue("options/hybrid", "hancom-ai")
+    gui.app_settings().setValue("options/image_dpi", "not a number")
+
+    w = gui.MainWindow()
+
+    assert w.hybrid.currentData() is None
+    assert w.image_dpi.value() == gui.IMAGE_DPI_DEFAULT
+    w.close()
+
+
+def test_output_folder_is_remembered(qapp, settings_file, tmp_path):
+    w = gui.MainWindow()
+    w.output_edit.setText(str(tmp_path))
+    w._remember_output_dir()
+    w.close()
+
+    assert gui.MainWindow().output_edit.text() == str(tmp_path)
+
+
+def test_theme_follows_system_until_chosen_by_hand(qapp, settings_file):
+    w = gui.MainWindow()
+    assert gui.app_settings().value("dark") is None
+    was = w.dark
+    w._toggle_theme()
+    w.close()
+
+    assert gui.MainWindow().dark is (not was)
