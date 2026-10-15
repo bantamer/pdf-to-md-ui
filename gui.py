@@ -529,8 +529,9 @@ def with_help(widget: QWidget, key: str) -> QWidget:
     row.setSpacing(4)
     row.addWidget(widget)
     row.addWidget(HelpMark(tr(key)))
-    row.addStretch()
-    box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+    # Only as wide as its contents: a block that grew took the spare room of
+    # its row, and the format after "Tagged PDF" drifted off to the right.
+    box.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
     return box
 
 
@@ -541,23 +542,37 @@ FIELD_WIDTH = 166
 LABEL_MAX_WIDTH = 116
 
 
-def settings_grid(rows: list, checks: list, labels: list[QLabel]) -> QGridLayout:
-    """Two even columns: label, box, (?) | label, box, (?).
+GRID_SPACING = 6
+GAP_WIDTH = 18
+
+
+def settings_grid(
+    rows: list, checks: list, labels: list[QLabel], check_grids: list[QGridLayout]
+) -> QVBoxLayout:
+    """Two even columns: label, box, (?) | label, box, (?), checkboxes below.
 
     `rows` holds pairs of (label key, widget, help key) - either may be None -
     or a bare widget that spans the whole width. `checks` are (checkbox, help
-    key) pairs laid out two to a line, each starting where the labels start.
-    The labels are collected so the window can give them all one width, which
-    lines Options and More options up with each other.
+    key) pairs, two to a line, in a grid of their own: a long checkbox text
+    then cannot push the boxes above out of line. The labels and the checkbox
+    grids are collected so the window can size them once the font is known
+    (MainWindow._align_labels), which lines Options and More options up.
     """
     grid = QGridLayout()
     grid.setContentsMargins(0, 0, 0, 0)
-    grid.setHorizontalSpacing(6)
+    grid.setHorizontalSpacing(GRID_SPACING)
     grid.setVerticalSpacing(8)
     # 0 label, 1 box, 2 (?), 3 gap between the halves, 4 label, 5 box, 6 (?)
-    grid.setColumnMinimumWidth(3, 16)
-    grid.setColumnStretch(3, 1)
+    # The gap stays fixed and spare width goes to the right: in a maximised
+    # window a stretching gap pushed the second column off to mid-screen.
+    grid.setColumnMinimumWidth(3, GAP_WIDTH)
     grid.setColumnStretch(7, 1)
+    # Qt leaves out the spacing next to an empty column - a spacer item counts
+    # as empty too - so a grid without a full-width row put its second half
+    # 6 px further left than one with. A blank widget keeps the column real.
+    gap = QWidget()
+    gap.setFixedSize(GAP_WIDTH, 1)
+    grid.addWidget(gap, 0, 3)
     row = 0
     for item in rows:
         if isinstance(item, QWidget):
@@ -577,9 +592,21 @@ def settings_grid(rows: list, checks: list, labels: list[QLabel]) -> QGridLayout
             grid.addWidget(widget, row, base + 1)
             grid.addWidget(HelpMark(tr(help_key)), row, base + 2)
         row += 1
+    boxes = QGridLayout()
+    boxes.setContentsMargins(0, 0, 0, 0)
+    boxes.setHorizontalSpacing(0)
+    boxes.setVerticalSpacing(8)
+    boxes.setColumnStretch(2, 1)
     for i, (box, help_key) in enumerate(checks):
-        grid.addWidget(with_help(box, help_key), row + i // 2, (i % 2) * 4, 1, 3)
-    return grid
+        boxes.addWidget(with_help(box, help_key), i // 2, i % 2, Qt.AlignmentFlag.AlignLeft)
+    check_grids.append(boxes)
+
+    outer = QVBoxLayout()
+    outer.setContentsMargins(0, 0, 0, 0)
+    outer.setSpacing(8)
+    outer.addLayout(grid)
+    outer.addLayout(boxes)
+    return outer
 
 
 def eye_icon(open_: bool) -> QIcon:
@@ -738,6 +765,7 @@ class MainWindow(QWidget):
         self._guide: GuideDialog | None = None
         self.favorites = load_favorites()
         self._form_labels: list[QLabel] = []
+        self._check_grids: list[QGridLayout] = []
         self._build_ui()
         # What every option looks like untouched - the "Reset" buttons go back
         # to this. Taken before the saved settings are applied on top.
@@ -808,7 +836,6 @@ class MainWindow(QWidget):
         root.setContentsMargins(22, 20, 22, 20)
         root.setSpacing(16)
         root.setMenuBar(self._menu_bar())
-        root.addLayout(self._header())
         root.addWidget(scroll, 1)
         root.addLayout(self._action_bar())
         self._sync_actions()
@@ -822,30 +849,6 @@ class MainWindow(QWidget):
             # policy minus the wheel.
             widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
-    def _header(self) -> QHBoxLayout:
-        title = QLabel(APP_NAME)
-        title.setObjectName("Title")
-        subtitle = QLabel(tr("app.subtitle"))
-        subtitle.setObjectName("Subtitle")
-
-        text = QVBoxLayout()
-        text.setSpacing(2)
-        text.addWidget(title)
-        text.addWidget(subtitle)
-
-        # Filled in by show_update() when a newer release turns up.
-        self.update_link = QLabel()
-        self.update_link.setObjectName("UpdateLink")
-        self.update_link.setTextFormat(Qt.TextFormat.RichText)
-        self.update_link.setOpenExternalLinks(True)
-        self.update_link.setToolTip(tr("update.link_tooltip"))
-        self.update_link.hide()
-
-        row = QHBoxLayout()
-        row.addLayout(text)
-        row.addStretch()
-        row.addWidget(self.update_link, 0, Qt.AlignmentFlag.AlignTop)
-        return row
 
     def _menu_bar(self) -> QMenuBar:
         """File, Settings and Help, the way a Windows program has them.
@@ -929,6 +932,16 @@ class MainWindow(QWidget):
         self.act_about = help_menu.addAction(
             tr("menu.about", app=APP_NAME), self._show_about
         )
+
+        # Filled in by show_update() when a newer release turns up; it sits
+        # at the right end of the menu bar, out of the way until then.
+        self.update_link = QLabel()
+        self.update_link.setObjectName("UpdateLink")
+        self.update_link.setTextFormat(Qt.TextFormat.RichText)
+        self.update_link.setOpenExternalLinks(True)
+        self.update_link.setToolTip(tr("update.link_tooltip"))
+        self.update_link.hide()
+        bar.setCornerWidget(self.update_link, Qt.Corner.TopRightCorner)
         return bar
 
     def _files_card(self) -> QFrame:
@@ -1029,6 +1042,7 @@ class MainWindow(QWidget):
                 (self.opt_plain_md, "plain_md.tooltip"),
             ],
             self._form_labels,
+            self._check_grids,
         )
 
         self.more_btn = QPushButton(tr("advanced.button") + "  ▾")
@@ -1119,6 +1133,7 @@ class MainWindow(QWidget):
                 (self.opt_strikethrough, "strikethrough.tooltip"),
             ],
             self._form_labels,
+            self._check_grids,
         )
         outer = QVBoxLayout(panel)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -1717,6 +1732,11 @@ class MainWindow(QWidget):
         width = min(LABEL_MAX_WIDTH, max(widths) + 2)
         for label in self._form_labels:
             label.setFixedWidth(width)
+        # The right-hand checkboxes start where the right-hand labels do:
+        # label, box, (?), the gap, and the spacing between those four.
+        half = width + FIELD_WIDTH + HelpMark.SIZE + GAP_WIDTH + 4 * GRID_SPACING
+        for grid in self._check_grids:
+            grid.setColumnMinimumWidth(0, half)
 
     def _sync_format_options(self, *_) -> None:
         """Grey out what the ticked formats would ignore."""

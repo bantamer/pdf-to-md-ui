@@ -461,3 +461,30 @@ def test_both_are_remembered_and_reset(qapp, settings_file):
 
     again.reset_main_btn.click()
     assert again.opt_page_sep.isChecked() and not again.opt_plain_md.isChecked()
+
+
+# -- two even columns ----------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("width", [760, 1900])
+def test_options_and_more_options_line_up(window, width):
+    """Same box size everywhere, and both sections' columns at the same x -
+    in a narrow window and in a maximised one."""
+    from PySide6.QtWidgets import QGridLayout
+
+    window.more_btn.setChecked(True)
+    window.resize(width, 900)
+    window.show()
+    QApplication.processEvents()
+    grids = [g for g in window.findChildren(QGridLayout) if g.columnCount() >= 8]
+    assert len(grids) == 2
+
+    starts = [[g.cellRect(0, c).x() for c in range(7)] for g in grids]
+    assert starts[0] == starts[1]
+    boxes = [window.image_mode, window.image_dpi, window.pages_edit, window.timeout_spin,
+             window.reading_order, window.table_method, window.image_format,
+             window.threads_spin, window.password_edit, window.hybrid,
+             window.space_ratio, window.hybrid_url]
+    assert {b.width() for b in boxes} == {gui.FIELD_WIDTH}
+    # The second half sits right after the first: spare width goes to the right.
+    assert starts[0][4] - (starts[0][2] + 18) <= 40

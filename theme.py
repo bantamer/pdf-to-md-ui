@@ -169,21 +169,11 @@ QDialog {{
 
 /* ---- Header ---- */
 
-QLabel#Title {{
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.2px;
-}}
-
-QLabel#Subtitle {{
-    font-size: 12px;
-    color: {p['text_muted']};
-}}
-
 QLabel#UpdateLink {{
     background: {p['accent_soft']};
-    border-radius: 12px;
-    padding: 4px 12px;
+    border-radius: 10px;
+    padding: 2px 10px;
+    margin: 3px 4px;
     font-weight: 600;
 }}
 

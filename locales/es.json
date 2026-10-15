@@ -1,6 +1,4 @@
 {
-  "app.subtitle": "Extracción de texto estructurado de PDF · opendataloader-pdf",
-
   "menu.file": "&Archivo",
   "menu.add_files": "Añadir archivos…",
   "menu.add_folder": "Añadir carpeta…",

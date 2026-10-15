@@ -1,6 +1,4 @@
 {
-  "app.subtitle": "Извлечение структурированного текста из PDF · opendataloader-pdf",
-
   "menu.file": "&Файл",
   "menu.add_files": "Добавить файлы…",
   "menu.add_folder": "Добавить папку…",
