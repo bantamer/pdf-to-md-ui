@@ -326,6 +326,73 @@ QPushButton#Ghost:hover {{
     background: {p['surface_alt']};
 }}
 
+/* "Reset" at the end of a section caption: there, not shouting. */
+QPushButton#Small {{
+    background: transparent;
+    border: 1px solid {p['border']};
+    border-radius: 6px;
+    color: {p['text_muted']};
+    padding: 3px 10px;
+    font-size: 12px;
+}}
+
+QPushButton#Small:hover {{
+    color: {p['accent']};
+    border-color: {p['accent']};
+}}
+
+/* A saved destination: the whole row is the button. */
+QPushButton#Favorite {{
+    text-align: left;
+    padding: 7px 12px;
+    font-weight: 400;
+}}
+
+QPushButton#Favorite[current="true"] {{
+    background: {p['accent_soft']};
+    border-color: {p['accent']};
+    color: {p['accent']};
+    font-weight: 600;
+}}
+
+QPushButton#FavoriteRemove {{
+    background: transparent;
+    border: 1px solid transparent;
+    color: {p['text_muted']};
+    padding: 6px 10px;
+}}
+
+QPushButton#FavoriteRemove:hover {{
+    color: {p['danger']};
+    border-color: {p['danger']};
+}}
+
+/* ---- Help marks ---- */
+
+QLabel#HelpMark {{
+    border: 1.5px solid {p['text_muted']};
+    border-radius: 9px;
+    color: {p['text_muted']};
+    font-size: 11px;
+    font-weight: 700;
+    padding: 0;
+}}
+
+QLabel#HelpMark:hover {{
+    border-color: {p['accent']};
+    color: {p['accent']};
+}}
+
+/* ---- User guide ---- */
+
+QTextBrowser#GuideText {{
+    background: {p['surface']};
+    border: 1px solid {p['border']};
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+}}
+
 /* ---- Inputs ---- */
 
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{

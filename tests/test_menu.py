@@ -98,16 +98,23 @@ def test_theme_modes(window, settings_file):
     assert window.dark == gui._system_prefers_dark()
 
 
-def test_log_menu_and_button_stay_in_step(window):
+def test_log_from_the_menu(window):
     window.act_show_log.trigger()
-    assert window.log_btn.isChecked() and not window.log_card.isHidden()
+    assert not window.log_card.isHidden()
 
     height = window.height()
     window._toggle_log(True)  # already shown: nothing to do
     assert window.height() == height
 
-    window.log_btn.click()
-    assert not window.act_show_log.isChecked() and window.log_card.isHidden()
+    window.act_show_log.trigger()
+    assert window.log_card.isHidden()
+
+
+def test_no_log_button_in_the_way(window):
+    """The log is reached from the menu, or from "Details" after a problem."""
+    texts = [b.text() for b in window.findChildren(gui.QPushButton)]
+    assert gui.tr("log.section") not in texts
+    assert not window.details_link.isVisibleTo(window)
 
 
 def test_reset_forgets_settings_but_keeps_files(qapp, settings_file, tmp_path):
@@ -140,18 +147,29 @@ def test_reset_forgets_settings_but_keeps_files(qapp, settings_file, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "lang, readme", [("ru", "README.ru.md"), ("en", "README.md"), ("pl", "README.md")]
+    "lang, heading",
+    [("ru", "Инструкция: PDF → Markdown"), ("en", "User guide: PDF → Markdown"),
+     ("pl", "User guide: PDF → Markdown")],
 )
-def test_user_guide_opens_the_readme_in_the_right_language(
-    window, monkeypatch, lang, readme
-):
+def test_user_guide_opens_in_the_program(window, monkeypatch, lang, heading):
+    """F1 shows the bundled guide - offline, Russian or English."""
     opened = []
     monkeypatch.setattr(gui.QDesktopServices, "openUrl", lambda url: opened.append(url))
     monkeypatch.setattr(i18n, "_current", lang)
 
     window.act_guide.trigger()
 
-    assert opened == [QUrl(f"{gui.REPO_URL}/blob/main/{readme}")]
+    assert opened == [], "the guide must not need a browser"
+    assert window._guide.isVisible()
+    assert window._guide.browser.toPlainText().startswith(heading)
+
+
+def test_user_guide_is_one_window(window):
+    window.act_guide.trigger()
+    first = window._guide
+    window.act_guide.trigger()
+
+    assert window._guide is first
 
 
 def test_about_names_version_licence_and_authors(window):

@@ -26,6 +26,9 @@
   "menu.about": "O programie {app}",
 
   "reset.confirm": "Przywrócić wszystkie ustawienia — formaty, opcje, folder wyników, motyw i język — do wartości domyślnych?\n\nLista plików pozostanie.",
+  "reset.defaults": "Resetuj",
+  "reset.main_tooltip": "Przywróć domyślne formaty wyjściowe i opcje",
+  "reset.advanced_tooltip": "Przywróć domyślne opcje zaawansowane",
 
   "about.title": "O programie {app}",
   "about.version": "Wersja {version}",
@@ -33,6 +36,8 @@
   "about.license": "Wolne oprogramowanie na licencji GNU General Public License v3. Dostarczane bez jakiejkolwiek gwarancji.",
   "about.third_party": "Komponenty zewnętrzne",
   "about.source": "Kod źródłowy",
+
+  "guide.title": "Instrukcja",
 
   "update.available": "Dostępna jest wersja {version}",
   "update.link_tooltip": "Otwórz stronę pobierania",
@@ -45,6 +50,11 @@
   "files.add_files": "Dodaj pliki",
   "files.add_folder": "Dodaj folder",
   "files.clear": "Wyczyść",
+  "files.remove": "Usuń",
+  "files.remove_tooltip": "Usuń zaznaczone pliki z listy (klawisz Delete). Nic nie jest usuwane z dysku.",
+  "files.menu_remove": "Usuń z listy",
+  "files.menu_open_result": "Otwórz wynik",
+  "files.menu_show": "Pokaż w Eksploratorze",
 
   "list.ok": "Skonwertowano",
   "list.degraded": "Skonwertowano bez obrazów (zabrakło czasu)",
@@ -58,6 +68,14 @@
   "output.browse": "Przeglądaj…",
   "output.hint": "Folder zostanie zapamiętany i podstawiony przy następnym uruchomieniu. Wyczyść pole, a wyniki znów będą trafiać obok plików źródłowych.",
 
+  "favorites.button": "Ulubione foldery ({count})",
+  "favorites.add": "Dodaj bieżący folder",
+  "favorites.add_tooltip": "Zapamiętaj folder z pola powyżej, aby wybierać go jednym kliknięciem",
+  "favorites.remove": "Usuń z ulubionych (sam folder zostaje)",
+  "favorites.use": "Zapisuj wyniki w {path}",
+  "favorites.empty": "Możesz tu trzymać do 5 folderów na wyniki: wybierz folder powyżej i naciśnij „Dodaj bieżący folder”.",
+  "favorites.full": "Jest już {max} folderów — usuń jeden, aby dodać nowy.",
+
   "formats.section": "Formaty wyjściowe",
 
   "format.markdown": "Markdown",
@@ -66,8 +84,8 @@
   "format.text": "Tekst",
   "format.tagged_pdf": "PDF z tagami",
   "format.pdf": "PDF z adnotacjami",
-  "format.tagged_pdf_tooltip": "Oryginalny PDF z dodanymi tagami struktury.",
-  "format.pdf_tooltip": "Kopia oryginalnego PDF z zaznaczonymi wszystkimi rozpoznanymi elementami:\nkomórkami tabel i ich granicami, blokami tekstu, nagłówkami.\nNie zawiera tekstu — pokazuje, dlaczego tabela wyszła źle.\nPlik nazwa_annotated.pdf; prawie nie wydłuża pracy.",
+  "format.tagged_pdf_tooltip": "Kopia źródłowego PDF z dodanymi znacznikami struktury: nagłówki, akapity, listy, tabele.\n\nStrony wyglądają tak samo, ale czytniki ekranu i inne programy odczytują dokument we właściwej kolejności.",
+  "format.pdf_tooltip": "Kopia źródłowego PDF, na której stronach narysowano wszystko, co rozpoznał konwerter: komórki tabel z obramowaniem, bloki tekstu, nagłówki.\n\nNie zawiera własnego tekstu — pokazuje, dlaczego tabela wyszła źle. Plik nazwa_annotated.pdf; prawie nie wpływa na szybkość.",
 
   "options.section": "Opcje",
 
@@ -75,64 +93,71 @@
   "images.external": "Zapisuj jako osobne pliki",
   "images.embedded": "Osadź w dokumencie",
   "images.off": "Nie zapisuj",
-  "images.tooltip": "Osobne pliki — PNG obok dokumentu, w tekście odnośniki do nich.\nOsadzenie — obrazy wewnątrz .md jako Base64: jeden samodzielny\nplik, ale kilka razy większy.\nNie zapisuj — tylko tekst i tabele.",
+  "images.tooltip": "Zapisuj jako osobne pliki — obrazy PNG lub JPEG obok dokumentu, w tekście odnośniki do nich.\n\nOsadź w dokumencie — obrazy wewnątrz pliku .md jako Base64: jeden samodzielny plik, ale kilka razy większy.\n\nNie zapisuj — tylko tekst i tabele; najszybciej.",
   "images.hint": "Wyodrębnianie obrazów to najcięższa część pracy: każda ilustracja jest renderowana od nowa. Przy zwykłych dokumentach różnicy nie widać, ale noty katalogowe mają dziesiątki stron wykresów i ich konwersja może trwać minuty.",
 
   "dpi.label": "Rozdzielczość:",
-  "dpi.tooltip": "Rozdzielczość renderowania obrazów. Niższa — mniej pamięci i szybciej,\nale mniej szczegółów. 144 to wartość domyślna; 96 zwykle wystarcza.",
+  "dpi.tooltip": "Jak ostre będą obrazy. Mniej — szybciej i mniej pamięci, ale obrazy są grubsze.\n\n144 to wartość domyślna; do wykresów w kartach katalogowych zwykle wystarcza 96. Ma znaczenie tylko przy zapisywaniu obrazów.",
 
   "pages.label": "Strony:",
   "pages.placeholder": "wszystkie",
-  "pages.tooltip": "Na przykład 1,3,5-7. Przydatne przy notach katalogowych: weź opis i tabele\nparametrów, pomijając dziesiątki stron wykresów.",
+  "pages.tooltip": "Które strony konwertować, np. 1,3,5-7. Puste — wszystkie.\n\nW kartach katalogowych opłaca się wziąć opis i tabele parametrów (np. 1-12) i pominąć dziesiątki stron wykresów.",
 
   "timeout.label": "Limit czasu na plik:",
   "timeout.suffix": " s",
   "timeout.none": "bez limitu",
-  "timeout.tooltip": "Plik, który nie zmieści się w limicie, zostanie powtórzony bez obrazów,\na dopiero potem oznaczony jako nieudany.",
+  "timeout.tooltip": "Ile czasu może zająć jeden plik. Plik, który się nie zmieści, jest próbowany jeszcze raz bez obrazów i dopiero potem oznaczany jako nieskonwertowany; reszta plików jest przetwarzana dalej.\n\n0 — bez limitu.",
 
   "struct.label": "Użyj tagów z PDF",
-  "struct.tooltip": "Czytaj wbudowaną strukturę dokumentu zamiast analizować układ strony.\nDokładniej — ale tylko dla PDF, które naprawdę mają tagi.",
+  "struct.tooltip": "Niektóre pliki PDF mają znaczniki opisujące strukturę: nagłówki, listy, tabele. Z tą opcją konwerter korzysta ze znaczników zamiast odtwarzać układ ze strony.\n\nDokładniej, gdy znaczniki są dobre, gorzej, gdy niestaranne. PDF bez znaczników są konwertowane jak zwykle.",
 
   "sanitize.label": "Ukryj dane wrażliwe",
+  "sanitize.tooltip": "Zastępuje w wyniku adresy e-mail, numery telefonów, adresy IP, numery kart i linki symbolami zastępczymi.\n\nPrzydatne przed udostępnieniem tekstu. Źródłowy PDF się nie zmienia.",
 
   "advanced.button": "Więcej opcji",
 
   "reading_order.label": "Kolejność czytania:",
   "reading_order.off": "wyłączona",
-  "reading_order.tooltip": "Rozwiązanie zapasowe dla stron, na których podział rekurencyjny zawodzi.",
+  "reading_order.tooltip": "W jakiej kolejności czytane są bloki tekstu na stronie.\n\nxycut (domyślnie) dzieli stronę na kolumny i wiersze — pasuje do większości dokumentów. „wyłączona” zachowuje kolejność, w jakiej tekst zapisano w PDF; spróbuj, gdy strona o nietypowym układzie wychodzi pomieszana.",
 
   "tables.label": "Tabele:",
   "tables.default": "według linii",
   "tables.cluster": "według klastrów",
-  "tables.tooltip": "Wielu producentów rysuje tabele z niepełnymi liniami —\ntryb klastrów składa je lepiej.",
+  "tables.tooltip": "Jak wyszukiwać tabele.\n\nWedług linii — z linii narysowanych między komórkami; domyślnie.\n\nWedług klastrów — dodatkowo grupuje tekst w komórki według położenia. Pomaga przy tabelach, w których narysowano tylko część linii, co w kartach katalogowych zdarza się często.",
 
   "image_format.label": "Format obrazów:",
+  "image_format.tooltip": "Typ plików obrazów. PNG zachowuje ostrość wykresów i schematów, JPEG zmniejsza zdjęcia.\n\nMa znaczenie tylko przy zapisywaniu obrazów.",
 
   "threads.label": "Wątki:",
-  "threads.tooltip": "Więcej niż jeden — strony przetwarzane równolegle (szybciej,\nale wynik dla niektórych PDF może się nieco różnić).",
+  "threads.tooltip": "Ile rdzeni procesora jednocześnie przetwarza strony jednego pliku. Same pliki nadal są konwertowane po kolei.\n\n1 to wartość domyślna i najpewniejsza. Więcej to tryb eksperymentalny: wynik może się nieco różnić dla niektórych PDF, a na prawdziwych kartach katalogowych oszczędzało to tylko 5–10% czasu. W trybie AI nie jest używane.",
 
   "space_ratio.label": "Próg spacji:",
-  "space_ratio.tooltip": "Kiedy wstawiać spację, jako ułamek rozmiaru czcionki. Jeśli odstęp między\nsąsiednimi znakami jest większy, wstawiana jest spacja.\nNiższy rozdziela słowa, wyższy je skleja.",
+  "space_ratio.tooltip": "Kiedy wstawiać spację między sąsiednimi literami: gdy odstęp jest większy niż ta część rozmiaru czcionki.\n\nMniej — słowa zaczynają się rozpadać, więcej — sklejają się. 0,17 to wartość domyślna; zmieniaj tylko wtedy, gdy słowa w wyniku są porozrywane lub sklejone.",
 
   "password.label": "Hasło PDF:",
   "password.placeholder": "dla zaszyfrowanych PDF",
+  "password.show": "Pokaż hasło",
+  "password.hide": "Ukryj hasło",
+  "password.tooltip": "Potrzebne tylko dla plików PDF, które przy otwieraniu pytają o hasło. Używane tylko w tym uruchomieniu i nigdzie nie zapisywane.\n\nPrzycisk z okiem pokazuje wpisany tekst.",
 
   "line_breaks.label": "Zachowaj podziały wierszy",
+  "line_breaks.tooltip": "Zachowuje podziały wierszy dokładnie jak na stronie.\n\nBez zaznaczenia wiersze akapitu łączą się w jeden — wygodniej się czyta i wyszukuje.",
 
   "header_footer.label": "Uwzględnij nagłówki i stopki",
+  "header_footer.tooltip": "Uwzględnia nagłówki i stopki: numery stron, tytuł dokumentu, nazwę firmy powtarzane na każdej stronie.\n\nBez zaznaczenia są pomijane, żeby nie przerywały tekstu.",
 
   "strikethrough.label": "Oznaczaj przekreślony tekst",
+  "strikethrough.tooltip": "Oznacza przekreślony tekst: ~~w ten sposób~~ w Markdown, <del> w HTML. Funkcja eksperymentalna.",
 
   "hybrid.label": "Tryb AI:",
   "hybrid.off": "Wyłączony",
+  "hybrid.tooltip": "Wysyła trudne strony — złożone tabele, skany — do osobnego serwera AI (docling), który lepiej je rozpoznaje; reszta jest konwertowana jak zwykle.\n\nSerwer instaluje się i uruchamia osobno: pip install \"opendataloader-pdf[hybrid]\", potem opendataloader-pdf-hybrid --port 5002. Jeśli nie odpowiada, program powie o tym przed rozpoczęciem pracy.",
 
   "hybrid_url.label": "Adres serwera:",
-
-  "hybrid.hint": "Tryb AI wymaga osobno zainstalowanego i uruchomionego serwera (pip install \"opendataloader-pdf[hybrid]\", następnie opendataloader-pdf-hybrid --port 5002). Jeśli serwer nie odpowiada, program powie o tym przed rozpoczęciem.",
+  "hybrid_url.tooltip": "Adres serwera AI. Zostaw puste dla serwera na tym komputerze (http://localhost:5002); wypełnij tylko wtedy, gdy serwer działa gdzie indziej.",
 
   "log.section": "Dziennik",
   "log.placeholder": "Tutaj pojawi się przebieg pracy.",
-  "log.button": "Dziennik",
 
   "status.empty": "Dodaj co najmniej jeden PDF.",
   "status.ready": "Gotowe do pracy: {count} szt.",
@@ -140,6 +165,7 @@
   "status.stopping": "Zatrzymuję…",
   "status.file_of": "Plik {index} z {total}",
   "status.progress": "{prefix}{name} · {seconds} s",
+  "status.details": "Szczegóły",
 
   "action.open_output": "Otwórz folder wyników",
   "action.cancel": "Anuluj",

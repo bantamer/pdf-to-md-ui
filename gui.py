@@ -7,6 +7,8 @@ in converter.py; this module is the window around it.
 
 from __future__ import annotations
 
+import html
+import json
 import os
 import subprocess
 import sys
@@ -14,6 +16,7 @@ from pathlib import Path
 
 from PySide6.QtCore import (
     QElapsedTimer,
+    QPoint,
     QPointF,
     qVersion,
     QEvent,
@@ -29,6 +32,7 @@ from PySide6.QtGui import (
     QActionGroup,
     QColor,
     QDesktopServices,
+    QFontMetrics,
     QGuiApplication,
     QIcon,
     QKeySequence,
@@ -38,6 +42,7 @@ from PySide6.QtGui import (
     QShortcut,
 )
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QAbstractScrollArea,
     QAbstractSpinBox,
     QApplication,
@@ -54,6 +59,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QMenuBar,
     QMessageBox,
     QPlainTextEdit,
@@ -62,6 +68,8 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSpinBox,
+    QTextBrowser,
+    QToolTip,
     QVBoxLayout,
     QWidget,
 )
@@ -103,10 +111,13 @@ FORMATS = [
     ("tagged-pdf", "format.tagged_pdf"),
     ("pdf", "format.pdf"),
 ]
-FORMAT_TOOLTIPS = {
+# Formats whose name alone does not say what the file is.
+FORMAT_HELP = {
     "tagged-pdf": "format.tagged_pdf_tooltip",
     "pdf": "format.pdf_tooltip",
 }
+# Saved destinations under "Where to save".
+FAVORITES_MAX = 5
 
 
 def resource(name: str) -> Path:
@@ -209,6 +220,38 @@ def set_widget_value(widget: QWidget, value) -> None:
             widget.setText(str(value))
     except (TypeError, ValueError):
         pass
+
+
+def load_favorites() -> list[str]:
+    """The saved destinations. Kept as JSON: the registry hands a one-item
+    list back as a bare string."""
+    try:
+        value = json.loads(app_settings().value("favorite_dirs", "[]", str) or "[]")
+    except ValueError:
+        return []
+    if not isinstance(value, list):
+        return []
+    return [str(p) for p in value if isinstance(p, str) and p][:FAVORITES_MAX]
+
+
+def save_favorites(paths: list[str]) -> None:
+    app_settings().setValue("favorite_dirs", json.dumps(paths[:FAVORITES_MAX], ensure_ascii=False))
+
+
+def _folder_key(path: str) -> str:
+    """Comparable form of a folder path: case, slashes and a trailing \\ aside."""
+    path = path.strip()
+    return os.path.normcase(os.path.abspath(path)) if path else ""
+
+
+def show_in_explorer(path: str) -> None:
+    """Open the folder holding `path` with `path` selected (Windows), or the
+    folder itself elsewhere."""
+    if os.name == "nt":
+        subprocess.Popen(["explorer", "/select,", os.path.normpath(path)])
+    else:
+        folder = path if os.path.isdir(path) else os.path.dirname(path)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(folder))
 
 
 def startup_paths(arguments: list[str]) -> list[str]:
@@ -335,6 +378,96 @@ def hint(text: str) -> QLabel:
     return label
 
 
+def help_html(text: str) -> str:
+    """Help text for a tooltip: one paragraph per blank-line-separated block.
+
+    Rich text is what makes Qt wrap a tooltip; plain text runs off as one
+    line as wide as the screen.
+    """
+    return "".join(f"<p>{html.escape(part)}</p>" for part in text.split("\n\n"))
+
+
+class HelpMark(QLabel):
+    """The (?) after a setting: pointing at it explains the setting.
+
+    The explanation opens at once, without the usual tooltip delay, and a
+    click opens it too - on a touchpad that is easier than hovering.
+    """
+
+    def __init__(self, text: str):
+        super().__init__("?")
+        self.setObjectName("HelpMark")
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setFixedSize(18, 18)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        self.setCursor(Qt.CursorShape.WhatsThisCursor)
+        self.setToolTip(help_html(text))
+        self.setAccessibleDescription(text)
+
+    def show_help(self) -> None:
+        QToolTip.showText(
+            self.mapToGlobal(QPoint(0, self.height() + 4)), self.toolTip(), self
+        )
+
+    def enterEvent(self, event):
+        self.show_help()
+        super().enterEvent(event)
+
+    def mousePressEvent(self, event):
+        self.show_help()
+
+
+def with_help(widget: QWidget, key: str) -> QWidget:
+    """The widget followed by its (?)."""
+    box = QWidget()
+    row = QHBoxLayout(box)
+    row.setContentsMargins(0, 0, 0, 0)
+    row.setSpacing(4)
+    row.addWidget(widget)
+    row.addWidget(HelpMark(tr(key)))
+    row.addStretch()
+    box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+    return box
+
+
+def eye_icon(open_: bool) -> QIcon:
+    """The password field's show/hide button: an eye, struck through or not."""
+    size = 32
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    pen = QPen(QColor("#8a909c"), 2.4)
+    painter.setPen(pen)
+    # Almond outline from two arcs, then the pupil.
+    painter.drawArc(4, 8, 24, 20, 30 * 16, 120 * 16)
+    painter.drawArc(4, 4, 24, 20, 210 * 16, 120 * 16)
+    painter.setBrush(QColor("#8a909c"))
+    painter.drawEllipse(QPointF(16, 16), 3.6, 3.6)
+    if not open_:
+        painter.drawLine(QPointF(6, 26), QPointF(26, 6))
+    painter.end()
+    return QIcon(pixmap)
+
+
+def section_row(text: str, *widgets: QWidget) -> QHBoxLayout:
+    """A section caption with controls at the right end of the same line."""
+    row = QHBoxLayout()
+    row.setContentsMargins(0, 0, 0, 0)
+    row.addWidget(section(text))
+    row.addStretch()
+    for widget in widgets:
+        row.addWidget(widget)
+    return row
+
+
+def reset_button(tooltip_key: str) -> QPushButton:
+    button = QPushButton(tr("reset.defaults"))
+    button.setObjectName("Small")
+    button.setToolTip(tr(tooltip_key))
+    return button
+
+
 def field_row(*pairs, spacing: int = 10) -> QHBoxLayout:
     """A row of (label, widget) pairs; a bare widget is added as-is."""
     row = QHBoxLayout()
@@ -388,6 +521,40 @@ class AboutDialog(QDialog):
         self.setMinimumWidth(420)
 
 
+class GuideDialog(QDialog):
+    """Help → User guide (F1): the guide that ships with the program.
+
+    Bundled rather than a link to GitHub, so it opens offline and matches the
+    version installed. Russian or English; the other languages get English.
+    """
+
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setObjectName("Guide")
+        self.setWindowTitle(tr("guide.title"))
+        language = "ru" if i18n.current() == "ru" else "en"
+        accent = (theme.DARK if getattr(parent, "dark", False) else theme.LIGHT)["accent"]
+
+        self.browser = QTextBrowser()
+        self.browser.setObjectName("GuideText")
+        self.browser.setOpenExternalLinks(True)
+        self.browser.document().setDefaultStyleSheet(f"a {{ color: {accent}; }}")
+        try:
+            text = resource(f"docs/guide.{language}.md").read_text(encoding="utf-8")
+        except OSError:
+            text = f"[{REPO_URL}]({REPO_URL})"
+        self.browser.setMarkdown(text)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.close)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 12)
+        layout.addWidget(self.browser, 1)
+        layout.addWidget(buttons)
+        self.resize(700, 760)
+
+
 # --------------------------------------------------------------------------- #
 # Main window
 # --------------------------------------------------------------------------- #
@@ -431,7 +598,15 @@ class MainWindow(QWidget):
         self.tick.timeout.connect(self._update_elapsed)
 
         self.update_release: dict | None = None
+        self._guide: GuideDialog | None = None
+        self.favorites = load_favorites()
         self._build_ui()
+        # What every option looks like untouched - the "Reset" buttons go back
+        # to this. Taken before the saved settings are applied on top.
+        self._defaults = {
+            widget: widget_value(widget)
+            for widget in self._main_option_widgets() + self._advanced_widgets()
+        }
         self._restore_settings()
         self._apply_theme()
         # "As in Windows" keeps following Windows while the program is open.
@@ -479,6 +654,7 @@ class MainWindow(QWidget):
         self.body_layout.addStretch()
 
         scroll = QScrollArea()
+        self.scroll = scroll
         scroll.setObjectName("Scroll")
         scroll.setWidget(body)
         scroll.setWidgetResizable(True)
@@ -624,11 +800,22 @@ class MainWindow(QWidget):
         self.file_list.setVisible(False)
         self.file_list.itemDoubleClicked.connect(self._open_result)
         self.file_list.setMaximumHeight(150)
+        # Pick one or several (Ctrl, Shift) and take them off with Delete, the
+        # "Remove" button or the right-click menu - without starting over.
+        self.file_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.file_list.itemSelectionChanged.connect(self._sync_actions)
+        self.file_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.file_list.customContextMenuRequested.connect(self._file_menu)
+        self.file_list.installEventFilter(self)
 
         add_btn = QPushButton(tr("files.add_files"))
         add_btn.clicked.connect(self.pick_files)
         add_folder_btn = QPushButton(tr("files.add_folder"))
         add_folder_btn.clicked.connect(self.pick_folder)
+        self.remove_btn = QPushButton(tr("files.remove"))
+        self.remove_btn.setToolTip(tr("files.remove_tooltip"))
+        self.remove_btn.clicked.connect(self.remove_selected)
+        self.remove_btn.setVisible(False)
         self.clear_btn = QPushButton(tr("files.clear"))
         self.clear_btn.setObjectName("Danger")
         self.clear_btn.clicked.connect(self.clear_inputs)
@@ -639,6 +826,7 @@ class MainWindow(QWidget):
         buttons.addWidget(add_btn)
         buttons.addWidget(add_folder_btn)
         buttons.addStretch()
+        buttons.addWidget(self.remove_btn)
         buttons.addWidget(self.clear_btn)
 
         return card(section(tr("files.section")), self.drop, self.file_list, buttons)
@@ -646,14 +834,12 @@ class MainWindow(QWidget):
     def _options_card(self) -> QFrame:
         self.format_boxes: dict[str, QCheckBox] = {}
         formats = QHBoxLayout()
-        formats.setSpacing(14)
+        formats.setSpacing(12)
         for key, label in FORMATS:
             box = QCheckBox(tr(label))
             box.setChecked(key == "markdown")
-            if key in FORMAT_TOOLTIPS:
-                box.setToolTip(tr(FORMAT_TOOLTIPS[key]))
             self.format_boxes[key] = box
-            formats.addWidget(box)
+            formats.addWidget(with_help(box, FORMAT_HELP[key]) if key in FORMAT_HELP else box)
         formats.addStretch()
 
         # -- images: the single setting that decides how long a datasheet takes
@@ -661,8 +847,7 @@ class MainWindow(QWidget):
         self.image_mode.addItem(tr("images.external"), "external")
         self.image_mode.addItem(tr("images.embedded"), "embedded")
         self.image_mode.addItem(tr("images.off"), "off")
-        self.image_mode.setFixedWidth(280)
-        self.image_mode.setToolTip(tr("images.tooltip"))
+        self.image_mode.setFixedWidth(256)
         self.image_mode.currentIndexChanged.connect(self._toggle_image_dpi)
 
         # Worth trying before turning images off entirely: 96 DPI keeps the
@@ -672,12 +857,10 @@ class MainWindow(QWidget):
         self.image_dpi.setValue(IMAGE_DPI_DEFAULT)
         self.image_dpi.setSuffix(" DPI")
         self.image_dpi.setFixedWidth(130)
-        self.image_dpi.setToolTip(tr("dpi.tooltip"))
 
         self.pages_edit = QLineEdit()
         self.pages_edit.setPlaceholderText(tr("pages.placeholder"))
         self.pages_edit.setFixedWidth(140)
-        self.pages_edit.setToolTip(tr("pages.tooltip"))
 
         self.timeout_spin = QSpinBox()
         self.timeout_spin.setRange(0, 36000)
@@ -685,18 +868,16 @@ class MainWindow(QWidget):
         self.timeout_spin.setSuffix(tr("timeout.suffix"))
         self.timeout_spin.setSpecialValueText(tr("timeout.none"))
         self.timeout_spin.setFixedWidth(150)
-        self.timeout_spin.setToolTip(tr("timeout.tooltip"))
 
         self.opt_struct = QCheckBox(tr("struct.label"))
-        self.opt_struct.setToolTip(tr("struct.tooltip"))
         self.opt_sanitize = QCheckBox(tr("sanitize.label"))
 
         grid = QGridLayout()
         grid.setHorizontalSpacing(24)
         grid.setVerticalSpacing(6)
         grid.setContentsMargins(0, 0, 0, 0)
-        grid.addWidget(self.opt_struct, 0, 0)
-        grid.addWidget(self.opt_sanitize, 0, 1)
+        grid.addWidget(with_help(self.opt_struct, "struct.tooltip"), 0, 0)
+        grid.addWidget(with_help(self.opt_sanitize, "sanitize.tooltip"), 0, 1)
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
 
@@ -708,18 +889,23 @@ class MainWindow(QWidget):
         more_row.addWidget(self.more_btn)
         more_row.addStretch()
 
+        self.reset_main_btn = reset_button("reset.main_tooltip")
+        self.reset_main_btn.clicked.connect(
+            lambda: self._reset_options(self._main_option_widgets())
+        )
+
         return card(
-            section(tr("formats.section")),
+            section_row(tr("formats.section"), self.reset_main_btn),
             formats,
             section(tr("options.section")),
             field_row(
-                (tr("images.label"), self.image_mode),
-                (tr("dpi.label"), self.image_dpi),
+                (tr("images.label"), with_help(self.image_mode, "images.tooltip")),
+                (tr("dpi.label"), with_help(self.image_dpi, "dpi.tooltip")),
             ),
             hint(tr("images.hint")),
             field_row(
-                (tr("pages.label"), self.pages_edit),
-                (tr("timeout.label"), self.timeout_spin),
+                (tr("pages.label"), with_help(self.pages_edit, "pages.tooltip")),
+                (tr("timeout.label"), with_help(self.timeout_spin, "timeout.tooltip")),
             ),
             grid,
             more_row,
@@ -735,13 +921,11 @@ class MainWindow(QWidget):
         self.reading_order.addItem("xycut", "xycut")
         self.reading_order.addItem(tr("reading_order.off"), "off")
         self.reading_order.setMinimumWidth(120)
-        self.reading_order.setToolTip(tr("reading_order.tooltip"))
 
         self.table_method = QComboBox()
         self.table_method.addItem(tr("tables.default"), "default")
         self.table_method.addItem(tr("tables.cluster"), "cluster")
         self.table_method.setMinimumWidth(120)
-        self.table_method.setToolTip(tr("tables.tooltip"))
 
         self.image_format = QComboBox()
         self.image_format.addItem("PNG", "png")
@@ -752,7 +936,6 @@ class MainWindow(QWidget):
         self.threads_spin.setRange(1, max(1, os.cpu_count() or 1))
         self.threads_spin.setValue(1)
         self.threads_spin.setMinimumWidth(120)
-        self.threads_spin.setToolTip(tr("threads.tooltip"))
 
         self.space_ratio = QDoubleSpinBox()
         self.space_ratio.setRange(0.01, 1.00)
@@ -760,12 +943,16 @@ class MainWindow(QWidget):
         self.space_ratio.setDecimals(2)
         self.space_ratio.setValue(SPACE_RATIO_DEFAULT)
         self.space_ratio.setMinimumWidth(120)
-        self.space_ratio.setToolTip(tr("space_ratio.tooltip"))
 
         self.password_edit = QLineEdit()
         self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_edit.setPlaceholderText(tr("password.placeholder"))
         self.password_edit.setMinimumWidth(120)
+        self.password_eye = self.password_edit.addAction(
+            eye_icon(open_=True), QLineEdit.ActionPosition.TrailingPosition
+        )
+        self.password_eye.setToolTip(tr("password.show"))
+        self.password_eye.triggered.connect(self._toggle_password)
 
         self.opt_line_breaks = QCheckBox(tr("line_breaks.label"))
         self.opt_header_footer = QCheckBox(tr("header_footer.label"))
@@ -787,26 +974,25 @@ class MainWindow(QWidget):
         grid.setHorizontalSpacing(14)
         grid.setVerticalSpacing(8)
         rows = [
-            (tr("reading_order.label"), self.reading_order,
-             tr("tables.label"), self.table_method),
-            (tr("image_format.label"), self.image_format,
-             tr("threads.label"), self.threads_spin),
-            (tr("password.label"), self.password_edit,
-             tr("hybrid.label"), self.hybrid),
-            (tr("space_ratio.label"), self.space_ratio,
-             tr("hybrid_url.label"), self.hybrid_url),
+            (tr("reading_order.label"), self.reading_order, "reading_order.tooltip",
+             tr("tables.label"), self.table_method, "tables.tooltip"),
+            (tr("image_format.label"), self.image_format, "image_format.tooltip",
+             tr("threads.label"), self.threads_spin, "threads.tooltip"),
+            (tr("password.label"), self.password_edit, "password.tooltip",
+             tr("hybrid.label"), self.hybrid, "hybrid.tooltip"),
+            (tr("space_ratio.label"), self.space_ratio, "space_ratio.tooltip",
+             tr("hybrid_url.label"), self.hybrid_url, "hybrid_url.tooltip"),
         ]
-        for r, (l1, w1, l2, w2) in enumerate(rows):
-            if l1:
-                grid.addWidget(QLabel(l1), r, 0)
-                grid.addWidget(w1, r, 1)
+        for r, (l1, w1, h1, l2, w2, h2) in enumerate(rows):
+            grid.addWidget(QLabel(l1), r, 0)
+            grid.addWidget(with_help(w1, h1), r, 1)
             grid.addWidget(QLabel(l2), r, 2)
-            grid.addWidget(w2, r, 3)
+            grid.addWidget(with_help(w2, h2), r, 3)
         grid.setColumnStretch(4, 1)
 
         # Fields give way to long labels rather than push the card past the
         # window: French and Spanish labels run a good third longer.
-        for field in (w for row in rows for w in (row[1], row[3])):
+        for field in (w for row in rows for w in (row[1], row[4])):
             field.setMaximumWidth(200)
 
         # Two columns, like the checkboxes above: three in a row ran past the
@@ -814,28 +1000,35 @@ class MainWindow(QWidget):
         checks = QGridLayout()
         checks.setHorizontalSpacing(24)
         checks.setVerticalSpacing(6)
-        for i, box in enumerate(
-            (self.opt_line_breaks, self.opt_header_footer, self.opt_strikethrough)
+        for i, (box, key) in enumerate(
+            (
+                (self.opt_line_breaks, "line_breaks.tooltip"),
+                (self.opt_header_footer, "header_footer.tooltip"),
+                (self.opt_strikethrough, "strikethrough.tooltip"),
+            )
         ):
-            checks.addWidget(box, i // 2, i % 2)
+            checks.addWidget(with_help(box, key), i // 2, i % 2)
         checks.setColumnStretch(0, 1)
         checks.setColumnStretch(1, 1)
         grid.addLayout(checks, len(rows), 0, 1, 5)
 
-        grid.addWidget(
-            hint(tr("hybrid.hint")),
-            len(rows) + 1,
-            0,
-            1,
-            5,
+        self.reset_advanced_btn = reset_button("reset.advanced_tooltip")
+        self.reset_advanced_btn.clicked.connect(
+            lambda: self._reset_options(self._advanced_widgets())
         )
+        reset_row = QHBoxLayout()
+        reset_row.addStretch()
+        reset_row.addWidget(self.reset_advanced_btn)
+        grid.addLayout(reset_row, len(rows) + 1, 0, 1, 5)
         return panel
 
     def _output_card(self) -> QFrame:
         self.output_edit = QLineEdit()
         self.output_edit.setPlaceholderText(tr("output.placeholder"))
         self.output_edit.setText(app_settings().value("output_dir", "", str))
+        self.output_edit.setClearButtonEnabled(True)
         self.output_edit.editingFinished.connect(self._remember_output_dir)
+        self.output_edit.textChanged.connect(self._refresh_favorites)
         browse = QPushButton(tr("output.browse"))
         browse.clicked.connect(self.pick_output)
 
@@ -843,10 +1036,39 @@ class MainWindow(QWidget):
         row.setSpacing(8)
         row.addWidget(self.output_edit, 1)
         row.addWidget(browse)
+
+        # Favourite folders: folded away like "More options", since most
+        # people never need more than one destination.
+        self.fav_btn = QPushButton()
+        self.fav_btn.setObjectName("Ghost")
+        self.fav_btn.setCheckable(True)
+        self.fav_btn.toggled.connect(self._toggle_favorites)
+        fav_row = QHBoxLayout()
+        fav_row.addWidget(self.fav_btn)
+        fav_row.addStretch()
+
+        self.fav_panel = QWidget()
+        self.fav_panel.setVisible(False)
+        panel = QVBoxLayout(self.fav_panel)
+        panel.setContentsMargins(0, 0, 0, 0)
+        panel.setSpacing(6)
+        self.fav_rows = QVBoxLayout()
+        self.fav_rows.setSpacing(6)
+        panel.addLayout(self.fav_rows)
+        self.fav_add = QPushButton(tr("favorites.add"))
+        self.fav_add.clicked.connect(self.add_favorite)
+        add_row = QHBoxLayout()
+        add_row.addWidget(self.fav_add)
+        add_row.addStretch()
+        panel.addLayout(add_row)
+        self._refresh_favorites()
+
         return card(
             section(tr("output.section")),
             row,
             hint(tr("output.hint")),
+            fav_row,
+            self.fav_panel,
         )
 
     def _log_card(self) -> QFrame:
@@ -882,10 +1104,13 @@ class MainWindow(QWidget):
         self.open_btn.clicked.connect(self.open_output)
         self.open_btn.setVisible(False)
 
-        self.log_btn = QPushButton(tr("log.button"))
-        self.log_btn.setObjectName("Ghost")
-        self.log_btn.setCheckable(True)
-        self.log_btn.toggled.connect(self._toggle_log)
+        # The log is for when something went wrong, so that is when the way to
+        # it shows up; otherwise it waits in Settings → Show log.
+        self.details_link = QLabel()  # text set with the theme's accent
+        self.details_link.setObjectName("DetailsLink")
+        self.details_link.setTextFormat(Qt.TextFormat.RichText)
+        self.details_link.linkActivated.connect(lambda _: self._toggle_log(True))
+        self.details_link.setVisible(False)
 
         self.cancel_btn = QPushButton(tr("action.cancel"))
         self.cancel_btn.setObjectName("Danger")
@@ -898,8 +1123,9 @@ class MainWindow(QWidget):
         self.run_btn.clicked.connect(self.start)
 
         row = QHBoxLayout()
-        row.addWidget(self.status, 1)
-        row.addWidget(self.log_btn)
+        row.addWidget(self.status)
+        row.addWidget(self.details_link)
+        row.addStretch(1)
         row.addWidget(self.open_btn)
         row.addWidget(self.cancel_btn)
         row.addWidget(self.run_btn)
@@ -915,6 +1141,9 @@ class MainWindow(QWidget):
     def _apply_theme(self) -> None:
         palette = theme.DARK if self.dark else theme.LIGHT
         QApplication.instance().setStyleSheet(theme.build_qss(palette))
+        self.details_link.setText(
+            f"<a style='color:{palette['accent']}' href='#log'>{tr('status.details')}</a>"
+        )
         if self.update_release is not None:  # the link takes the accent colour
             self.show_update(self.update_release)
 
@@ -967,8 +1196,12 @@ class MainWindow(QWidget):
             self.resetRequested.emit()
 
     def _open_guide(self) -> None:
-        readme = "README.ru.md" if i18n.current() == "ru" else "README.md"
-        QDesktopServices.openUrl(QUrl(f"{REPO_URL}/blob/main/{readme}"))
+        # Not modal: the guide stays open next to the window while you work.
+        if self._guide is None:
+            self._guide = GuideDialog(self)
+        self._guide.show()
+        self._guide.raise_()
+        self._guide.activateWindow()
 
     def _show_about(self) -> None:
         AboutDialog(self).exec()
@@ -980,12 +1213,173 @@ class MainWindow(QWidget):
         self.act_convert.setEnabled(has_files and not busy)
         self.act_stop.setEnabled(busy)
         self.act_clear.setEnabled(has_files)
+        self.remove_btn.setEnabled(bool(self.file_list.selectedItems()) and not busy)
         self.act_open_output.setEnabled(
             bool(self.output_dir) and os.path.isdir(self.output_dir) and not busy
         )
         # A new window would lose the running conversion.
         self.language_menu.setEnabled(not busy)
         self.act_reset.setEnabled(not busy)
+
+    # -- defaults --------------------------------------------------------------- #
+
+    def _main_option_widgets(self) -> list[QWidget]:
+        """Output formats and the options under them."""
+        return [
+            *self.format_boxes.values(),
+            self.image_mode,
+            self.image_dpi,
+            self.pages_edit,
+            self.timeout_spin,
+            self.opt_struct,
+            self.opt_sanitize,
+        ]
+
+    def _advanced_widgets(self) -> list[QWidget]:
+        return [
+            self.reading_order,
+            self.table_method,
+            self.image_format,
+            self.threads_spin,
+            self.password_edit,
+            self.hybrid,
+            self.space_ratio,
+            self.hybrid_url,
+            self.opt_line_breaks,
+            self.opt_header_footer,
+            self.opt_strikethrough,
+        ]
+
+    def _reset_options(self, widgets: list[QWidget]) -> None:
+        for widget in widgets:
+            set_widget_value(widget, self._defaults[widget])
+
+    def _toggle_password(self) -> None:
+        hidden = self.password_edit.echoMode() == QLineEdit.EchoMode.Password
+        self.password_edit.setEchoMode(
+            QLineEdit.EchoMode.Normal if hidden else QLineEdit.EchoMode.Password
+        )
+        self.password_eye.setIcon(eye_icon(open_=not hidden))
+        self.password_eye.setToolTip(tr("password.hide" if hidden else "password.show"))
+
+    # -- favourite folders ------------------------------------------------------ #
+
+    def _toggle_favorites(self, shown: bool) -> None:
+        self.fav_panel.setVisible(shown)
+        self._refresh_favorites()
+
+    def _refresh_favorites(self, *_) -> None:
+        """Redraw the saved folders and the buttons around them."""
+        while self.fav_rows.count():
+            item = self.fav_rows.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                # Hidden at once: deleteLater alone left the old rows floating
+                # over the new ones until the next event loop pass.
+                widget.hide()
+                widget.deleteLater()
+
+        current = _folder_key(self.output_edit.text())
+        metrics = QFontMetrics(self.font())
+        for path in self.favorites:
+            row = QWidget()
+            line = QHBoxLayout(row)
+            line.setContentsMargins(0, 0, 0, 0)
+            line.setSpacing(6)
+            use = QPushButton(metrics.elidedText(path, Qt.TextElideMode.ElideMiddle, 520))
+            use.setObjectName("Favorite")
+            use.setProperty("current", _folder_key(path) == current)
+            use.setToolTip(tr("favorites.use", path=path))
+            use.clicked.connect(lambda _=False, p=path: self.use_favorite(p))
+            remove = QPushButton("✕")
+            remove.setObjectName("FavoriteRemove")
+            remove.setToolTip(tr("favorites.remove"))
+            remove.clicked.connect(lambda _=False, p=path: self.remove_favorite(p))
+            line.addWidget(use, 1)
+            line.addWidget(remove)
+            self.fav_rows.addWidget(row)
+        if not self.favorites:
+            self.fav_rows.addWidget(hint(tr("favorites.empty")))
+
+        text = self.output_edit.text().strip()
+        known = any(_folder_key(p) == current for p in self.favorites)
+        full = len(self.favorites) >= FAVORITES_MAX
+        self.fav_add.setEnabled(bool(text) and not known and not full)
+        self.fav_add.setToolTip(
+            tr("favorites.full", max=FAVORITES_MAX) if full
+            else tr("favorites.add_tooltip")
+        )
+        arrow = "  ▴" if self.fav_btn.isChecked() else "  ▾"
+        self.fav_btn.setText(tr("favorites.button", count=len(self.favorites)) + arrow)
+
+    def add_favorite(self) -> None:
+        path = self.output_edit.text().strip()
+        if not path or len(self.favorites) >= FAVORITES_MAX:
+            return
+        if any(_folder_key(p) == _folder_key(path) for p in self.favorites):
+            return
+        self.favorites.append(os.path.abspath(path))
+        save_favorites(self.favorites)
+        self._refresh_favorites()
+
+    def remove_favorite(self, path: str) -> None:
+        self.favorites = [p for p in self.favorites if p != path]
+        save_favorites(self.favorites)
+        self._refresh_favorites()
+
+    def use_favorite(self, path: str) -> None:
+        self.output_edit.setText(path)
+        self._remember_output_dir()
+
+    # -- removing files from the list -------------------------------------------- #
+
+    def remove_selected(self) -> None:
+        """Take the selected entries off the list; nothing is deleted on disk."""
+        if self._busy():
+            return
+        items = self.file_list.selectedItems()
+        if not items:
+            return
+        first = min(self.file_list.row(item) for item in items)
+        chosen = {item.data(Qt.ItemDataRole.UserRole) for item in items}
+        self.inputs = [path for path in self.inputs if path not in chosen]
+        self._refresh_file_list()
+        # Keep a selection where the removed ones were, so Delete can be
+        # pressed again to go on down the list.
+        if self.file_list.count():
+            self.file_list.setCurrentRow(min(first, self.file_list.count() - 1))
+
+    def eventFilter(self, obj, event):
+        # Delete in the file list. A key event rather than a shortcut: a
+        # shortcut fires only in the active window, a key press wherever the
+        # list has the focus.
+        if (
+            obj is self.file_list
+            and event.type() == QEvent.Type.KeyPress
+            and event.key() == Qt.Key.Key_Delete
+        ):
+            self.remove_selected()
+            return True
+        return super().eventFilter(obj, event)
+
+    def _file_menu(self, position) -> None:
+        item = self.file_list.itemAt(position)
+        if item is None:
+            return
+        if not item.isSelected():
+            self.file_list.setCurrentItem(item)
+        path = item.data(Qt.ItemDataRole.UserRole)
+        status, _ = self._status_of(path)
+
+        menu = QMenu(self)
+        remove = menu.addAction(tr("files.menu_remove"), self.remove_selected)
+        remove.setShortcut(QKeySequence(QKeySequence.StandardKey.Delete))
+        remove.setEnabled(not self._busy())
+        menu.addSeparator()
+        open_result = menu.addAction(tr("files.menu_open_result"), lambda: self._open_result(item))
+        open_result.setEnabled(status in ("ok", "degraded", "partial"))
+        menu.addAction(tr("files.menu_show"), lambda: show_in_explorer(path))
+        menu.exec(self.file_list.viewport().mapToGlobal(position))
 
     # -- remembered settings ---------------------------------------------- #
 
@@ -1016,6 +1410,7 @@ class MainWindow(QWidget):
             ("hybrid", self.hybrid),
             ("hybrid_url", self.hybrid_url),
             ("advanced_open", self.more_btn),
+            ("favorites_open", self.fav_btn),
         ]
         return widgets
 
@@ -1089,6 +1484,7 @@ class MainWindow(QWidget):
         has_files = bool(self.inputs)
         self.file_list.setVisible(has_files)
         self.clear_btn.setVisible(has_files)
+        self.remove_btn.setVisible(has_files)
         self.drop.setVisible(not has_files)
         self._sync_actions()
         if self._busy():
@@ -1198,9 +1594,6 @@ class MainWindow(QWidget):
         self.hybrid_url.setEnabled(bool(self.hybrid.currentData()))
 
     def _toggle_log(self, shown: bool) -> None:
-        if self.log_btn.isChecked() != shown:
-            self.log_btn.setChecked(shown)  # re-enters here via the signal
-            return
         if self.act_show_log.isChecked() != shown:
             self.act_show_log.setChecked(shown)  # same, from the menu side
             return
@@ -1214,6 +1607,8 @@ class MainWindow(QWidget):
         available = self.screen().availableGeometry().height()
         if shown:
             self.resize(self.width(), min(self.height() + delta, available))
+            # Bring it into view: it sits at the bottom of the scroll area.
+            QTimer.singleShot(0, self, lambda: self.scroll.ensureWidgetVisible(self.log_card))
         else:
             self.resize(self.width(), max(self.height() - delta, self.minimumHeight()))
 
@@ -1404,6 +1799,12 @@ class MainWindow(QWidget):
         }
         self._apply_statuses()
 
+        problems = bool(
+            summary["error"] or summary["degraded"] or summary["timed_out"]
+            or summary["failed"] or (ok == 0 and not summary["cancelled"])
+        )
+        self.details_link.setVisible(problems)
+
         if summary["error"]:
             self._set_status(tr("summary.failed_status"), state="error")
             self.append_log(summary["error"])
@@ -1460,6 +1861,7 @@ class MainWindow(QWidget):
         self.cancel_btn.setEnabled(busy)
         if busy:
             self.open_btn.setVisible(False)
+            self.details_link.setVisible(False)
             self.current_file = ""
             self._set_status(tr("status.working"))
         self._sync_actions()

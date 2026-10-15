@@ -26,6 +26,9 @@
   "menu.about": "About {app}",
 
   "reset.confirm": "Reset all settings — formats, options, results folder, theme and language — to their defaults?\n\nThe file list stays.",
+  "reset.defaults": "Reset",
+  "reset.main_tooltip": "Put the output formats and options back to their defaults",
+  "reset.advanced_tooltip": "Put the advanced options back to their defaults",
 
   "about.title": "About {app}",
   "about.version": "Version {version}",
@@ -33,6 +36,8 @@
   "about.license": "Free software under the GNU General Public License v3. It comes with no warranty.",
   "about.third_party": "Third-party components",
   "about.source": "Source code",
+
+  "guide.title": "User guide",
 
   "update.available": "Version {version} is available",
   "update.link_tooltip": "Open the download page",
@@ -45,6 +50,11 @@
   "files.add_files": "Add files",
   "files.add_folder": "Add folder",
   "files.clear": "Clear",
+  "files.remove": "Remove",
+  "files.remove_tooltip": "Take the selected files off the list (Delete key). Nothing is deleted from the disk.",
+  "files.menu_remove": "Remove from list",
+  "files.menu_open_result": "Open result",
+  "files.menu_show": "Show in Explorer",
 
   "list.ok": "Converted",
   "list.degraded": "Converted without images (ran out of time)",
@@ -58,6 +68,14 @@
   "output.browse": "Browse…",
   "output.hint": "The folder is remembered and filled in next time. Clear the field and results go next to the source files again.",
 
+  "favorites.button": "Favourite folders ({count})",
+  "favorites.add": "Add current folder",
+  "favorites.add_tooltip": "Remember the folder in the field above, to pick it again with one click",
+  "favorites.remove": "Remove from favourites (the folder itself stays)",
+  "favorites.use": "Save results to {path}",
+  "favorites.empty": "Keep up to 5 folders for results here: choose a folder above and press “Add current folder”.",
+  "favorites.full": "Already {max} folders — remove one to add another.",
+
   "formats.section": "Output formats",
 
   "format.markdown": "Markdown",
@@ -66,8 +84,8 @@
   "format.text": "Text",
   "format.tagged_pdf": "Tagged PDF",
   "format.pdf": "Annotated PDF",
-  "format.tagged_pdf_tooltip": "The original PDF with structure tags added.",
-  "format.pdf_tooltip": "A copy of the original PDF with every detected element painted over it:\ntable cells and their borders, text blocks, headings.\nIt holds no text — it shows why a table came out wrong.\nFile name_annotated.pdf; costs next to no time.",
+  "format.tagged_pdf_tooltip": "A copy of the source PDF with structure tags added: headings, paragraphs, lists, tables.\n\nThe pages look the same, but screen readers and other programs can now read the document in the right order.",
+  "format.pdf_tooltip": "A copy of the source PDF with everything the converter recognised drawn over the pages: table cells with their borders, text blocks, headings.\n\nIt holds no text of its own — it shows why a table came out wrong. Saved as name_annotated.pdf; it hardly affects the speed.",
 
   "options.section": "Options",
 
@@ -75,64 +93,71 @@
   "images.external": "Save as separate files",
   "images.embedded": "Embed in the document",
   "images.off": "Don't save",
-  "images.tooltip": "Separate files — PNGs next to the document, linked from the text.\nEmbed — images inside the .md as Base64: one self-contained\nfile, but several times larger.\nDon't save — text and tables only.",
+  "images.tooltip": "Save as separate files — PNG or JPEG images next to the document, linked from the text.\n\nEmbed in the document — the images go inside the .md file as Base64: one self-contained file, but several times bigger.\n\nDon't save — text and tables only; the fastest choice.",
   "images.hint": "Extracting images is the heaviest part of the job: every illustration is rendered again. On ordinary documents you won't notice, but datasheets can have dozens of pages of plots, and those can take minutes.",
 
   "dpi.label": "Resolution:",
-  "dpi.tooltip": "Image render resolution. Lower uses less memory and is faster,\nbut coarser. 144 is the default; 96 is usually enough.",
+  "dpi.tooltip": "How sharp the extracted images are. Lower is faster and needs less memory, but the pictures are coarser.\n\n144 is the default; 96 is usually enough for datasheet plots. Matters only when images are saved.",
 
   "pages.label": "Pages:",
   "pages.placeholder": "all",
-  "pages.tooltip": "For example 1,3,5-7. Handy for datasheets: take the description and the\nparameter tables, skip dozens of pages of plots.",
+  "pages.tooltip": "Which pages to convert, e.g. 1,3,5-7. Empty means all of them.\n\nWith datasheets it pays to take the description and the parameter tables (say 1-12) and skip dozens of pages of plots.",
 
   "timeout.label": "Timeout per file:",
   "timeout.suffix": " s",
   "timeout.none": "no limit",
-  "timeout.tooltip": "A file that runs over is retried without images,\nand only then marked as failed.",
+  "timeout.tooltip": "How long one file may take. A file that runs over is tried once more without images, and only then marked as not converted; the rest of the batch carries on.\n\n0 means no limit.",
 
   "struct.label": "Use tags from the PDF",
-  "struct.tooltip": "Read the document's built-in structure instead of analysing the layout.\nMore accurate — but only for PDFs that really have tags.",
+  "struct.tooltip": "Some PDFs carry tags describing their structure — headings, lists, tables. With this on, the converter follows those tags instead of working the layout out from the page.\n\nMore accurate when the tags are good, worse when they are sloppy. PDFs without tags are converted as usual.",
 
   "sanitize.label": "Hide sensitive data",
+  "sanitize.tooltip": "Replaces e-mail addresses, phone numbers, IP addresses, card numbers and web links in the result with placeholders.\n\nUseful before you share the text. The source PDF is not changed.",
 
   "advanced.button": "More options",
 
   "reading_order.label": "Reading order:",
   "reading_order.off": "off",
-  "reading_order.tooltip": "A fallback for pages where recursive splitting goes wrong.",
+  "reading_order.tooltip": "The order in which the text blocks of a page are read.\n\nxycut (the default) cuts the page into columns and rows, which suits most documents. Off keeps the order the text is stored in inside the PDF — try it when a page with an unusual layout comes out jumbled.",
 
   "tables.label": "Tables:",
   "tables.default": "by ruling lines",
   "tables.cluster": "by clusters",
-  "tables.tooltip": "Many manufacturers draw tables with incomplete ruling —\nthe cluster mode puts those together better.",
+  "tables.tooltip": "How tables are found.\n\nBy ruling lines — from the lines drawn between cells; the default.\n\nBy clusters — also groups text into cells by its position. Helps with tables that have only some of their lines drawn, which is common in datasheets.",
 
   "image_format.label": "Image format:",
+  "image_format.tooltip": "File type of the saved images. PNG keeps plots and diagrams sharp; JPEG makes photos smaller.\n\nMatters only when images are saved.",
 
   "threads.label": "Threads:",
-  "threads.tooltip": "More than one processes pages in parallel (faster,\nbut the result may differ slightly on some PDFs).",
+  "threads.tooltip": "How many processor cores work on the pages of one file at the same time. The files themselves are still converted one after another.\n\n1 is the default and the most reliable. More is experimental: the result may differ slightly on some PDFs, and on real datasheets it saved only 5–10% of the time. Ignored in AI mode.",
 
   "space_ratio.label": "Space threshold:",
-  "space_ratio.tooltip": "When to insert a space, as a share of the font size. If the gap between\nneighbouring characters is wider, a space goes between them.\nLower splits words apart, higher glues them together.",
+  "space_ratio.tooltip": "When to put a space between two neighbouring letters: when the gap is wider than this share of the font size.\n\nLower — words start falling apart; higher — they run together. 0.17 is the default; change it only if words in the result are broken up or glued together.",
 
   "password.label": "PDF password:",
   "password.placeholder": "for encrypted PDFs",
+  "password.show": "Show password",
+  "password.hide": "Hide password",
+  "password.tooltip": "Needed only for PDFs that ask for a password to open. Used for this run only and never saved.\n\nThe eye button shows what you typed.",
 
   "line_breaks.label": "Keep line breaks",
+  "line_breaks.tooltip": "Keeps the line breaks exactly as on the page.\n\nOff joins the lines of a paragraph into one — that reads and searches better.",
 
   "header_footer.label": "Include headers and footers",
+  "header_footer.tooltip": "Includes running headers and footers: page numbers, the document title, the company name repeated on every page.\n\nOff leaves them out so they don't break up the text.",
 
   "strikethrough.label": "Mark strikethrough text",
+  "strikethrough.tooltip": "Marks crossed-out text: ~~like this~~ in Markdown, <del> in HTML. Experimental.",
 
   "hybrid.label": "AI mode:",
   "hybrid.off": "Off",
+  "hybrid.tooltip": "Sends the difficult pages — complex tables, scans — to a separate AI server (docling) for better recognition; the rest is converted as usual.\n\nThe server is installed and started separately: pip install \"opendataloader-pdf[hybrid]\", then opendataloader-pdf-hybrid --port 5002. If it doesn't answer, the program tells you before starting.",
 
   "hybrid_url.label": "Server address:",
-
-  "hybrid.hint": "AI mode needs a separately installed and running server (pip install \"opendataloader-pdf[hybrid]\", then opendataloader-pdf-hybrid --port 5002). If the server does not answer, the program says so before starting.",
+  "hybrid_url.tooltip": "Address of the AI server. Leave it empty for a server on this computer (http://localhost:5002); fill it in only if the server runs elsewhere.",
 
   "log.section": "Log",
   "log.placeholder": "Progress will appear here.",
-  "log.button": "Log",
 
   "status.empty": "Add at least one PDF.",
   "status.ready": "Ready to go: {count}",
@@ -140,6 +165,7 @@
   "status.stopping": "Stopping…",
   "status.file_of": "File {index} of {total}",
   "status.progress": "{prefix}{name} · {seconds} s",
+  "status.details": "Details",
 
   "action.open_output": "Open results folder",
   "action.cancel": "Cancel",

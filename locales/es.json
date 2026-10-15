@@ -26,6 +26,9 @@
   "menu.about": "Acerca de {app}",
 
   "reset.confirm": "¿Restablecer toda la configuración — formatos, opciones, carpeta de resultados, tema e idioma — a los valores predeterminados?\n\nLa lista de archivos se mantiene.",
+  "reset.defaults": "Restablecer",
+  "reset.main_tooltip": "Volver a los formatos de salida y opciones predeterminados",
+  "reset.advanced_tooltip": "Volver a las opciones avanzadas predeterminadas",
 
   "about.title": "Acerca de {app}",
   "about.version": "Versión {version}",
@@ -33,6 +36,8 @@
   "about.license": "Software libre bajo la licencia GNU General Public License v3. Se ofrece sin ninguna garantía.",
   "about.third_party": "Componentes de terceros",
   "about.source": "Código fuente",
+
+  "guide.title": "Guía de uso",
 
   "update.available": "Está disponible la versión {version}",
   "update.link_tooltip": "Abrir la página de descarga",
@@ -45,6 +50,11 @@
   "files.add_files": "Añadir archivos",
   "files.add_folder": "Añadir carpeta",
   "files.clear": "Vaciar",
+  "files.remove": "Quitar",
+  "files.remove_tooltip": "Quitar de la lista los archivos seleccionados (tecla Supr). No se borra nada del disco.",
+  "files.menu_remove": "Quitar de la lista",
+  "files.menu_open_result": "Abrir el resultado",
+  "files.menu_show": "Mostrar en el Explorador",
 
   "list.ok": "Convertido",
   "list.degraded": "Convertido sin imágenes (se agotó el tiempo)",
@@ -58,6 +68,14 @@
   "output.browse": "Examinar…",
   "output.hint": "La carpeta se recuerda y se rellena la próxima vez. Vacíe el campo y los resultados volverán a guardarse junto a los archivos de origen.",
 
+  "favorites.button": "Carpetas favoritas ({count})",
+  "favorites.add": "Añadir la carpeta actual",
+  "favorites.add_tooltip": "Recordar la carpeta del campo de arriba para elegirla luego con un clic",
+  "favorites.remove": "Quitar de favoritos (la carpeta en sí se queda)",
+  "favorites.use": "Guardar los resultados en {path}",
+  "favorites.empty": "Aquí puede tener hasta 5 carpetas para resultados: elija una carpeta arriba y pulse «Añadir la carpeta actual».",
+  "favorites.full": "Ya hay {max} carpetas: quite una para añadir otra.",
+
   "formats.section": "Formatos de salida",
 
   "format.markdown": "Markdown",
@@ -66,8 +84,8 @@
   "format.text": "Texto",
   "format.tagged_pdf": "PDF etiquetado",
   "format.pdf": "PDF anotado",
-  "format.tagged_pdf_tooltip": "El PDF original con etiquetas de estructura añadidas.",
-  "format.pdf_tooltip": "Una copia del PDF original con cada elemento detectado resaltado encima:\nceldas de tabla y sus bordes, bloques de texto, títulos.\nNo contiene texto — muestra por qué una tabla salió mal.\nArchivo nombre_annotated.pdf; apenas añade tiempo.",
+  "format.tagged_pdf_tooltip": "Una copia del PDF original con etiquetas de estructura añadidas: títulos, párrafos, listas, tablas.\n\nLas páginas se ven igual, pero los lectores de pantalla y otros programas leen el documento en el orden correcto.",
+  "format.pdf_tooltip": "Una copia del PDF original con todo lo que reconoció el conversor dibujado sobre las páginas: celdas de tabla con sus bordes, bloques de texto, títulos.\n\nNo contiene texto propio: sirve para ver por qué una tabla salió mal. Archivo nombre_annotated.pdf; apenas afecta a la velocidad.",
 
   "options.section": "Opciones",
 
@@ -75,64 +93,71 @@
   "images.external": "Guardar como archivos aparte",
   "images.embedded": "Incrustar en el documento",
   "images.off": "No guardar",
-  "images.tooltip": "Archivos aparte — PNG junto al documento, enlazados desde el texto.\nIncrustar — imágenes dentro del .md en Base64: un único archivo\nautónomo, pero varias veces más grande.\nNo guardar — solo texto y tablas.",
+  "images.tooltip": "Guardar como archivos aparte — imágenes PNG o JPEG junto al documento, enlazadas desde el texto.\n\nIncrustar en el documento — las imágenes van dentro del archivo .md en Base64: un único archivo autónomo, pero varias veces más grande.\n\nNo guardar — solo texto y tablas; lo más rápido.",
   "images.hint": "Extraer las imágenes es la parte más pesada del trabajo: cada ilustración se vuelve a renderizar. En documentos normales no se nota, pero las hojas de datos tienen decenas de páginas de gráficas, y esas pueden tardar minutos.",
 
   "dpi.label": "Resolución:",
-  "dpi.tooltip": "Resolución de renderizado de las imágenes. Menor — menos memoria y más rápido,\npero con menos detalle. 144 por defecto; 96 suele bastar.",
+  "dpi.tooltip": "Lo nítidas que salen las imágenes. Menos es más rápido y necesita menos memoria, pero las imágenes son más bastas.\n\n144 por defecto; para las gráficas de una hoja de datos suele bastar 96. Solo importa si se guardan imágenes.",
 
   "pages.label": "Páginas:",
   "pages.placeholder": "todas",
-  "pages.tooltip": "Por ejemplo 1,3,5-7. Útil con hojas de datos: tome la descripción y las tablas\nde parámetros, y omita decenas de páginas de gráficas.",
+  "pages.tooltip": "Qué páginas convertir, p. ej. 1,3,5-7. Vacío: todas.\n\nEn las hojas de datos conviene tomar la descripción y las tablas de parámetros (digamos 1-12) y saltarse decenas de páginas de gráficas.",
 
   "timeout.label": "Tiempo límite por archivo:",
   "timeout.suffix": " s",
   "timeout.none": "sin límite",
-  "timeout.tooltip": "Un archivo que supere el límite se reintenta sin imágenes,\ny solo entonces se marca como fallido.",
+  "timeout.tooltip": "Cuánto puede tardar un archivo. El que se pasa se reintenta una vez sin imágenes y solo entonces se marca como no convertido; el resto del lote sigue adelante.\n\n0 = sin límite.",
 
   "struct.label": "Usar las etiquetas del PDF",
-  "struct.tooltip": "Leer la estructura integrada del documento en lugar de analizar la maquetación.\nMás preciso — pero solo para PDF que realmente tienen etiquetas.",
+  "struct.tooltip": "Algunos PDF llevan etiquetas que describen su estructura: títulos, listas, tablas. Con esta opción, el conversor sigue esas etiquetas en lugar de deducir la maquetación de la página.\n\nMás preciso si las etiquetas son buenas, peor si son descuidadas. Los PDF sin etiquetas se convierten como siempre.",
 
   "sanitize.label": "Ocultar datos sensibles",
+  "sanitize.tooltip": "Sustituye en el resultado las direcciones de correo, teléfonos, direcciones IP, números de tarjeta y enlaces por marcadores.\n\nÚtil antes de compartir el texto. El PDF original no cambia.",
 
   "advanced.button": "Más opciones",
 
   "reading_order.label": "Orden de lectura:",
   "reading_order.off": "desactivado",
-  "reading_order.tooltip": "Una alternativa para páginas en las que la división recursiva falla.",
+  "reading_order.tooltip": "El orden en que se leen los bloques de texto de una página.\n\nxycut (por defecto) divide la página en columnas y filas, lo que va bien a la mayoría de documentos. «desactivado» conserva el orden en que el texto está guardado en el PDF; pruébelo si una página con una maquetación poco habitual sale desordenada.",
 
   "tables.label": "Tablas:",
   "tables.default": "por líneas",
   "tables.cluster": "por agrupación",
-  "tables.tooltip": "Muchos fabricantes dibujan tablas con líneas incompletas —\nel modo por agrupación las reconstruye mejor.",
+  "tables.tooltip": "Cómo se detectan las tablas.\n\nPor líneas — a partir de las líneas trazadas entre celdas; por defecto.\n\nPor agrupación — además agrupa el texto en celdas según su posición. Ayuda con tablas que solo tienen algunas líneas trazadas, algo habitual en las hojas de datos.",
 
   "image_format.label": "Formato de imagen:",
+  "image_format.tooltip": "El tipo de archivo de las imágenes. PNG mantiene nítidas las gráficas y los esquemas; JPEG reduce las fotos.\n\nSolo importa si se guardan imágenes.",
 
   "threads.label": "Hilos:",
-  "threads.tooltip": "Más de uno procesa las páginas en paralelo (más rápido,\npero el resultado puede variar ligeramente en algunos PDF).",
+  "threads.tooltip": "Cuántos núcleos del procesador trabajan a la vez en las páginas de un mismo archivo. Los archivos en sí se siguen convirtiendo uno tras otro.\n\n1 es el valor por defecto y el más fiable. Más es experimental: el resultado puede variar un poco en algunos PDF, y en hojas de datos reales solo ahorró un 5–10 % del tiempo. No se usa en el modo IA.",
 
   "space_ratio.label": "Umbral de espacio:",
-  "space_ratio.tooltip": "Cuándo insertar un espacio, como fracción del tamaño de letra. Si la distancia\nentre caracteres vecinos es mayor, se inserta un espacio.\nMás bajo separa las palabras, más alto las junta.",
+  "space_ratio.tooltip": "Cuándo poner un espacio entre dos letras vecinas: cuando el hueco supera esta fracción del tamaño de letra.\n\nMenos: las palabras empiezan a partirse; más: se pegan. 0,17 por defecto; cámbielo solo si en el resultado hay palabras partidas o pegadas.",
 
   "password.label": "Contraseña del PDF:",
   "password.placeholder": "para PDF cifrados",
+  "password.show": "Mostrar contraseña",
+  "password.hide": "Ocultar contraseña",
+  "password.tooltip": "Solo hace falta para los PDF que piden contraseña al abrirse. Se usa solo en esta conversión y nunca se guarda.\n\nEl botón del ojo muestra lo que ha escrito.",
 
   "line_breaks.label": "Conservar saltos de línea",
+  "line_breaks.tooltip": "Conserva los saltos de línea tal como están en la página.\n\nSin marcar, las líneas de un párrafo se unen en una: se lee y se busca mejor.",
 
   "header_footer.label": "Incluir encabezados y pies",
+  "header_footer.tooltip": "Incluye encabezados y pies de página: números de página, título del documento, nombre de la empresa repetidos en cada página.\n\nSin marcar se descartan para que no corten el texto.",
 
   "strikethrough.label": "Marcar texto tachado",
+  "strikethrough.tooltip": "Marca el texto tachado: ~~así~~ en Markdown, <del> en HTML. Experimental.",
 
   "hybrid.label": "Modo IA:",
   "hybrid.off": "Desactivado",
+  "hybrid.tooltip": "Envía las páginas difíciles —tablas complejas, escaneos— a un servidor de IA aparte (docling) para reconocerlas mejor; el resto se convierte como siempre.\n\nEl servidor se instala y se inicia por separado: pip install \"opendataloader-pdf[hybrid]\" y luego opendataloader-pdf-hybrid --port 5002. Si no responde, el programa lo avisa antes de empezar.",
 
   "hybrid_url.label": "Dirección del servidor:",
-
-  "hybrid.hint": "El modo IA requiere un servidor instalado y en ejecución por separado (pip install \"opendataloader-pdf[hybrid]\", luego opendataloader-pdf-hybrid --port 5002). Si el servidor no responde, el programa lo indica antes de empezar.",
+  "hybrid_url.tooltip": "La dirección del servidor de IA. Déjela vacía para un servidor en este equipo (http://localhost:5002); rellénela solo si el servidor está en otro sitio.",
 
   "log.section": "Registro",
   "log.placeholder": "Aquí aparecerá el progreso.",
-  "log.button": "Registro",
 
   "status.empty": "Añada al menos un PDF.",
   "status.ready": "Listo: {count}",
@@ -140,6 +165,7 @@
   "status.stopping": "Deteniendo…",
   "status.file_of": "Archivo {index} de {total}",
   "status.progress": "{prefix}{name} · {seconds} s",
+  "status.details": "Detalles",
 
   "action.open_output": "Abrir carpeta de resultados",
   "action.cancel": "Cancelar",

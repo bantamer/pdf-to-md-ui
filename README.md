@@ -33,6 +33,11 @@ your PC" on first run: click **More info → Run anyway**.
 4. A mark next to each file tells how it went — hover it for details.
    Double-click a converted file to open the result.
 
+A file you don't need comes off the list with **Remove** or the Delete key.
+Every setting has a **?** that explains it, and **Help → User guide** (F1)
+walks through everything — [English](docs/guide.en.md),
+[Russian](docs/guide.ru.md); it is built into the program and works offline.
+
 ## What it does well
 
 - **Tables survive.** Markdown keeps tables as HTML, so merged cells — the
@@ -47,7 +52,9 @@ your PC" on first run: click **More info → Run anyway**.
 - **An annotated PDF** shows every detected table cell and text block on top of
   the page — the quickest way to see why a table came out wrong.
 - Page ranges, image options, reading order, table detection method, PDF
-  password; every setting is remembered between launches.
+  password; every setting is remembered between launches, and **Reset**
+  puts a section back to its defaults.
+- Up to five favourite folders for the results, one click apart.
 - Six languages — English, Русский, Polski, Français, Español, Italiano. The
   app follows the Windows language; switch it in **Settings → Language**.
 - A standard Windows menu — **File**, **Settings**, **Help** — with the usual
@@ -171,6 +178,7 @@ open — longer languages must not push the cards past the edge.
 | `theme.py` | Colour palettes and generated stylesheet |
 | `patches/` | veraPDF line-art fix loaded ahead of the jar |
 | `tools/make_icon.py` | Draws `icon.ico` and `docs/icon.png` |
+| `docs/guide.*.md` | The user guide shown by Help → User guide |
 | `tests/` | pytest suite, the `table.pdf` fixture, a generator for plot-heavy pages |
 | `build.bat`, `app.spec`, `installer.iss` | Local build, PyInstaller definition, Inno Setup installer |
 | `.github/workflows/` | Tests on every change; installer on `v*` tags |

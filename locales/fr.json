@@ -26,6 +26,9 @@
   "menu.about": "À propos de {app}",
 
   "reset.confirm": "Rétablir tous les paramètres par défaut — formats, options, dossier des résultats, thème et langue ?\n\nLa liste des fichiers est conservée.",
+  "reset.defaults": "Réinitialiser",
+  "reset.main_tooltip": "Rétablir les formats de sortie et les options par défaut",
+  "reset.advanced_tooltip": "Rétablir les options avancées par défaut",
 
   "about.title": "À propos de {app}",
   "about.version": "Version {version}",
@@ -33,6 +36,8 @@
   "about.license": "Logiciel libre sous licence GNU General Public License v3. Il est fourni sans aucune garantie.",
   "about.third_party": "Composants tiers",
   "about.source": "Code source",
+
+  "guide.title": "Guide d’utilisation",
 
   "update.available": "La version {version} est disponible",
   "update.link_tooltip": "Ouvrir la page de téléchargement",
@@ -45,6 +50,11 @@
   "files.add_files": "Ajouter des fichiers",
   "files.add_folder": "Ajouter un dossier",
   "files.clear": "Vider",
+  "files.remove": "Retirer",
+  "files.remove_tooltip": "Retirer de la liste les fichiers sélectionnés (touche Suppr). Rien n’est supprimé du disque.",
+  "files.menu_remove": "Retirer de la liste",
+  "files.menu_open_result": "Ouvrir le résultat",
+  "files.menu_show": "Afficher dans l’Explorateur",
 
   "list.ok": "Converti",
   "list.degraded": "Converti sans images (temps dépassé)",
@@ -58,6 +68,14 @@
   "output.browse": "Parcourir…",
   "output.hint": "Le dossier est mémorisé et proposé au prochain lancement. Videz le champ pour que les résultats soient de nouveau placés à côté des fichiers source.",
 
+  "favorites.button": "Dossiers favoris ({count})",
+  "favorites.add": "Ajouter le dossier actuel",
+  "favorites.add_tooltip": "Mémoriser le dossier du champ ci-dessus pour le choisir ensuite en un clic",
+  "favorites.remove": "Retirer des favoris (le dossier lui-même reste)",
+  "favorites.use": "Enregistrer les résultats dans {path}",
+  "favorites.empty": "Gardez ici jusqu’à 5 dossiers de résultats : choisissez un dossier ci-dessus et cliquez sur « Ajouter le dossier actuel ».",
+  "favorites.full": "Déjà {max} dossiers — retirez-en un pour en ajouter un autre.",
+
   "formats.section": "Formats de sortie",
 
   "format.markdown": "Markdown",
@@ -66,8 +84,8 @@
   "format.text": "Texte",
   "format.tagged_pdf": "PDF balisé",
   "format.pdf": "PDF annoté",
-  "format.tagged_pdf_tooltip": "Le PDF d'origine avec des balises de structure ajoutées.",
-  "format.pdf_tooltip": "Une copie du PDF d'origine sur laquelle chaque élément détecté est surligné :\ncellules de tableau et leurs bordures, blocs de texte, titres.\nElle ne contient pas de texte — elle montre pourquoi un tableau est mal sorti.\nFichier nom_annotated.pdf ; ne coûte presque pas de temps.",
+  "format.tagged_pdf_tooltip": "Une copie du PDF source avec des balises de structure ajoutées : titres, paragraphes, listes, tableaux.\n\nLes pages restent identiques, mais les lecteurs d’écran et les autres programmes lisent le document dans le bon ordre.",
+  "format.pdf_tooltip": "Une copie du PDF source sur laquelle est dessiné tout ce que le convertisseur a reconnu : cellules de tableau avec leurs bordures, blocs de texte, titres.\n\nIl ne contient pas de texte à lui — il montre pourquoi un tableau est mal sorti. Fichier nom_annotated.pdf ; n’influe presque pas sur la vitesse.",
 
   "options.section": "Options",
 
@@ -75,64 +93,71 @@
   "images.external": "Fichiers séparés",
   "images.embedded": "Intégrer au document",
   "images.off": "Ne pas enregistrer",
-  "images.tooltip": "Fichiers séparés — des PNG à côté du document, liés depuis le texte.\nIntégrer — les images dans le .md en Base64 : un seul fichier autonome,\nmais plusieurs fois plus gros.\nNe pas enregistrer — texte et tableaux uniquement.",
+  "images.tooltip": "Fichiers séparés — images PNG ou JPEG à côté du document, liées depuis le texte.\n\nIntégrer au document — les images vont dans le fichier .md en Base64 : un seul fichier autonome, mais plusieurs fois plus gros.\n\nNe pas enregistrer — texte et tableaux seulement ; le plus rapide.",
   "images.hint": "L'extraction des images est la partie la plus lourde du travail : chaque illustration est rendue à nouveau. Sur des documents ordinaires, cela ne se remarque pas, mais les fiches techniques comptent des dizaines de pages de graphiques, et celles-ci peuvent prendre des minutes.",
 
   "dpi.label": "Résolution :",
-  "dpi.tooltip": "Résolution de rendu des images. Plus basse — moins de mémoire et plus rapide,\nmais moins fin. 144 par défaut ; 96 suffit généralement.",
+  "dpi.tooltip": "La netteté des images extraites. Plus bas, c’est plus rapide et moins gourmand en mémoire, mais les images sont plus grossières.\n\n144 par défaut ; 96 suffit en général pour les courbes des fiches techniques. Ne compte que si les images sont enregistrées.",
 
   "pages.label": "Pages :",
   "pages.placeholder": "toutes",
-  "pages.tooltip": "Par exemple 1,3,5-7. Pratique pour les fiches techniques : prenez la description\net les tableaux de paramètres, sautez les dizaines de pages de graphiques.",
+  "pages.tooltip": "Les pages à convertir, par ex. 1,3,5-7. Vide = toutes.\n\nPour une fiche technique, il vaut mieux prendre la description et les tableaux de paramètres (disons 1-12) et sauter des dizaines de pages de courbes.",
 
   "timeout.label": "Délai par fichier :",
   "timeout.suffix": " s",
   "timeout.none": "sans limite",
-  "timeout.tooltip": "Un fichier qui dépasse le délai est relancé sans images,\net seulement ensuite marqué comme échoué.",
+  "timeout.tooltip": "Le temps qu’un fichier peut prendre. Un fichier qui dépasse est réessayé une fois sans images, puis seulement marqué comme non converti ; le reste du lot continue.\n\n0 = sans limite.",
 
   "struct.label": "Utiliser les balises du PDF",
-  "struct.tooltip": "Lire la structure intégrée du document au lieu d'analyser la mise en page.\nPlus précis — mais seulement pour les PDF qui ont vraiment des balises.",
+  "struct.tooltip": "Certains PDF portent des balises qui décrivent leur structure : titres, listes, tableaux. Avec cette option, le convertisseur suit ces balises au lieu de déduire la mise en page.\n\nPlus précis quand les balises sont bonnes, moins bon quand elles sont négligées. Les PDF sans balises sont convertis normalement.",
 
   "sanitize.label": "Masquer les données sensibles",
+  "sanitize.tooltip": "Remplace dans le résultat les adresses e-mail, numéros de téléphone, adresses IP, numéros de carte et liens web par des marqueurs.\n\nUtile avant de partager le texte. Le PDF source n’est pas modifié.",
 
   "advanced.button": "Plus d'options",
 
   "reading_order.label": "Ordre de lecture :",
   "reading_order.off": "désactivé",
-  "reading_order.tooltip": "Une solution de repli pour les pages où le découpage récursif échoue.",
+  "reading_order.tooltip": "L’ordre dans lequel les blocs de texte d’une page sont lus.\n\nxycut (par défaut) découpe la page en colonnes et en lignes, ce qui convient à la plupart des documents. « désactivé » garde l’ordre dans lequel le texte est stocké dans le PDF — essayez-le quand une page à la mise en page inhabituelle sort mélangée.",
 
   "tables.label": "Tableaux :",
   "tables.default": "par bordures",
   "tables.cluster": "par regroupement",
-  "tables.tooltip": "Beaucoup de fabricants dessinent des tableaux aux bordures incomplètes —\nle mode par regroupement les reconstitue mieux.",
+  "tables.tooltip": "Comment les tableaux sont détectés.\n\nPar bordures — d’après les lignes tracées entre les cellules ; par défaut.\n\nPar regroupement — regroupe aussi le texte en cellules selon sa position. Utile pour les tableaux dont seules certaines lignes sont tracées, fréquents dans les fiches techniques.",
 
   "image_format.label": "Format des images :",
+  "image_format.tooltip": "Le type de fichier des images. PNG garde les courbes et schémas nets ; JPEG réduit la taille des photos.\n\nNe compte que si les images sont enregistrées.",
 
   "threads.label": "Threads :",
-  "threads.tooltip": "Plus d'un — les pages sont traitées en parallèle (plus rapide,\nmais le résultat peut légèrement varier sur certains PDF).",
+  "threads.tooltip": "Combien de cœurs du processeur traitent en même temps les pages d’un même fichier. Les fichiers eux-mêmes sont toujours convertis l’un après l’autre.\n\n1 est la valeur par défaut, la plus fiable. Au-delà, c’est expérimental : le résultat peut légèrement varier sur certains PDF, et sur de vraies fiches techniques le gain n’a été que de 5 à 10 %. Ignoré en mode IA.",
 
   "space_ratio.label": "Seuil d'espace :",
-  "space_ratio.tooltip": "Quand insérer une espace, en fraction de la taille de police. Si l'écart entre\ndeux caractères voisins est plus grand, une espace est insérée.\nPlus bas sépare les mots, plus haut les colle.",
+  "space_ratio.tooltip": "Quand insérer une espace entre deux lettres voisines : quand l’écart dépasse cette part de la taille de police.\n\nPlus bas — les mots se morcellent ; plus haut — ils se collent. 0,17 par défaut ; ne le changez que si les mots du résultat sont coupés ou collés.",
 
   "password.label": "Mot de passe PDF :",
   "password.placeholder": "pour les PDF chiffrés",
+  "password.show": "Afficher le mot de passe",
+  "password.hide": "Masquer le mot de passe",
+  "password.tooltip": "Nécessaire seulement pour les PDF qui demandent un mot de passe à l’ouverture. Utilisé pour cette conversion uniquement, jamais enregistré.\n\nLe bouton en forme d’œil affiche ce que vous avez saisi.",
 
   "line_breaks.label": "Conserver les retours à la ligne",
+  "line_breaks.tooltip": "Garde les retours à la ligne exactement comme sur la page.\n\nDésactivé, les lignes d’un paragraphe sont réunies en une seule — plus agréable à lire et à rechercher.",
 
   "header_footer.label": "Inclure en-têtes et pieds de page",
+  "header_footer.tooltip": "Inclut les en-têtes et pieds de page : numéros de page, titre du document, nom de la société répétés sur chaque page.\n\nDésactivé, ils sont écartés pour ne pas couper le texte.",
 
   "strikethrough.label": "Marquer le texte barré",
+  "strikethrough.tooltip": "Signale le texte barré : ~~comme ceci~~ en Markdown, <del> en HTML. Expérimental.",
 
   "hybrid.label": "Mode IA :",
   "hybrid.off": "Désactivé",
+  "hybrid.tooltip": "Envoie les pages difficiles — tableaux complexes, scans — à un serveur d’IA séparé (docling) pour une meilleure reconnaissance ; le reste est converti normalement.\n\nLe serveur s’installe et se lance à part : pip install \"opendataloader-pdf[hybrid]\", puis opendataloader-pdf-hybrid --port 5002. S’il ne répond pas, le programme le signale avant de commencer.",
 
   "hybrid_url.label": "Adresse du serveur :",
-
-  "hybrid.hint": "Le mode IA nécessite un serveur installé et lancé séparément (pip install \"opendataloader-pdf[hybrid]\", puis opendataloader-pdf-hybrid --port 5002). Si le serveur ne répond pas, le programme le signale avant de commencer.",
+  "hybrid_url.tooltip": "L’adresse du serveur d’IA. Laissez vide pour un serveur sur cet ordinateur (http://localhost:5002) ; à remplir seulement si le serveur tourne ailleurs.",
 
   "log.section": "Journal",
   "log.placeholder": "La progression s'affichera ici.",
-  "log.button": "Journal",
 
   "status.empty": "Ajoutez au moins un PDF.",
   "status.ready": "Prêt : {count}",
@@ -140,6 +165,7 @@
   "status.stopping": "Arrêt…",
   "status.file_of": "Fichier {index} sur {total}",
   "status.progress": "{prefix}{name} · {seconds} s",
+  "status.details": "Détails",
 
   "action.open_output": "Ouvrir le dossier des résultats",
   "action.cancel": "Annuler",

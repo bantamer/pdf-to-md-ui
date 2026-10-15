@@ -34,6 +34,9 @@ a = Analysis(
         # The exe carries the icon in its resources; the window loads it
         # from here (gui.resource).
         ("icon.ico", "."),
+        # Help → User guide (F1) reads these; it has to work offline.
+        ("docs/guide.en.md", "docs"),
+        ("docs/guide.ru.md", "docs"),
     ],
     hiddenimports=odl_hidden,
     hookspath=[],
