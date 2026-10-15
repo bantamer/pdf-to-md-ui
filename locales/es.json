@@ -100,7 +100,6 @@
   "timeout.label": "Tiempo límite por archivo:",
   "timeout.suffix": " s",
   "timeout.none": "sin límite",
-  "timeout.tooltip": "Cuánto puede tardar un archivo. El que se pasa se reintenta una vez sin imágenes y solo entonces se marca como no convertido; el resto del lote sigue adelante.\n\n0 = sin límite.",
 
   "struct.label": "Usar las etiquetas del PDF",
   "struct.tooltip": "Algunos PDF llevan etiquetas que describen su estructura: títulos, listas, tablas. Con esta opción, el conversor sigue esas etiquetas en lugar de deducir la maquetación de la página.\n\nMás preciso si las etiquetas son buenas, peor si son descuidadas. Los PDF sin etiquetas se convierten como siempre.",

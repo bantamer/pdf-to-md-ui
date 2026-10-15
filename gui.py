@@ -123,6 +123,9 @@ FORMAT_HELP = {
 # Image resolution choices. 144 is the converter's own default; 96 is
 # usually enough for datasheet plots; 300 and up is print quality.
 IMAGE_DPI_CHOICES = [72, 96, 120, 144, 200, 300, 600]
+# Timeout per file, in seconds; 0 is no limit.
+TIMEOUT_CHOICES = [15, 30, 60, 120, 300, 600, 1800, 0]
+TIMEOUT_DEFAULT = 30
 # Saved destinations under "Where to save".
 FAVORITES_MAX = 5
 
@@ -1017,11 +1020,17 @@ class MainWindow(QWidget):
         self.pages_edit = QLineEdit()
         self.pages_edit.setPlaceholderText(tr("pages.placeholder"))
 
-        self.timeout_spin = QSpinBox()
-        self.timeout_spin.setRange(0, 36000)
-        self.timeout_spin.setValue(30)
-        self.timeout_spin.setSuffix(tr("timeout.suffix"))
-        self.timeout_spin.setSpecialValueText(tr("timeout.none"))
+        # The usual values in a list, like the resolution.
+        self.timeout_box = QComboBox()
+        for seconds in TIMEOUT_CHOICES:
+            if seconds == 0:
+                text = tr("timeout.none")
+            elif seconds < 60:
+                text = f"{seconds}{tr('timeout.suffix')}"
+            else:
+                text = tr("timeout.minutes", n=seconds // 60)
+            self.timeout_box.addItem(text, str(seconds))
+        self.timeout_box.setCurrentIndex(TIMEOUT_CHOICES.index(TIMEOUT_DEFAULT))
 
         self.opt_struct = QCheckBox(tr("struct.label"))
         self.opt_sanitize = QCheckBox(tr("sanitize.label"))
@@ -1038,7 +1047,7 @@ class MainWindow(QWidget):
                  ("dpi.label", self.image_dpi, "dpi.tooltip")),
                 hint(tr("images.hint")),
                 (("pages.label", self.pages_edit, "pages.tooltip"),
-                 ("timeout.label", self.timeout_spin, "timeout.tooltip")),
+                 ("timeout.label", self.timeout_box, "timeout.tooltip")),
             ],
             [
                 (self.opt_struct, "struct.tooltip"),
@@ -1365,7 +1374,7 @@ class MainWindow(QWidget):
             self.image_mode,
             self.image_dpi,
             self.pages_edit,
-            self.timeout_spin,
+            self.timeout_box,
             self.opt_struct,
             self.opt_sanitize,
             self.opt_page_sep,
@@ -1533,7 +1542,7 @@ class MainWindow(QWidget):
         widgets += [
             ("image_mode", self.image_mode),
             ("image_dpi", self.image_dpi),
-            ("timeout", self.timeout_spin),
+            ("timeout", self.timeout_box),
             ("use_struct_tree", self.opt_struct),
             ("sanitize", self.opt_sanitize),
             ("page_separators", self.opt_page_sep),
@@ -1927,7 +1936,7 @@ class MainWindow(QWidget):
         self.thread = QThread(self)
         self._sync_actions()
         self.worker = ConvertWorker(
-            jobs, output_dir, options, self.timeout_spin.value(), supported
+            jobs, output_dir, options, int(self.timeout_box.currentData()), supported
         )
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)

@@ -100,7 +100,6 @@
   "timeout.label": "Limit czasu na plik:",
   "timeout.suffix": " s",
   "timeout.none": "bez limitu",
-  "timeout.tooltip": "Ile czasu może zająć jeden plik. Plik, który się nie zmieści, jest próbowany jeszcze raz bez obrazów i dopiero potem oznaczany jako nieskonwertowany; reszta plików jest przetwarzana dalej.\n\n0 — bez limitu.",
 
   "struct.label": "Użyj tagów z PDF",
   "struct.tooltip": "Niektóre pliki PDF mają znaczniki opisujące strukturę: nagłówki, listy, tabele. Z tą opcją konwerter korzysta ze znaczników zamiast odtwarzać układ ze strony.\n\nDokładniej, gdy znaczniki są dobre, gorzej, gdy niestaranne. PDF bez znaczników są konwertowane jak zwykle.",

@@ -15,7 +15,7 @@ def test_defaults(window):
     # Left at the CLI's own default, so not sent at all.
     assert "image_resolution" not in opts and "space_ratio" not in opts
     assert "hybrid" not in opts
-    assert window.timeout_spin.value() == 30
+    assert window.timeout_box.currentData() == "30"
 
 
 def test_annotated_pdf_alone_is_a_valid_run(window):
@@ -49,7 +49,7 @@ def test_settings_survive_a_restart(qapp, settings_file):
     first.format_boxes["pdf"].setChecked(True)
     first.image_mode.setCurrentIndex(first.image_mode.findData("off"))
     first.image_dpi.setCurrentIndex(first.image_dpi.findData("96"))
-    first.timeout_spin.setValue(120)
+    first.timeout_box.setCurrentIndex(first.timeout_box.findData("120"))
     first.table_method.setCurrentIndex(first.table_method.findData("cluster"))
     first.space_ratio.setValue(0.25)
     first.opt_header_footer.setChecked(True)
@@ -64,7 +64,7 @@ def test_settings_survive_a_restart(qapp, settings_file):
     assert second.format_boxes["markdown"].isChecked()
     assert second.image_mode.currentData() == "off"
     assert second.image_dpi.currentData() == "96"
-    assert second.timeout_spin.value() == 120
+    assert second.timeout_box.currentData() == "120"
     assert second.table_method.currentData() == "cluster"
     assert abs(second.space_ratio.value() - 0.25) < 1e-9
     assert second.opt_header_footer.isChecked()

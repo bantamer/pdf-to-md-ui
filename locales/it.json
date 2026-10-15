@@ -100,7 +100,6 @@
   "timeout.label": "Timeout per file:",
   "timeout.suffix": " s",
   "timeout.none": "nessun limite",
-  "timeout.tooltip": "Quanto tempo può richiedere un file. Un file che sfora viene riprovato una volta senza immagini e solo dopo segnato come non convertito; il resto del lotto prosegue.\n\n0 = nessun limite.",
 
   "struct.label": "Usa i tag del PDF",
   "struct.tooltip": "Alcuni PDF contengono tag che ne descrivono la struttura: titoli, elenchi, tabelle. Con questa opzione il convertitore segue i tag invece di ricavare l’impaginazione dalla pagina.\n\nPiù preciso se i tag sono buoni, peggio se sono trascurati. I PDF senza tag vengono convertiti come al solito.",

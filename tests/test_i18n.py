@@ -104,7 +104,7 @@ def test_switching_language_keeps_files_and_options(qapp, settings_file, tmp_pat
     pdf.write_bytes(b"%PDF")
     old = gui.open_window()
     old.add_paths([str(pdf)])
-    old.timeout_spin.setValue(77)
+    old.timeout_box.setCurrentIndex(old.timeout_box.findData("120"))
     old.format_boxes["json"].setChecked(True)
 
     new = gui.switch_language(old, "fr")
@@ -112,7 +112,7 @@ def test_switching_language_keeps_files_and_options(qapp, settings_file, tmp_pat
         assert i18n.current() == "fr"
         assert new.run_btn.text() == i18n.load_table("fr")["action.convert"]
         assert new.inputs == [str(pdf)]
-        assert new.timeout_spin.value() == 77
+        assert new.timeout_box.currentData() == "120"
         assert new.format_boxes["json"].isChecked()
         assert gui.app_settings().value("language") == "fr"
         assert old not in gui._windows and new in gui._windows

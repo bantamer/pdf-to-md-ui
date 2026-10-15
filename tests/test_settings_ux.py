@@ -211,7 +211,7 @@ def test_help_is_written_in_every_language(code):
 def test_reset_puts_formats_and_options_back(window):
     window.format_boxes["markdown"].setChecked(False)
     window.format_boxes["json"].setChecked(True)
-    window.timeout_spin.setValue(99)
+    window.timeout_box.setCurrentIndex(window.timeout_box.findData("300"))
     window.pages_edit.setText("1-3")
     window.image_mode.setCurrentIndex(window.image_mode.findData("off"))
     window.threads_spin.setValue(2)  # an advanced one: must stay
@@ -220,7 +220,7 @@ def test_reset_puts_formats_and_options_back(window):
 
     assert window.format_boxes["markdown"].isChecked()
     assert not window.format_boxes["json"].isChecked()
-    assert window.timeout_spin.value() == 30
+    assert window.timeout_box.currentData() == "30"
     assert window.pages_edit.text() == ""
     assert window.image_mode.currentData() == "external"
     assert window.threads_spin.value() == 2
@@ -232,7 +232,7 @@ def test_reset_puts_advanced_options_back(window):
     window.password_edit.setText("secret")
     window.opt_header_footer.setChecked(True)
     window.hybrid.setCurrentIndex(1)
-    window.timeout_spin.setValue(99)  # a main one: must stay
+    window.timeout_box.setCurrentIndex(window.timeout_box.findData("300"))  # a main one: must stay
 
     window.reset_advanced_btn.click()
 
@@ -241,18 +241,18 @@ def test_reset_puts_advanced_options_back(window):
     assert window.password_edit.text() == ""
     assert not window.opt_header_footer.isChecked()
     assert window.hybrid.currentData() is None
-    assert window.timeout_spin.value() == 99
+    assert window.timeout_box.currentData() == "300"
 
 
 def test_defaults_are_the_untouched_ones_not_the_saved_ones(qapp, settings_file):
     first = gui.MainWindow()
-    first.timeout_spin.setValue(77)
+    first.timeout_box.setCurrentIndex(first.timeout_box.findData("120"))
     first._save_settings()
 
     again = gui.MainWindow()
-    assert again.timeout_spin.value() == 77  # restored as saved...
+    assert again.timeout_box.currentData() == "120"  # restored as saved...
     again.reset_main_btn.click()
-    assert again.timeout_spin.value() == 30  # ...but reset goes to the default
+    assert again.timeout_box.currentData() == "30"  # ...but reset goes to the default
 
 
 # -- password ------------------------------------------------------------------------ #
@@ -481,7 +481,7 @@ def test_options_and_more_options_line_up(window, width):
 
     starts = [[g.cellRect(0, c).x() for c in range(7)] for g in grids]
     assert starts[0] == starts[1]
-    boxes = [window.image_mode, window.image_dpi, window.pages_edit, window.timeout_spin,
+    boxes = [window.image_mode, window.image_dpi, window.pages_edit, window.timeout_box,
              window.reading_order, window.table_method, window.image_format,
              window.threads_spin, window.password_edit, window.hybrid,
              window.space_ratio, window.hybrid_url]
@@ -511,3 +511,23 @@ def test_resolution_saved_by_the_old_counter_still_loads(qapp, settings_file):
 
     gui.app_settings().setValue("options/image_dpi", 150)
     assert gui.MainWindow().image_dpi.currentData() == "144"
+
+
+def test_timeout_is_a_list_of_usual_values(window):
+    box = window.timeout_box
+    values = [int(box.itemData(i)) for i in range(box.count())]
+    texts = [box.itemText(i) for i in range(box.count())]
+
+    assert values == gui.TIMEOUT_CHOICES
+    assert box.currentData() == "30"
+    assert texts[0] == "15" + gui.tr("timeout.suffix")
+    assert texts[values.index(120)] == gui.tr("timeout.minutes", n=2)
+    assert texts[-1] == gui.tr("timeout.none")
+
+
+def test_timeout_saved_by_the_old_counter_still_loads(qapp, settings_file):
+    gui.app_settings().setValue("options/timeout", 120)
+    assert gui.MainWindow().timeout_box.currentData() == "120"
+
+    gui.app_settings().setValue("options/timeout", 45)  # not on the list
+    assert gui.MainWindow().timeout_box.currentData() == "30"

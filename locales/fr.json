@@ -100,7 +100,6 @@
   "timeout.label": "Délai par fichier :",
   "timeout.suffix": " s",
   "timeout.none": "sans limite",
-  "timeout.tooltip": "Le temps qu’un fichier peut prendre. Un fichier qui dépasse est réessayé une fois sans images, puis seulement marqué comme non converti ; le reste du lot continue.\n\n0 = sans limite.",
 
   "struct.label": "Utiliser les balises du PDF",
   "struct.tooltip": "Certains PDF portent des balises qui décrivent leur structure : titres, listes, tableaux. Avec cette option, le convertisseur suit ces balises au lieu de déduire la mise en page.\n\nPlus précis quand les balises sont bonnes, moins bon quand elles sont négligées. Les PDF sans balises sont convertis normalement.",

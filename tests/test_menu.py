@@ -124,7 +124,7 @@ def test_reset_forgets_settings_but_keeps_files(qapp, settings_file, tmp_path):
     i18n.set_language("fr")
     w = gui.open_window()
     w.add_paths([str(pdf)])
-    w.timeout_spin.setValue(99)
+    w.timeout_box.setCurrentIndex(w.timeout_box.findData("300"))
     w.output_edit.setText(str(tmp_path))
     w._remember_output_dir()
     w._set_theme("dark")
@@ -137,7 +137,7 @@ def test_reset_forgets_settings_but_keeps_files(qapp, settings_file, tmp_path):
         assert settings.value("output_dir") is None
         assert settings.value("dark") is None
         assert settings.value("language") is None
-        assert new.timeout_spin.value() == 30
+        assert new.timeout_box.currentData() == "30"
         assert new.output_edit.text() == ""
         assert new.inputs == [str(pdf)]
         assert i18n.current() == i18n.system_language()

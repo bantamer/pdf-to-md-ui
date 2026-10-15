@@ -104,7 +104,8 @@
   "timeout.label": "Timeout per file:",
   "timeout.suffix": " s",
   "timeout.none": "no limit",
-  "timeout.tooltip": "How long one file may take. A file that runs over is tried once more without images, and only then marked as not converted; the rest of the batch carries on.\n\n0 means no limit.",
+  "timeout.minutes": "{n} min",
+  "timeout.tooltip": "How long one file may take. A file that runs over is tried once more without images, and only then marked as not converted; the rest of the batch carries on.\n\n“No limit” lets a file take as long as it needs.",
 
   "struct.label": "Use tags from the PDF",
   "struct.tooltip": "Some PDFs carry tags describing their structure — headings, lists, tables. With this on, the converter follows those tags instead of working the layout out from the page.\n\nMore accurate when the tags are good, worse when they are sloppy. PDFs without tags are converted as usual.",
