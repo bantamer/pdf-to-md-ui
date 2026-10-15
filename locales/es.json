@@ -135,7 +135,6 @@
   "space_ratio.tooltip": "Cuándo poner un espacio entre dos letras vecinas: cuando el hueco supera esta fracción del tamaño de letra.\n\nMenos: las palabras empiezan a partirse; más: se pegan. 0,17 por defecto; cámbielo solo si en el resultado hay palabras partidas o pegadas.",
 
   "password.label": "Contraseña del PDF:",
-  "password.placeholder": "para PDF cifrados",
   "password.show": "Mostrar contraseña",
   "password.hide": "Ocultar contraseña",
   "password.tooltip": "Solo hace falta para los PDF que piden contraseña al abrirse. Se usa solo en esta conversión y nunca se guarda.\n\nEl botón del ojo muestra lo que ha escrito.",

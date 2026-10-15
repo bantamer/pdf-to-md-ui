@@ -135,7 +135,6 @@
   "space_ratio.tooltip": "Quand insérer une espace entre deux lettres voisines : quand l’écart dépasse cette part de la taille de police.\n\nPlus bas — les mots se morcellent ; plus haut — ils se collent. 0,17 par défaut ; ne le changez que si les mots du résultat sont coupés ou collés.",
 
   "password.label": "Mot de passe PDF :",
-  "password.placeholder": "pour les PDF chiffrés",
   "password.show": "Afficher le mot de passe",
   "password.hide": "Masquer le mot de passe",
   "password.tooltip": "Nécessaire seulement pour les PDF qui demandent un mot de passe à l’ouverture. Utilisé pour cette conversion uniquement, jamais enregistré.\n\nLe bouton en forme d’œil affiche ce que vous avez saisi.",

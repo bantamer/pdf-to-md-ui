@@ -135,7 +135,6 @@
   "space_ratio.tooltip": "Kiedy wstawiać spację między sąsiednimi literami: gdy odstęp jest większy niż ta część rozmiaru czcionki.\n\nMniej — słowa zaczynają się rozpadać, więcej — sklejają się. 0,17 to wartość domyślna; zmieniaj tylko wtedy, gdy słowa w wyniku są porozrywane lub sklejone.",
 
   "password.label": "Hasło PDF:",
-  "password.placeholder": "dla zaszyfrowanych PDF",
   "password.show": "Pokaż hasło",
   "password.hide": "Ukryj hasło",
   "password.tooltip": "Potrzebne tylko dla plików PDF, które przy otwieraniu pytają o hasło. Używane tylko w tym uruchomieniu i nigdzie nie zapisywane.\n\nPrzycisk z okiem pokazuje wpisany tekst.",

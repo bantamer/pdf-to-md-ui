@@ -139,7 +139,7 @@
   "space_ratio.tooltip": "When to put a space between two neighbouring letters: when the gap is wider than this share of the font size.\n\nLower — words start falling apart; higher — they run together. 0.17 is the default; change it only if words in the result are broken up or glued together.",
 
   "password.label": "PDF password:",
-  "password.placeholder": "for encrypted PDFs",
+  "password.placeholder": "if any",
   "password.show": "Show password",
   "password.hide": "Hide password",
   "password.tooltip": "Needed only for PDFs that ask for a password to open. Used for this run only and never saved.\n\nThe eye button shows what you typed.",

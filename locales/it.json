@@ -135,7 +135,6 @@
   "space_ratio.tooltip": "Quando inserire uno spazio tra due lettere vicine: quando la distanza supera questa frazione della dimensione del carattere.\n\nPiù basso — le parole si spezzano; più alto — si incollano. 0,17 è il valore predefinito; cambialo solo se nel risultato ci sono parole spezzate o incollate.",
 
   "password.label": "Password del PDF:",
-  "password.placeholder": "per PDF cifrati",
   "password.show": "Mostra password",
   "password.hide": "Nascondi password",
   "password.tooltip": "Serve solo per i PDF che chiedono una password all’apertura. Usata solo per questa conversione e mai salvata.\n\nIl pulsante a forma di occhio mostra quello che hai scritto.",
