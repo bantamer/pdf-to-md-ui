@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
 
       # The installer takes its version from the tag, About from version.py:
       # refuse a tag that does not match, so the two can never disagree.

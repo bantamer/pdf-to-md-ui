@@ -119,7 +119,7 @@ python -m pytest tests
 
 Установщики для раздачи собирает GitHub Actions: при отправке метки `v*`
 прогоняются тесты, приложение собирается с Java
-[Eclipse Temurin](https://adoptium.net) 21, и `PDF-to-Markdown-Setup.exe`
+[Eclipse Temurin](https://adoptium.net) 25, и `PDF-to-Markdown-Setup.exe`
 прикрепляется к релизу.
 
 Локально [build.bat](build.bat) создаёт виртуальное окружение, урезает Java

@@ -96,7 +96,7 @@ if not defined JLINK for /f "delims=" %%i in ('where jlink 2^>nul') do set "JLIN
 if not defined JLINK (
     echo       jlink not found - building without a bundled runtime.
     echo       The app will then need Java 11+ installed on every machine it
-    echo       runs on. Install a JDK 17+ from https://adoptium.net and re-run
+    echo       runs on. Install Temurin 25 ^(any JDK 17+ works^) from https://adoptium.net and re-run
     echo       this script to ship Java inside the build instead.
     exit /b 0
 )

@@ -112,7 +112,7 @@ skipped where Java is missing. GitHub Actions runs the suite on every push to
 ### Building
 
 Installers for sharing come from GitHub Actions: pushing a `v*` tag runs the
-tests, builds the app with an [Eclipse Temurin](https://adoptium.net) 21
+tests, builds the app with an [Eclipse Temurin](https://adoptium.net) 25
 runtime and attaches `PDF-to-Markdown-Setup.exe` to the release.
 
 Locally, [build.bat](build.bat) sets up a virtualenv, trims a JRE with `jlink`,

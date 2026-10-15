@@ -36,19 +36,21 @@ pip install -r requirements.txt pyinstaller
 ## 2. Урезанная JRE
 
 Пакет `opendataloader-pdf` запускает Java 11+. Чтобы пользователю не пришлось
-ставить её самому, кладём рядом собственную. Нужен любой JDK 17+ на машине
-сборки (Temurin подойдёт):
+ставить её самому, кладём рядом собственную. Релизы собираются на
+[Eclipse Temurin](https://adoptium.net) 25 — его и ставьте на машину сборки
+(подойдёт любой JDK 17+):
 
 ```
-jlink --add-modules java.base,java.desktop,java.logging,java.naming,java.xml ^
-      --strip-debug --no-header-files --no-man-pages --compress=2 ^
+jlink --add-modules java.base,java.desktop,java.logging,java.naming,java.xml,jdk.unsupported ^
+      --strip-debug --no-header-files --no-man-pages --compress=zip-6 ^
       --output jre
 ```
 
-Получается около 45 МБ. Набор модулей минимальный из рабочих: если при
+Получается около 45 МБ. Набор модулей минимальный из рабочих: `java.desktop`
+нужен для отрисовки страниц, `jdk.unsupported` — PDFBox. Если при
 конвертации вылетит `NoClassDefFoundError`, добавьте нужный модуль или
-соберите с `--add-modules ALL-MODULE-PATH` и урежьте потом. На JDK 21+ ключ
-`--compress=2` убран — там просто выбросьте его.
+соберите с `--add-modules ALL-MODULE-PATH` и урежьте потом. На JDK старше 21
+вместо `--compress=zip-6` пишите `--compress=2`.
 
 Приложение само найдёт эту папку — `_use_bundled_jre()` в
 [gui.py](gui.py) выставляет `JAVA_HOME`, если рядом с exe лежит `jre\`.
