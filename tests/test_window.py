@@ -126,10 +126,15 @@ def _drop(window, *paths):
 
     mime = QMimeData()
     mime.setUrls([QUrl.fromLocalFile(str(p)) for p in paths])
-    enter = QDragEnterEvent(
-        QPoint(10, 10), Qt.DropAction.CopyAction, mime,
+    args = (
+        Qt.DropAction.CopyAction, mime,
         Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
     )
+    # PySide6 6.12 deprecates the QPoint form; 6.11 only has that one.
+    try:
+        enter = QDragEnterEvent(QPointF(10, 10), *args)
+    except TypeError:
+        enter = QDragEnterEvent(QPoint(10, 10), *args)
     window.dragEnterEvent(enter)
     assert enter.isAccepted()
     drop = QDropEvent(
