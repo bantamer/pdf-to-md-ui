@@ -40,6 +40,11 @@ walks through everything — [English](docs/guide.en.md),
 
 ## What it does well
 
+- **Fit for a language model.** Plots and drawings that the converter reads
+  as tables of empty cells are replaced by a one-line note with the caption
+  and page (up to three quarters of a datasheet's tokens); merged MIN/TYP/MAX
+  cells in TI and ADI tables are split back into their columns; fonts whose
+  letters came out as "?" (Infineon, TI plot labels) are made readable.
 - **Tables survive.** Markdown keeps tables as HTML, so merged cells — the
   backbone of a datasheet's Electrical Characteristics — stay intact. Plain
   Markdown tables are one tick away for editors that don't show HTML.
@@ -181,6 +186,8 @@ open — longer languages must not push the cards past the edge.
 |---|---|
 | `gui.py` | Window, drag & drop, remembered settings, language switch |
 | `converter.py` | Running the jar: options, where each file goes, the worker thread |
+| `fontfix.py` | Character maps for fonts the converter cannot read, added to a temporary copy of the PDF |
+| `postprocess.py` | Markdown clean-up: figure clutter out, MIN/TYP/MAX columns split using the JSON |
 | `single_instance.py` | One window: a second launch hands its files to the first |
 | `updates.py` | Asks GitHub whether a newer release is out |
 | `i18n.py`, `locales/` | Interface languages |

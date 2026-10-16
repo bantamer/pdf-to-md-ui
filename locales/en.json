@@ -231,6 +231,7 @@
   "run.font_cache": "  building the font cache - once per computer, can take a few minutes; the timeout waits for it",
   "run.fonts_fixed": "  fonts the converter could not read, given a character map: {count}",
   "run.figures_dropped": "  figures read as tables, replaced by a note: {count}",
+  "run.limits_split": "  MIN/TYP/MAX columns put back apart, tables: {count}",
   "run.timed_out": "  stopped by the timeout",
   "run.failed": "  conversion error, file skipped",
   "run.java_start_failed": "  could not start java: {error}",

@@ -19,6 +19,7 @@ import hashlib
 import importlib.metadata
 import importlib.resources as resources
 import inspect
+import json
 import os
 import queue
 import shutil
@@ -37,7 +38,7 @@ from PySide6.QtCore import QObject, Signal
 
 from i18n import tr
 from fontfix import fix_fonts
-from postprocess import drop_figure_tables
+from postprocess import drop_figure_tables, split_limit_columns
 
 JAR_NAME = "opendataloader-pdf-cli.jar"
 
@@ -572,6 +573,16 @@ class ConvertWorker(QObject):
         if self.timeout:
             self._emit(tr("run.timeout", seconds=self.timeout))
 
+        # Splitting merged MIN/TYP/MAX columns needs the positions only the
+        # JSON output has; ask for it too and remove it later if unwanted.
+        run_options = dict(self.options)
+        formats = [f for f in str(run_options.get("format", "")).split(",") if f]
+        self._extra_json = bool(
+            run_options.get("markdown_with_html") and "markdown" in formats and "json" not in formats
+        )
+        if self._extra_json:
+            run_options["format"] = ",".join(formats + ["json"])
+
         for index, job in enumerate(self.jobs, 1):
             with self._lock:
                 if self._cancelled:
@@ -594,12 +605,12 @@ class ConvertWorker(QObject):
             work_dir = tempfile.mkdtemp(prefix="pdf2md-")
             source = self._readable_copy(job, work_dir)
             try:
-                outcome = self._run_one(java, jar, job, self.options, heap, source)
-                if outcome == "timeout" and self.options.get("image_output") != "off":
+                outcome = self._run_one(java, jar, job, run_options, heap, source)
+                if outcome == "timeout" and run_options.get("image_output") != "off":
                     # Images are the expensive part; an empty result helps
                     # nobody, so retry once without them and say so afterwards.
                     self._emit(tr("run.retry_no_images"))
-                    retry = dict(self.options, image_output="off")
+                    retry = dict(run_options, image_output="off")
                     outcome = self._run_one(java, jar, job, retry, heap, source)
                     if outcome == "ok":
                         outcome = "degraded"
@@ -652,21 +663,35 @@ class ConvertWorker(QObject):
     def _postprocess(self, job: Job) -> None:
         """Tidy the Markdown the converter wrote (postprocess.py).
 
-        Only the HTML-table form: plain Markdown tables have no empty cells
-        to tell a drawing by. Never fatal - the untouched file is still a
-        result.
+        Only the HTML-table form: plain Markdown tables keep neither the
+        merged cells to split nor the empty ones a drawing is told by. Never
+        fatal - the untouched file is still a result.
         """
-        if not self.clean_figures or not self.options.get("markdown_with_html"):
-            return
-        md_path = Path(job.output_dir) / (Path(job.pdf).stem + ".md")
+        stem = Path(job.output_dir) / Path(job.pdf).stem
+        json_path = stem.with_suffix(".json")
         try:
+            if not self.options.get("markdown_with_html"):
+                return
+            md_path = stem.with_suffix(".md")
             text = md_path.read_text(encoding="utf-8")
-            cleaned, dropped = drop_figure_tables(text)
-            if dropped:
-                md_path.write_text(cleaned, encoding="utf-8")
-                self._emit(tr("run.figures_dropped", count=dropped))
-        except (OSError, UnicodeError):
+            new = text
+            if json_path.exists():
+                doc = json.loads(json_path.read_text(encoding="utf-8"))
+                new, split = split_limit_columns(new, doc)
+                if split:
+                    self._emit(tr("run.limits_split", count=split))
+            if self.clean_figures:
+                new, dropped = drop_figure_tables(new)
+                if dropped:
+                    self._emit(tr("run.figures_dropped", count=dropped))
+            if new != text:
+                md_path.write_text(new, encoding="utf-8")
+        except (OSError, UnicodeError, ValueError):
             pass
+        finally:
+            if getattr(self, "_extra_json", False):
+                with contextlib.suppress(OSError):
+                    json_path.unlink()
 
     # -- one file ----------------------------------------------------------- #
 

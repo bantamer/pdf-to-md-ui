@@ -52,6 +52,10 @@ You can tick several formats at once.
   images.
 - **Page separators** — a `---- page 3 ----` line between the pages; untick
   it for one continuous text.
+- **Drop figure clutter** — plots, drawings and flow charts often come out
+  as huge tables of empty cells. Each is replaced by a line
+  "[Figure omitted, page N]" with its caption; see the figure itself in the
+  PDF. On by default.
 - **Plain Markdown tables** — tables in Markdown's own markup instead of
   HTML, for editors and sites that don't show HTML. Merged cells fall apart
   that way, which is why it is off by default.
@@ -93,6 +97,17 @@ the favourites (the folder itself stays on the disk).
 - **Open results folder** opens the folder in Explorer.
 - If something went wrong, a **Details** link appears next to the status line;
   it opens the log. The log is always at **Settings → Show log** (Ctrl+L).
+
+## What the program fixes by itself
+
+- **Unreadable fonts.** In some PDFs (Infineon, TI plot labels, Microchip
+  drawings) the font's letters are not named and the text came out as "?".
+  The program restores them before converting — the original file is not
+  changed.
+- **Merged MIN/TYP/MAX.** In TI and ADI tables with no lines between the MIN,
+  TYP and MAX columns, the numbers are put back under their words. Where the
+  page does not make clear which number belongs where, the cell is left as it
+  was, spread over the three columns.
 
 ## Tips for datasheets
 
