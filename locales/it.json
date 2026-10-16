@@ -61,6 +61,9 @@
   "list.partial": "Convertiti {ok} di {total}",
   "list.open_hint": "Fai doppio clic per aprire il risultato",
 
+  "figure.omitted": "[Figura omessa]",
+  "figure.omitted_page": "[Figura omessa, pag. {page}]",
+
   "output.section": "Dove salvare",
   "output.placeholder": "Cartella accanto ai file di origine",
   "output.browse": "Sfoglia…",
@@ -88,6 +91,10 @@
   "options.section": "Opzioni",
 
   "images.label": "Immagini:",
+  "images.files": "File separati",
+  "images.inside": "Nel documento",
+  "images.none": "Non salvare",
+  "images.tooltip": "File separati — immagini PNG o JPEG accanto al documento, collegate dal testo.\n\nNel documento — le immagini finiscono nel file .md in Base64: un unico file autonomo, ma molte volte più grande.\n\nNon salvare — solo testo e tabelle; la scelta più veloce.",
   "images.hint": "L'estrazione delle immagini è la parte più pesante del lavoro: ogni illustrazione viene renderizzata di nuovo. Nei documenti normali non si nota, ma i datasheet hanno decine di pagine di grafici, e quelle possono richiedere minuti.",
 
   "dpi.label": "Risoluzione:",
@@ -100,6 +107,8 @@
   "timeout.label": "Timeout per file:",
   "timeout.suffix": " s",
   "timeout.none": "nessun limite",
+  "timeout.minutes": "{n} min",
+  "timeout.tooltip": "Quanto tempo può richiedere un file. Un file che sfora viene riprovato una volta senza immagini e solo dopo segnato come non convertito; il resto del lotto prosegue.\n\n«Nessun limite» lascia al file tutto il tempo che serve.",
 
   "struct.label": "Usa i tag del PDF",
   "struct.tooltip": "Alcuni PDF contengono tag che ne descrivono la struttura: titoli, elenchi, tabelle. Con questa opzione il convertitore segue i tag invece di ricavare l’impaginazione dalla pagina.\n\nPiù preciso se i tag sono buoni, peggio se sono trascurati. I PDF senza tag vengono convertiti come al solito.",
@@ -113,6 +122,9 @@
   "plain_md.label": "Tabelle in Markdown puro",
   "plain_md.tooltip": "Scrive le tabelle con la sintassi propria del Markdown | con | barre | invece dell’HTML. Alcuni editor e siti mostrano solo quella.\n\nIl Markdown non sa unire le celle, quindi le tabelle con celle unite — come le caratteristiche elettriche di un datasheet — escono rotte o spostate. Per questo è disattivato in partenza. Riguarda solo il Markdown.",
 
+  "clean_figures.label": "Togli il disordine dei grafici",
+  "clean_figures.tooltip": "Grafici, disegni dei package e diagrammi di flusso spesso escono come enormi tabelle di celle vuote con numeri di scala sparsi: fino a tre quarti di un datasheet. Ognuna viene sostituita da una riga: qui c’era una figura, la sua didascalia e la pagina. Le frasi vere al suo interno, come i passi di un diagramma di flusso, restano.\n\nLa figura in sé comunque non è nel Markdown; guarda la pagina nel PDF. Riguarda il Markdown con tabelle HTML.",
+
   "advanced.button": "Altre opzioni",
 
   "reading_order.label": "Ordine di lettura:",
@@ -121,7 +133,7 @@
 
   "tables.label": "Tabelle:",
   "tables.default": "per linee",
-  "tables.cluster": "per raggruppamento",
+  "tables.cluster": "per gruppi",
   "tables.tooltip": "Come vengono trovate le tabelle.\n\nPer linee — dalle linee tracciate tra le celle; predefinito.\n\nPer raggruppamento — raggruppa anche il testo in celle in base alla posizione. Aiuta con le tabelle in cui sono tracciate solo alcune linee, frequenti nei datasheet.",
 
   "image_format.label": "Formato immagini:",
@@ -134,6 +146,7 @@
   "space_ratio.tooltip": "Quando inserire uno spazio tra due lettere vicine: quando la distanza supera questa frazione della dimensione del carattere.\n\nPiù basso — le parole si spezzano; più alto — si incollano. 0,17 è il valore predefinito; cambialo solo se nel risultato ci sono parole spezzate o incollate.",
 
   "password.label": "Password del PDF:",
+  "password.placeholder": "se presente",
   "password.show": "Mostra password",
   "password.hide": "Nascondi password",
   "password.tooltip": "Serve solo per i PDF che chiedono una password all’apertura. Usata solo per questa conversione e mai salvata.\n\nIl pulsante a forma di occhio mostra quello che hai scritto.",
@@ -147,11 +160,14 @@
   "strikethrough.label": "Segna il testo barrato",
   "strikethrough.tooltip": "Segna il testo barrato: ~~così~~ in Markdown, <del> in HTML. Sperimentale.",
 
+  "hidden_text.label": "Scarta il testo nascosto",
+  "hidden_text.tooltip": "Per risultati destinati a un’IA. Un PDF può contenere testo che il lettore non vede — invisibile, bianco su bianco, microscopico, fuori pagina, in livelli nascosti — a volte con istruzioni per l’IA. Questa opzione lo scarta.\n\nIl prezzo: circa il doppio del tempo, e spariscono anche alcuni segni sottili — in un datasheet Microchip dalle formule sono spariti i segni meno e uguale. Per questo è disattivata in partenza.",
+
   "hybrid.label": "Modalità IA:",
   "hybrid.off": "Disattivata",
   "hybrid.tooltip": "Invia le pagine difficili — tabelle complesse, scansioni — a un server IA separato (docling) per riconoscerle meglio; il resto viene convertito come al solito.\n\nIl server si installa e si avvia a parte: pip install \"opendataloader-pdf[hybrid]\", poi opendataloader-pdf-hybrid --port 5002. Se non risponde, il programma lo dice prima di iniziare.",
 
-  "hybrid_url.label": "Indirizzo del server:",
+  "hybrid_url.label": "Indirizzo server:",
   "hybrid_url.tooltip": "L’indirizzo del server IA. Lascialo vuoto per un server su questo computer (http://localhost:5002); compilalo solo se il server è altrove.",
 
   "log.section": "Registro",
@@ -203,6 +219,8 @@
   "run.no_java": "Java non trovato. Installa Java 11 o successivo, oppure reinstalla il programma — contiene già il Java giusto.",
   "run.patch_on": "patch veraPDF: attiva",
   "run.patch_off": "patch veraPDF: non applicata a questa versione",
+  "run.hidden_on": "testo nascosto: scartato",
+  "run.hidden_partial": "testo nascosto: questa versione di opendataloader-pdf scarta solo il testo minuscolo, fuori pagina e dei livelli nascosti; il testo invisibile o del colore dello sfondo resta",
   "run.inputs": "File in ingresso: {count}",
   "run.output": "Cartella dei risultati: {path}",
   "run.java": "Java: {path} · memoria JVM fino a {heap} MB",
@@ -210,6 +228,11 @@
   "run.result_dir": "  risultati: {path}",
   "run.mkdir_failed": "  impossibile creare la cartella: {error}",
   "run.retry_no_images": "  timeout superato — nuovo tentativo senza immagini",
+  "run.font_cache": "  creazione della cache dei font — una volta per computer, può richiedere qualche minuto; il timeout la aspetta",
+  "run.fonts_fixed": "  font senza tabella dei caratteri, corretti: {count}",
+  "run.figures_dropped": "  figure lette come tabelle, sostituite da una nota: {count}",
+  "run.limits_split": "  colonne MIN/TYP/MAX separate, tabelle: {count}",
+  "run.images_tidied": "  immagini: decorazioni ripetute tolte {links}, file inutili eliminati {files}",
   "run.timed_out": "  interrotto dal timeout",
   "run.failed": "  errore di conversione, file saltato",
   "run.java_start_failed": "  impossibile avviare java: {error}",

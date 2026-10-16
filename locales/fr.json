@@ -61,6 +61,9 @@
   "list.partial": "{ok} sur {total} convertis",
   "list.open_hint": "Double-cliquez pour ouvrir le résultat",
 
+  "figure.omitted": "[Figure omise]",
+  "figure.omitted_page": "[Figure omise, page {page}]",
+
   "output.section": "Où enregistrer",
   "output.placeholder": "Dossier à côté des fichiers source",
   "output.browse": "Parcourir…",
@@ -88,6 +91,10 @@
   "options.section": "Options",
 
   "images.label": "Images :",
+  "images.files": "Fichiers séparés",
+  "images.inside": "Dans le document",
+  "images.none": "Ne pas enregistrer",
+  "images.tooltip": "Fichiers séparés — images PNG ou JPEG à côté du document, liées depuis le texte.\n\nDans le document — les images vont dans le fichier .md en Base64 : un seul fichier autonome, mais plusieurs fois plus gros.\n\nNe pas enregistrer — texte et tableaux seulement ; le plus rapide.",
   "images.hint": "L'extraction des images est la partie la plus lourde du travail : chaque illustration est rendue à nouveau. Sur des documents ordinaires, cela ne se remarque pas, mais les fiches techniques comptent des dizaines de pages de graphiques, et celles-ci peuvent prendre des minutes.",
 
   "dpi.label": "Résolution :",
@@ -100,6 +107,8 @@
   "timeout.label": "Délai par fichier :",
   "timeout.suffix": " s",
   "timeout.none": "sans limite",
+  "timeout.minutes": "{n} min",
+  "timeout.tooltip": "Le temps qu’un fichier peut prendre. Un fichier qui dépasse est réessayé une fois sans images, puis seulement marqué comme non converti ; le reste du lot continue.\n\n« Sans limite » laisse un fichier prendre le temps qu’il faut.",
 
   "struct.label": "Utiliser les balises du PDF",
   "struct.tooltip": "Certains PDF portent des balises qui décrivent leur structure : titres, listes, tableaux. Avec cette option, le convertisseur suit ces balises au lieu de déduire la mise en page.\n\nPlus précis quand les balises sont bonnes, moins bon quand elles sont négligées. Les PDF sans balises sont convertis normalement.",
@@ -113,6 +122,9 @@
   "plain_md.label": "Tableaux en Markdown pur",
   "plain_md.tooltip": "Écrit les tableaux dans la syntaxe propre au Markdown | avec | barres | au lieu du HTML. Certains éditeurs et sites n’affichent que celle-là.\n\nLe Markdown ne sait pas fusionner les cellules : les tableaux à cellules fusionnées — les caractéristiques électriques d’une fiche technique, par exemple — sortent cassés ou décalés. C’est pourquoi l’option est désactivée par défaut. Ne concerne que le Markdown.",
 
+  "clean_figures.label": "Retirer le fouillis des figures",
+  "clean_figures.tooltip": "Les courbes, dessins de boîtiers et organigrammes sortent souvent en énormes tableaux de cellules vides parsemées de graduations — jusqu’aux trois quarts d’une fiche technique. Chacun est remplacé par une ligne : une figure était là, sa légende et sa page. Les vraies phrases à l’intérieur, comme les étapes d’un organigramme, sont gardées.\n\nLa figure elle-même n’est de toute façon pas dans le Markdown ; voyez la page dans le PDF. Concerne le Markdown à tableaux HTML.",
+
   "advanced.button": "Plus d'options",
 
   "reading_order.label": "Ordre de lecture :",
@@ -124,7 +136,7 @@
   "tables.cluster": "par regroupement",
   "tables.tooltip": "Comment les tableaux sont détectés.\n\nPar bordures — d’après les lignes tracées entre les cellules ; par défaut.\n\nPar regroupement — regroupe aussi le texte en cellules selon sa position. Utile pour les tableaux dont seules certaines lignes sont tracées, fréquents dans les fiches techniques.",
 
-  "image_format.label": "Format des images :",
+  "image_format.label": "Format d’image :",
   "image_format.tooltip": "Le type de fichier des images. PNG garde les courbes et schémas nets ; JPEG réduit la taille des photos.\n\nNe compte que si les images sont enregistrées.",
 
   "threads.label": "Threads :",
@@ -134,6 +146,7 @@
   "space_ratio.tooltip": "Quand insérer une espace entre deux lettres voisines : quand l’écart dépasse cette part de la taille de police.\n\nPlus bas — les mots se morcellent ; plus haut — ils se collent. 0,17 par défaut ; ne le changez que si les mots du résultat sont coupés ou collés.",
 
   "password.label": "Mot de passe PDF :",
+  "password.placeholder": "le cas échéant",
   "password.show": "Afficher le mot de passe",
   "password.hide": "Masquer le mot de passe",
   "password.tooltip": "Nécessaire seulement pour les PDF qui demandent un mot de passe à l’ouverture. Utilisé pour cette conversion uniquement, jamais enregistré.\n\nLe bouton en forme d’œil affiche ce que vous avez saisi.",
@@ -147,11 +160,14 @@
   "strikethrough.label": "Marquer le texte barré",
   "strikethrough.tooltip": "Signale le texte barré : ~~comme ceci~~ en Markdown, <del> en HTML. Expérimental.",
 
+  "hidden_text.label": "Écarter le texte caché",
+  "hidden_text.tooltip": "Pour des résultats destinés à une IA. Un PDF peut contenir du texte que le lecteur ne voit pas — invisible, blanc sur blanc, microscopique, hors de la page, dans des calques masqués — parfois avec des instructions pour l’IA. Cette option l’écarte.\n\nLe prix : environ deux fois plus lent, et certains signes fins disparaissent aussi — dans une fiche Microchip, les signes moins et égal ont disparu des formules. D’où la désactivation par défaut.",
+
   "hybrid.label": "Mode IA :",
   "hybrid.off": "Désactivé",
   "hybrid.tooltip": "Envoie les pages difficiles — tableaux complexes, scans — à un serveur d’IA séparé (docling) pour une meilleure reconnaissance ; le reste est converti normalement.\n\nLe serveur s’installe et se lance à part : pip install \"opendataloader-pdf[hybrid]\", puis opendataloader-pdf-hybrid --port 5002. S’il ne répond pas, le programme le signale avant de commencer.",
 
-  "hybrid_url.label": "Adresse du serveur :",
+  "hybrid_url.label": "Adresse serveur :",
   "hybrid_url.tooltip": "L’adresse du serveur d’IA. Laissez vide pour un serveur sur cet ordinateur (http://localhost:5002) ; à remplir seulement si le serveur tourne ailleurs.",
 
   "log.section": "Journal",
@@ -203,6 +219,8 @@
   "run.no_java": "Java introuvable. Installez Java 11 ou plus récent, ou réinstallez le programme — le bon Java est fourni avec.",
   "run.patch_on": "correctif veraPDF : activé",
   "run.patch_off": "correctif veraPDF : non appliqué à cette version",
+  "run.hidden_on": "texte caché : écarté",
+  "run.hidden_partial": "texte caché : cette version d’opendataloader-pdf n’écarte que le texte minuscule, hors page et des calques masqués ; le texte invisible ou de la couleur du fond reste",
   "run.inputs": "Fichiers en entrée : {count}",
   "run.output": "Dossier des résultats : {path}",
   "run.java": "Java : {path} · mémoire JVM jusqu'à {heap} Mo",
@@ -210,6 +228,11 @@
   "run.result_dir": "  résultats : {path}",
   "run.mkdir_failed": "  impossible de créer le dossier : {error}",
   "run.retry_no_images": "  délai dépassé — nouvel essai sans images",
+  "run.font_cache": "  construction du cache des polices — une fois par ordinateur, peut prendre quelques minutes ; le délai l’attend",
+  "run.fonts_fixed": "  polices sans table de caractères, corrigées : {count}",
+  "run.figures_dropped": "  figures lues comme des tableaux, remplacées par une note : {count}",
+  "run.limits_split": "  colonnes MIN/TYP/MAX séparées, tableaux : {count}",
+  "run.images_tidied": "  images : décorations répétées retirées {links}, fichiers inutiles supprimés {files}",
   "run.timed_out": "  arrêté par le délai",
   "run.failed": "  erreur de conversion, fichier ignoré",
   "run.java_start_failed": "  impossible de lancer java : {error}",

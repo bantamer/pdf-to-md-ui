@@ -1,7 +1,5 @@
 # <img src="docs/icon.png" width="40" alt="" align="top"> PDF → Markdown
 
-[Русская версия](README.ru.md)
-
 A Windows desktop app that turns PDFs — technical documents and datasheets
 especially — into Markdown, JSON, HTML or plain text. Drag files in, press one
 button. No terminal, no Python, no Java to install.

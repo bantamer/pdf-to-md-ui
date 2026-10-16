@@ -61,6 +61,9 @@
   "list.partial": "Skonwertowano {ok} z {total}",
   "list.open_hint": "Kliknij dwukrotnie, aby otworzyć wynik",
 
+  "figure.omitted": "[Pominięto rysunek]",
+  "figure.omitted_page": "[Pominięto rysunek, str. {page}]",
+
   "output.section": "Gdzie zapisać",
   "output.placeholder": "Folder obok plików źródłowych",
   "output.browse": "Przeglądaj…",
@@ -88,6 +91,10 @@
   "options.section": "Opcje",
 
   "images.label": "Obrazy:",
+  "images.files": "Osobne pliki",
+  "images.inside": "W dokumencie",
+  "images.none": "Nie zapisuj",
+  "images.tooltip": "Osobne pliki — obrazy PNG lub JPEG obok dokumentu, w tekście odnośniki do nich.\n\nW dokumencie — obrazy wewnątrz pliku .md jako Base64: jeden samodzielny plik, ale kilka razy większy.\n\nNie zapisuj — tylko tekst i tabele; najszybciej.",
   "images.hint": "Wyodrębnianie obrazów to najcięższa część pracy: każda ilustracja jest renderowana od nowa. Przy zwykłych dokumentach różnicy nie widać, ale noty katalogowe mają dziesiątki stron wykresów i ich konwersja może trwać minuty.",
 
   "dpi.label": "Rozdzielczość:",
@@ -100,6 +107,8 @@
   "timeout.label": "Limit czasu na plik:",
   "timeout.suffix": " s",
   "timeout.none": "bez limitu",
+  "timeout.minutes": "{n} min",
+  "timeout.tooltip": "Ile czasu może zająć jeden plik. Plik, który się nie zmieści, jest próbowany jeszcze raz bez obrazów i dopiero potem oznaczany jako nieskonwertowany; reszta plików jest przetwarzana dalej.\n\n„Bez limitu” — plik jest przetwarzany tak długo, jak trzeba.",
 
   "struct.label": "Użyj tagów z PDF",
   "struct.tooltip": "Niektóre pliki PDF mają znaczniki opisujące strukturę: nagłówki, listy, tabele. Z tą opcją konwerter korzysta ze znaczników zamiast odtwarzać układ ze strony.\n\nDokładniej, gdy znaczniki są dobre, gorzej, gdy niestaranne. PDF bez znaczników są konwertowane jak zwykle.",
@@ -112,6 +121,9 @@
 
   "plain_md.label": "Tabele w czystym Markdown",
   "plain_md.tooltip": "Zapisuje tabele własną składnią Markdown | z | kreskami | zamiast HTML. Niektóre edytory i strony pokazują tylko takie.\n\nMarkdown nie umie scalać komórek, więc tabele ze scalonymi komórkami — np. charakterystyki elektryczne w kartach katalogowych — wychodzą rozbite lub przesunięte. Dlatego domyślnie jest wyłączone. Dotyczy tylko Markdown.",
+
+  "clean_figures.label": "Usuwaj śmieci po wykresach",
+  "clean_figures.tooltip": "Wykresy, rysunki obudów i schematy blokowe często zamieniają się w ogromne tabele z pustych komórek z porozrzucanymi liczbami skal — w karcie katalogowej nawet trzy czwarte pliku. Każda taka tabela jest zastępowana jednym wierszem: był tu rysunek, jego podpis i strona. Prawdziwe zdania w środku, np. kroki schematu blokowego, zostają.\n\nSam rysunek i tak nie trafia do Markdown — zobacz stronę w PDF. Dotyczy Markdown z tabelami HTML.",
 
   "advanced.button": "Więcej opcji",
 
@@ -134,6 +146,7 @@
   "space_ratio.tooltip": "Kiedy wstawiać spację między sąsiednimi literami: gdy odstęp jest większy niż ta część rozmiaru czcionki.\n\nMniej — słowa zaczynają się rozpadać, więcej — sklejają się. 0,17 to wartość domyślna; zmieniaj tylko wtedy, gdy słowa w wyniku są porozrywane lub sklejone.",
 
   "password.label": "Hasło PDF:",
+  "password.placeholder": "jeśli jest",
   "password.show": "Pokaż hasło",
   "password.hide": "Ukryj hasło",
   "password.tooltip": "Potrzebne tylko dla plików PDF, które przy otwieraniu pytają o hasło. Używane tylko w tym uruchomieniu i nigdzie nie zapisywane.\n\nPrzycisk z okiem pokazuje wpisany tekst.",
@@ -146,6 +159,9 @@
 
   "strikethrough.label": "Oznaczaj przekreślony tekst",
   "strikethrough.tooltip": "Oznacza przekreślony tekst: ~~w ten sposób~~ w Markdown, <del> w HTML. Funkcja eksperymentalna.",
+
+  "hidden_text.label": "Odrzucaj ukryty tekst",
+  "hidden_text.tooltip": "Dla wyników przekazywanych AI. PDF może zawierać tekst, którego czytelnik nie widzi — niewidoczny, biały na białym, mikroskopijny, poza stroną, w ukrytych warstwach — czasem z poleceniami dla AI. Ta opcja go odrzuca.\n\nCena: mniej więcej dwa razy wolniej, a czasem znikają cienkie znaki — w karcie Microchip z wzorów zniknęły minusy i znaki równości. Dlatego domyślnie jest wyłączona.",
 
   "hybrid.label": "Tryb AI:",
   "hybrid.off": "Wyłączony",
@@ -203,6 +219,8 @@
   "run.no_java": "Nie znaleziono Javy. Zainstaluj Javę 11 lub nowszą albo zainstaluj program ponownie — odpowiednia Java jest w zestawie.",
   "run.patch_on": "łatka veraPDF: włączona",
   "run.patch_off": "łatka veraPDF: nie dotyczy tej wersji",
+  "run.hidden_on": "ukryty tekst: odrzucany",
+  "run.hidden_partial": "ukryty tekst: ta wersja opendataloader-pdf odrzuca tylko mały tekst, tekst poza stroną i ukryte warstwy; tekst niewidoczny i w kolorze tła zostaje",
   "run.inputs": "Plików na wejściu: {count}",
   "run.output": "Folder wyników: {path}",
   "run.java": "Java: {path} · pamięć JVM do {heap} MB",
@@ -210,6 +228,11 @@
   "run.result_dir": "  wynik: {path}",
   "run.mkdir_failed": "  nie udało się utworzyć folderu: {error}",
   "run.retry_no_images": "  przekroczono limit czasu — ponowna próba bez obrazów",
+  "run.font_cache": "  budowanie pamięci podręcznej czcionek — raz na komputer, może potrwać kilka minut; limit czasu na to czeka",
+  "run.fonts_fixed": "  czcionek bez tablicy znaków, poprawiono: {count}",
+  "run.figures_dropped": "  rysunków odczytanych jako tabele, zastąpiono notatką: {count}",
+  "run.limits_split": "  kolumny MIN/TYP/MAX rozdzielone, tabel: {count}",
+  "run.images_tidied": "  obrazy: usunięto powtarzające się ozdobniki {links}, usunięto zbędne pliki {files}",
   "run.timed_out": "  przerwano przez limit czasu",
   "run.failed": "  błąd konwersji, plik pominięty",
   "run.java_start_failed": "  nie udało się uruchomić javy: {error}",

@@ -61,6 +61,9 @@
   "list.partial": "Convertidos {ok} de {total}",
   "list.open_hint": "Haga doble clic para abrir el resultado",
 
+  "figure.omitted": "[Figura omitida]",
+  "figure.omitted_page": "[Figura omitida, pág. {page}]",
+
   "output.section": "Dónde guardar",
   "output.placeholder": "Carpeta junto a los archivos de origen",
   "output.browse": "Examinar…",
@@ -88,6 +91,10 @@
   "options.section": "Opciones",
 
   "images.label": "Imágenes:",
+  "images.files": "Archivos aparte",
+  "images.inside": "En el documento",
+  "images.none": "No guardar",
+  "images.tooltip": "Archivos aparte — imágenes PNG o JPEG junto al documento, enlazadas desde el texto.\n\nEn el documento — las imágenes van dentro del archivo .md en Base64: un único archivo autónomo, pero varias veces más grande.\n\nNo guardar — solo texto y tablas; lo más rápido.",
   "images.hint": "Extraer las imágenes es la parte más pesada del trabajo: cada ilustración se vuelve a renderizar. En documentos normales no se nota, pero las hojas de datos tienen decenas de páginas de gráficas, y esas pueden tardar minutos.",
 
   "dpi.label": "Resolución:",
@@ -97,9 +104,11 @@
   "pages.placeholder": "todas",
   "pages.tooltip": "Qué páginas convertir, p. ej. 1,3,5-7. Vacío: todas.\n\nEn las hojas de datos conviene tomar la descripción y las tablas de parámetros (digamos 1-12) y saltarse decenas de páginas de gráficas.",
 
-  "timeout.label": "Tiempo límite por archivo:",
+  "timeout.label": "Límite por archivo:",
   "timeout.suffix": " s",
   "timeout.none": "sin límite",
+  "timeout.minutes": "{n} min",
+  "timeout.tooltip": "Cuánto puede tardar un archivo. El que se pasa se reintenta una vez sin imágenes y solo entonces se marca como no convertido; el resto del lote sigue adelante.\n\n«Sin límite» deja que un archivo tarde lo que necesite.",
 
   "struct.label": "Usar las etiquetas del PDF",
   "struct.tooltip": "Algunos PDF llevan etiquetas que describen su estructura: títulos, listas, tablas. Con esta opción, el conversor sigue esas etiquetas en lugar de deducir la maquetación de la página.\n\nMás preciso si las etiquetas son buenas, peor si son descuidadas. Los PDF sin etiquetas se convierten como siempre.",
@@ -113,6 +122,9 @@
   "plain_md.label": "Tablas en Markdown puro",
   "plain_md.tooltip": "Escribe las tablas con la sintaxis propia de Markdown | con | barras | en lugar de HTML. Algunos editores y sitios solo muestran esas.\n\nMarkdown no puede combinar celdas, así que las tablas con celdas combinadas —como las características eléctricas de una hoja de datos— salen rotas o desplazadas. Por eso viene desactivado. Solo afecta a Markdown.",
 
+  "clean_figures.label": "Quitar el desorden de figuras",
+  "clean_figures.tooltip": "Las gráficas, los dibujos de encapsulados y los diagramas de flujo suelen salir como enormes tablas de celdas vacías con cifras de escala sueltas: hasta tres cuartas partes de una hoja de datos. Cada una se sustituye por una línea: aquí había una figura, su título y su página. Las frases reales de dentro, como los pasos de un diagrama de flujo, se conservan.\n\nLa figura en sí no está en el Markdown de todos modos; consulte la página en el PDF. Afecta al Markdown con tablas HTML.",
+
   "advanced.button": "Más opciones",
 
   "reading_order.label": "Orden de lectura:",
@@ -124,7 +136,7 @@
   "tables.cluster": "por agrupación",
   "tables.tooltip": "Cómo se detectan las tablas.\n\nPor líneas — a partir de las líneas trazadas entre celdas; por defecto.\n\nPor agrupación — además agrupa el texto en celdas según su posición. Ayuda con tablas que solo tienen algunas líneas trazadas, algo habitual en las hojas de datos.",
 
-  "image_format.label": "Formato de imagen:",
+  "image_format.label": "Formato imagen:",
   "image_format.tooltip": "El tipo de archivo de las imágenes. PNG mantiene nítidas las gráficas y los esquemas; JPEG reduce las fotos.\n\nSolo importa si se guardan imágenes.",
 
   "threads.label": "Hilos:",
@@ -133,7 +145,8 @@
   "space_ratio.label": "Umbral de espacio:",
   "space_ratio.tooltip": "Cuándo poner un espacio entre dos letras vecinas: cuando el hueco supera esta fracción del tamaño de letra.\n\nMenos: las palabras empiezan a partirse; más: se pegan. 0,17 por defecto; cámbielo solo si en el resultado hay palabras partidas o pegadas.",
 
-  "password.label": "Contraseña del PDF:",
+  "password.label": "Contraseña PDF:",
+  "password.placeholder": "si la hay",
   "password.show": "Mostrar contraseña",
   "password.hide": "Ocultar contraseña",
   "password.tooltip": "Solo hace falta para los PDF que piden contraseña al abrirse. Se usa solo en esta conversión y nunca se guarda.\n\nEl botón del ojo muestra lo que ha escrito.",
@@ -147,11 +160,14 @@
   "strikethrough.label": "Marcar texto tachado",
   "strikethrough.tooltip": "Marca el texto tachado: ~~así~~ en Markdown, <del> en HTML. Experimental.",
 
+  "hidden_text.label": "Descartar texto oculto",
+  "hidden_text.tooltip": "Para resultados que van a una IA. Un PDF puede llevar texto que el lector nunca ve —invisible, blanco sobre blanco, microscópico, fuera de la página, en capas ocultas—, a veces con instrucciones para la IA. Esto lo descarta.\n\nEl precio: unas dos veces más lento, y algunos signos finos también desaparecen: en una hoja de datos de Microchip desaparecieron los signos menos e igual de las fórmulas. Por eso viene desactivado.",
+
   "hybrid.label": "Modo IA:",
   "hybrid.off": "Desactivado",
   "hybrid.tooltip": "Envía las páginas difíciles —tablas complejas, escaneos— a un servidor de IA aparte (docling) para reconocerlas mejor; el resto se convierte como siempre.\n\nEl servidor se instala y se inicia por separado: pip install \"opendataloader-pdf[hybrid]\" y luego opendataloader-pdf-hybrid --port 5002. Si no responde, el programa lo avisa antes de empezar.",
 
-  "hybrid_url.label": "Dirección del servidor:",
+  "hybrid_url.label": "URL del servidor:",
   "hybrid_url.tooltip": "La dirección del servidor de IA. Déjela vacía para un servidor en este equipo (http://localhost:5002); rellénela solo si el servidor está en otro sitio.",
 
   "log.section": "Registro",
@@ -203,6 +219,8 @@
   "run.no_java": "No se encontró Java. Instale Java 11 o posterior, o vuelva a instalar el programa — incluye el Java adecuado.",
   "run.patch_on": "parche de veraPDF: activado",
   "run.patch_off": "parche de veraPDF: no se aplica a esta versión",
+  "run.hidden_on": "texto oculto: descartado",
+  "run.hidden_partial": "texto oculto: esta versión de opendataloader-pdf solo descarta texto diminuto, fuera de la página y de capas ocultas; el texto invisible o del color del fondo se queda",
   "run.inputs": "Archivos de entrada: {count}",
   "run.output": "Carpeta de resultados: {path}",
   "run.java": "Java: {path} · memoria de la JVM hasta {heap} MB",
@@ -210,6 +228,11 @@
   "run.result_dir": "  resultados: {path}",
   "run.mkdir_failed": "  no se pudo crear la carpeta: {error}",
   "run.retry_no_images": "  superó el tiempo límite — reintentando sin imágenes",
+  "run.font_cache": "  construyendo la caché de fuentes: una vez por equipo, puede tardar unos minutos; el tiempo límite la espera",
+  "run.fonts_fixed": "  fuentes sin tabla de caracteres, corregidas: {count}",
+  "run.figures_dropped": "  figuras leídas como tablas, sustituidas por una nota: {count}",
+  "run.limits_split": "  columnas MIN/TYP/MAX separadas, tablas: {count}",
+  "run.images_tidied": "  imágenes: adornos repetidos quitados {links}, archivos sobrantes borrados {files}",
   "run.timed_out": "  detenido por el tiempo límite",
   "run.failed": "  error de conversión, archivo omitido",
   "run.java_start_failed": "  no se pudo iniciar java: {error}",
