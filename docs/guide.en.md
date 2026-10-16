@@ -108,6 +108,9 @@ the favourites (the folder itself stays on the disk).
   TYP and MAX columns, the numbers are put back under their words. Where the
   page does not make clear which number belongs where, the cell is left as it
   was, spread over the three columns.
+- **Surplus images.** Identical pictures become one file; a picture repeated
+  on many pages (a logo, a bit of a frame) is left out of the text; files
+  nothing links to are deleted.
 
 ## Tips for datasheets
 

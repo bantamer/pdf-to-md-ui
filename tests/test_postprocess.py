@@ -126,3 +126,68 @@ def test_a_missing_markdown_file_is_no_error(qapp, tmp_path):
     job, worker = worker_for(tmp_path, clean=True)
 
     worker._postprocess(job)  # e.g. only JSON was asked for
+
+
+# -- images ------------------------------------------------------------------------ #
+
+from postprocess import REPEATED_IMAGE, tidy_images
+
+
+def images(tmp_path, files):
+    folder = tmp_path / "doc_images"
+    folder.mkdir()
+    for name, data in files.items():
+        (folder / name).write_bytes(data)
+    return folder
+
+
+def link(name):
+    return f"![](<doc_images/{name}>)"
+
+
+def test_identical_files_become_one(tmp_path):
+    folder = images(tmp_path, {"imageFile1.png": b"A", "imageFile2.png": b"A", "imageFile3.png": b"B"})
+    md = f"{link('imageFile1.png')}\n{link('imageFile2.png')}\n{link('imageFile3.png')}\n"
+
+    new, removed, deleted = tidy_images(md, folder)
+
+    assert new == f"{link('imageFile1.png')}\n{link('imageFile1.png')}\n{link('imageFile3.png')}\n"
+    assert (removed, deleted) == (0, 1)
+    assert sorted(p.name for p in folder.iterdir()) == ["imageFile1.png", "imageFile3.png"]
+
+
+def test_a_picture_on_every_page_is_a_decoration(tmp_path):
+    files = {f"imageFile{i}.png": b"LOGO" for i in range(1, REPEATED_IMAGE + 1)}
+    files["imageFile99.png"] = b"FIGURE"
+    folder = images(tmp_path, files)
+    md = "\n".join(link(n) for n in files) + "\n"
+
+    new, removed, _ = tidy_images(md, folder)
+
+    assert removed == REPEATED_IMAGE
+    assert new.strip() == link("imageFile99.png")
+    assert [p.name for p in folder.iterdir()] == ["imageFile99.png"]
+
+
+def test_files_nothing_links_to_are_deleted(tmp_path):
+    folder = images(tmp_path, {"imageFile1.png": b"A", "imageFile2.png": b"B"})
+
+    _, _, deleted = tidy_images(f"{link('imageFile1.png')}\n", folder)
+
+    assert deleted == 1 and not (folder / "imageFile2.png").exists()
+
+
+def test_files_other_outputs_use_are_kept(tmp_path):
+    folder = images(tmp_path, {"imageFile1.png": b"A", "imageFile2.png": b"B"})
+
+    tidy_images(f"{link('imageFile1.png')}\n", folder, keep={"imageFile2.png"})
+
+    assert (folder / "imageFile2.png").exists()
+
+
+def test_an_emptied_folder_goes(tmp_path):
+    folder = images(tmp_path, {"imageFile1.png": b"A"})
+
+    tidy_images("no pictures left\n", folder)
+
+    assert not folder.exists()

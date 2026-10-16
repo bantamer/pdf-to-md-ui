@@ -232,6 +232,7 @@
   "run.fonts_fixed": "  шрифтов без таблицы символов, исправлено: {count}",
   "run.figures_dropped": "  рисунков, распознанных как таблицы, заменено пометкой: {count}",
   "run.limits_split": "  столбцы MIN/TYP/MAX разнесены, таблиц: {count}",
+  "run.images_tidied": "  картинки: убрано повторяющихся украшений {links}, удалено лишних файлов {files}",
   "run.timed_out": "  прервано по таймауту",
   "run.failed": "  ошибка конвертации, файл пропущен",
   "run.java_start_failed": "  не удалось запустить java: {error}",

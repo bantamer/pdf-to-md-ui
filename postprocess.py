@@ -503,3 +503,76 @@ _ANY_TAG = re.compile(r"<[^>]+>")
 _LIMIT_TEXT = re.compile(
     r"<t[hd][^>]*>\s*(?:MIN|TYP|NOM|MAX)\.?(?:\s*\(\d+\))?\s+(?:MIN|TYP|NOM|MAX)", re.I
 )
+
+
+# -- images ---------------------------------------------------------------------- #
+#
+# With images saved as files the converter writes one file per picture it
+# meets: ST's logo once per page (40 identical files, 40 links), and the
+# pictures inside drawings that drop_figure_tables() has since removed
+# (BME280: 204 files, 28 still linked).
+
+_IMAGE_LINK = re.compile(r"!\[[^\]]*\]\(<?([^)<>]+?)>?\)")
+# An identical picture linked this often is a logo or a page decoration,
+# not a figure: its links go.
+REPEATED_IMAGE = 5
+
+
+def tidy_images(md: str, folder, keep: set[str] = frozenset()) -> tuple[str, int, int]:
+    """Merge identical image files, drop page decorations, delete strays.
+
+    `folder` is the <name>_images folder next to the Markdown; `keep` names
+    files other outputs (HTML, JSON) link to. Returns the new Markdown, the
+    number of links removed and the number of files deleted.
+    """
+    import hashlib
+    from pathlib import Path
+
+    folder = Path(folder)
+    if not folder.is_dir():
+        return md, 0, 0
+    digest: dict[str, str] = {}
+    for f in folder.iterdir():
+        if f.is_file():
+            digest[f.name] = hashlib.md5(f.read_bytes()).hexdigest()
+    first: dict[str, str] = {}
+    for name in sorted(digest, key=lambda n: (len(n), n)):
+        first.setdefault(digest[name], name)
+
+    links = [m for m in _IMAGE_LINK.finditer(md) if Path(m.group(1)).name in digest]
+    uses: dict[str, int] = {}
+    for m in links:
+        h = digest[Path(m.group(1)).name]
+        uses[h] = uses.get(h, 0) + 1
+
+    out, last, removed = [], 0, 0
+    for m in links:
+        name = Path(m.group(1)).name
+        h = digest[name]
+        out.append(md[last:m.start()])
+        if uses[h] >= REPEATED_IMAGE:
+            removed += 1
+        else:
+            target = m.group(1)[: -len(name)] + first[h]
+            out.append(f"![](<{target}>)")
+        last = m.end()
+    out.append(md[last:])
+    new = "".join(out)
+    if removed:
+        new = re.sub(r"\n{4,}", "\n\n\n", new)
+
+    used = {Path(m.group(1)).name for m in _IMAGE_LINK.finditer(new)} | set(keep)
+    deleted = 0
+    for name in digest:
+        if name not in used:
+            try:
+                (folder / name).unlink()
+                deleted += 1
+            except OSError:
+                pass
+    try:
+        if not any(folder.iterdir()):
+            folder.rmdir()
+    except OSError:
+        pass
+    return new, removed, deleted

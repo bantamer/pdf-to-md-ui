@@ -38,7 +38,7 @@ from PySide6.QtCore import QObject, Signal
 
 from i18n import tr
 from fontfix import fix_fonts
-from postprocess import drop_figure_tables, split_limit_columns
+from postprocess import drop_figure_tables, split_limit_columns, tidy_images
 
 JAR_NAME = "opendataloader-pdf-cli.jar"
 
@@ -684,6 +684,8 @@ class ConvertWorker(QObject):
                 new, dropped = drop_figure_tables(new)
                 if dropped:
                     self._emit(tr("run.figures_dropped", count=dropped))
+            if self.options.get("image_output") == "external":
+                new = self._tidy_images(stem, new)
             if new != text:
                 md_path.write_text(new, encoding="utf-8")
         except (OSError, UnicodeError, ValueError):
@@ -692,6 +694,24 @@ class ConvertWorker(QObject):
             if getattr(self, "_extra_json", False):
                 with contextlib.suppress(OSError):
                     json_path.unlink()
+
+    def _tidy_images(self, stem: Path, md: str) -> str:
+        """Merge duplicate image files, drop logos, delete unlinked files."""
+        folder = stem.parent / (stem.name + "_images")
+        if not folder.is_dir():
+            return md
+        names = [f.name for f in folder.iterdir()]
+        keep: set[str] = set()
+        others = [".html"] + ([] if getattr(self, "_extra_json", False) else [".json"])
+        for suffix in others:
+            other = stem.with_suffix(suffix)
+            if other.exists():
+                text = other.read_text(encoding="utf-8", errors="replace")
+                keep |= {n for n in names if n in text}
+        new, removed, deleted = tidy_images(md, folder, keep)
+        if removed or deleted:
+            self._emit(tr("run.images_tidied", links=removed, files=deleted))
+        return new
 
     # -- one file ----------------------------------------------------------- #
 
