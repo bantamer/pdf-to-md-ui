@@ -100,6 +100,7 @@ HELP_KEYS = [
     "format.tagged_pdf_tooltip", "format.pdf_tooltip",
     "images.tooltip", "dpi.tooltip", "pages.tooltip", "timeout.tooltip",
     "struct.tooltip", "sanitize.tooltip", "page_sep.tooltip", "plain_md.tooltip",
+    "clean_figures.tooltip",
     "reading_order.tooltip", "tables.tooltip", "image_format.tooltip",
     "threads.tooltip", "password.tooltip", "hybrid.tooltip",
     "space_ratio.tooltip", "hybrid_url.tooltip",

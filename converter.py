@@ -25,6 +25,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import zipfile
@@ -35,6 +36,8 @@ from urllib.parse import urlparse
 from PySide6.QtCore import QObject, Signal
 
 from i18n import tr
+from fontfix import fix_fonts
+from postprocess import drop_figure_tables
 
 JAR_NAME = "opendataloader-pdf-cli.jar"
 
@@ -499,6 +502,7 @@ class ConvertWorker(QObject):
         timeout: int,
         supported: set[str] | None,
         filter_hidden: bool = False,
+        clean_figures: bool = False,
     ):
         super().__init__()
         self.jobs = jobs
@@ -507,6 +511,7 @@ class ConvertWorker(QObject):
         self.timeout = timeout  # seconds; 0 = no limit
         self.supported = supported
         self.filter_hidden = filter_hidden
+        self.clean_figures = clean_figures
 
         self._lock = threading.Lock()
         self._process: subprocess.Popen | None = None
@@ -584,27 +589,36 @@ class ConvertWorker(QObject):
                 record(job, "failed")
                 continue
 
-            outcome = self._run_one(java, jar, job, self.options, heap)
+            # A copy with readable fonts when the original has fonts the
+            # converter could only print as "?" (fontfix.py); else the file.
+            work_dir = tempfile.mkdtemp(prefix="pdf2md-")
+            source = self._readable_copy(job, work_dir)
+            try:
+                outcome = self._run_one(java, jar, job, self.options, heap, source)
+                if outcome == "timeout" and self.options.get("image_output") != "off":
+                    # Images are the expensive part; an empty result helps
+                    # nobody, so retry once without them and say so afterwards.
+                    self._emit(tr("run.retry_no_images"))
+                    retry = dict(self.options, image_output="off")
+                    outcome = self._run_one(java, jar, job, retry, heap, source)
+                    if outcome == "ok":
+                        outcome = "degraded"
+            finally:
+                shutil.rmtree(work_dir, ignore_errors=True)
+
+            if outcome == "degraded":
+                self._postprocess(job)
+                summary["degraded"].append(job.label)
+                summary["ok"] += 1
+                record(job, "degraded")
+                continue
 
             if outcome == "cancelled":
                 summary["cancelled"] = True
                 break
-            if outcome == "timeout" and self.options.get("image_output") != "off":
-                # Images are the expensive part; an empty result helps nobody,
-                # so retry once without them and say so afterwards.
-                self._emit(tr("run.retry_no_images"))
-                retry = dict(self.options, image_output="off")
-                outcome = self._run_one(java, jar, job, retry, heap)
-                if outcome == "ok":
-                    summary["degraded"].append(job.label)
-                    summary["ok"] += 1
-                    record(job, "degraded")
-                    continue
-                if outcome == "cancelled":
-                    summary["cancelled"] = True
-                    break
 
             if outcome == "ok":
+                self._postprocess(job)
                 summary["ok"] += 1
                 record(job, "ok")
             elif outcome == "timeout":
@@ -619,11 +633,54 @@ class ConvertWorker(QObject):
         self._flush()
         self.finished.emit(summary)
 
+    def _readable_copy(self, job: Job, work_dir: str) -> str:
+        """The PDF to hand the converter: a font-fixed copy, or the original.
+
+        The copy keeps the file name - the converter names its output after
+        it - and is written unencrypted, so it needs no password.
+        """
+        target = os.path.join(work_dir, os.path.basename(job.pdf))
+        try:
+            fixed = fix_fonts(job.pdf, target, self.options.get("password") or "")
+        except Exception:  # noqa: BLE001 - any trouble: convert the original
+            return job.pdf
+        if not fixed:
+            return job.pdf
+        self._emit(tr("run.fonts_fixed", count=fixed))
+        return target
+
+    def _postprocess(self, job: Job) -> None:
+        """Tidy the Markdown the converter wrote (postprocess.py).
+
+        Only the HTML-table form: plain Markdown tables have no empty cells
+        to tell a drawing by. Never fatal - the untouched file is still a
+        result.
+        """
+        if not self.clean_figures or not self.options.get("markdown_with_html"):
+            return
+        md_path = Path(job.output_dir) / (Path(job.pdf).stem + ".md")
+        try:
+            text = md_path.read_text(encoding="utf-8")
+            cleaned, dropped = drop_figure_tables(text)
+            if dropped:
+                md_path.write_text(cleaned, encoding="utf-8")
+                self._emit(tr("run.figures_dropped", count=dropped))
+        except (OSError, UnicodeError):
+            pass
+
     # -- one file ----------------------------------------------------------- #
 
-    def _run_one(self, java: str, jar: str, job: Job, options: dict, heap: int) -> str:
-        """Return "ok", "error", "timeout" or "cancelled"."""
-        args = build_args(job.pdf, job.output_dir, options, self.supported)
+    def _run_one(
+        self, java: str, jar: str, job: Job, options: dict, heap: int, source: str | None = None
+    ) -> str:
+        """Return "ok", "error", "timeout" or "cancelled".
+
+        source: the PDF to read, when it is not job.pdf itself (a font-fixed
+        copy; it needs no password).
+        """
+        if source and source != job.pdf:
+            options = {k: v for k, v in options.items() if k != "password"}
+        args = build_args(source or job.pdf, job.output_dir, options, self.supported)
         command = java_command(java, jar, args, filter_hidden=self.filter_hidden)
 
         env = os.environ.copy()

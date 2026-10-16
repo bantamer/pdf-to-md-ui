@@ -61,6 +61,9 @@
   "list.partial": "{ok} of {total} converted",
   "list.open_hint": "Double-click to open the result",
 
+  "figure.omitted": "[Figure omitted]",
+  "figure.omitted_page": "[Figure omitted, page {page}]",
+
   "output.section": "Where to save",
   "output.placeholder": "Folder next to the source files",
   "output.browse": "Browse…",
@@ -118,6 +121,9 @@
 
   "plain_md.label": "Plain Markdown tables",
   "plain_md.tooltip": "Writes tables in Markdown's own | pipe | form instead of HTML. Some editors and sites show only that kind.\n\nMarkdown cannot merge cells, so tables with merged cells — a datasheet's Electrical Characteristics, for one — come out broken or shifted. That is why it is off by default. Affects Markdown only.",
+
+  "clean_figures.label": "Drop figure clutter",
+  "clean_figures.tooltip": "Plots, package drawings and flow charts often come out as huge tables of empty cells with scattered tick labels — in a datasheet up to three quarters of the file. This replaces each with one line: a figure was here, its caption and page. Real sentences inside, such as the steps of a flow chart, are kept.\n\nThe figure itself is not in the Markdown either way; look at the page in the PDF. Affects Markdown with HTML tables.",
 
   "advanced.button": "More options",
 
@@ -223,6 +229,8 @@
   "run.mkdir_failed": "  could not create the folder: {error}",
   "run.retry_no_images": "  ran past the timeout — retrying without images",
   "run.font_cache": "  building the font cache - once per computer, can take a few minutes; the timeout waits for it",
+  "run.fonts_fixed": "  fonts the converter could not read, given a character map: {count}",
+  "run.figures_dropped": "  figures read as tables, replaced by a note: {count}",
   "run.timed_out": "  stopped by the timeout",
   "run.failed": "  conversion error, file skipped",
   "run.java_start_failed": "  could not start java: {error}",

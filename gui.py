@@ -1038,6 +1038,9 @@ class MainWindow(QWidget):
         self.opt_page_sep = QCheckBox(tr("page_sep.label"))
         self.opt_page_sep.setChecked(True)
         self.opt_plain_md = QCheckBox(tr("plain_md.label"))
+        self.opt_clean_figures = QCheckBox(tr("clean_figures.label"))
+        self.opt_clean_figures.setChecked(True)
+        self.opt_plain_md.toggled.connect(self._sync_format_options)
         for box in self.format_boxes.values():
             box.toggled.connect(self._sync_format_options)
 
@@ -1054,6 +1057,7 @@ class MainWindow(QWidget):
                 (self.opt_sanitize, "sanitize.tooltip"),
                 (self.opt_page_sep, "page_sep.tooltip"),
                 (self.opt_plain_md, "plain_md.tooltip"),
+                (self.opt_clean_figures, "clean_figures.tooltip"),
             ],
             self._form_labels,
             self._check_grids,
@@ -1381,6 +1385,7 @@ class MainWindow(QWidget):
             self.opt_sanitize,
             self.opt_page_sep,
             self.opt_plain_md,
+            self.opt_clean_figures,
         ]
 
     def _advanced_widgets(self) -> list[QWidget]:
@@ -1550,6 +1555,7 @@ class MainWindow(QWidget):
             ("sanitize", self.opt_sanitize),
             ("page_separators", self.opt_page_sep),
             ("plain_markdown_tables", self.opt_plain_md),
+            ("clean_figures", self.opt_clean_figures),
             ("reading_order", self.reading_order),
             ("table_method", self.table_method),
             ("image_format", self.image_format),
@@ -1761,6 +1767,10 @@ class MainWindow(QWidget):
         ticked = {key for key, box in self.format_boxes.items() if box.isChecked()}
         self.opt_page_sep.setEnabled(bool(ticked & {"markdown", "text", "html"}))
         self.opt_plain_md.setEnabled("markdown" in ticked)
+        # Works on the HTML tables in Markdown; plain tables cannot tell.
+        self.opt_clean_figures.setEnabled(
+            "markdown" in ticked and not self.opt_plain_md.isChecked()
+        )
 
     def _toggle_image_dpi(self) -> None:
         self.image_dpi.setEnabled(self.image_mode.currentData() != "off")
@@ -1944,6 +1954,7 @@ class MainWindow(QWidget):
         self.worker = ConvertWorker(
             jobs, output_dir, options, int(self.timeout_box.currentData()), supported,
             filter_hidden=self.opt_hidden.isChecked(),
+            clean_figures=self.opt_clean_figures.isChecked(),
         )
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
