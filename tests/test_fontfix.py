@@ -183,3 +183,39 @@ def test_unreadable_text_comes_out_readable(tmp_path, qapp):
     assert "−40 °" in md
     assert "?" not in md
     assert (tmp_path / "irf.pdf").exists() and not (out / "irf.pdf").exists()
+
+
+def test_interleaf_symbols_are_symbol_codes(tmp_path):
+    """onsemi's Interleaf fonts: /C0109 is Symbol's mu ("100 µAdc")."""
+    pdf = make_pdf(tmp_path / "a.pdf", [
+        (lambda p: font(p, "/MGINID+IntDutch801G-Roman", [2, "/C0109", "/C0087"]), "\x02"),
+    ])
+
+    m = mapping_of(pdf)[0]
+
+    assert (m[2], m[3]) == ("μ", "Ω")
+
+
+def test_symbol_font_without_encoding_uses_symbol_codes(tmp_path):
+    def bare(pdf):
+        f = font(pdf, "/ABC+SymbolMT", [])
+        del f["/Encoding"]
+        return f
+
+    pdf = make_pdf(tmp_path / "a.pdf", [(bare, "-")])
+
+    m = mapping_of(pdf)[0]
+
+    assert (m[0x2D], m[0x6D]) == ("−", "μ")
+
+
+def test_symbol_font_with_winansi_keeps_it(tmp_path):
+    """MCP73831: a Symbol font declared WinAnsi has mu at 0xB5, as WinAnsi says."""
+    def winansi(pdf):
+        f = font(pdf, "/ABC+SymbolMT", [])
+        f["/Encoding"] = pikepdf.Name.WinAnsiEncoding
+        return f
+
+    pdf = make_pdf(tmp_path / "a.pdf", [(winansi, "\xb5")])
+
+    assert mapping_of(pdf)[0] is None

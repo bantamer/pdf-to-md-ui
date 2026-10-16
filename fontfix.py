@@ -32,6 +32,9 @@ from fontTools.ttLib.standardGlyphOrder import standardGlyphOrder
 
 # Names made of a short prefix and a number: the producer's own numbering.
 _NUMBERED = re.compile(r"^(G|g|c)(\d{1,4})$")
+# Interleaf text fonts (onsemi's older datasheets) put symbols in as /C0109:
+# the code in the Symbol font, so mu here.
+_INTERLEAF = re.compile(r"^C0(\d{3})$")
 
 # Adobe Symbol encoding, the codes that differ from ASCII.
 SYMBOL = {
@@ -147,12 +150,19 @@ def font_map(font, ignore_existing: bool = False) -> dict[int, str] | None:
     pairs = _differences(font)
     numbered = [(c, _NUMBERED.match(n)) for c, n in pairs]
     numbered = [(c, int(m.group(2))) for c, m in numbered if m]
+    family_name = base.split("+", 1)[-1]
+    interleaf = family_name.startswith("Int") and not re.search(r"Symbol|Math", family_name)
+    symbol_coded = {c: int(m.group(1)) for c, n in pairs if interleaf and (m := _INTERLEAF.match(n))}
+    # A Symbol font with neither a map nor glyph names: its codes are
+    # Symbol codes, which the converter does not know (a TI pin label's
+    # "IN1-" lost its minus).
+    bare_symbol = kind == "symbol" and "/Encoding" not in font
     # TI's plotting tool names the space glyph ".notdef": every gap in a
     # plot label then reads as an unknown character.
     blank_space = any(code == 32 and name == ".notdef" for code, name in pairs)
     if "/ToUnicode" in font and kind != "dingbats" and not ignore_existing:
         return None
-    if not numbered and not blank_space and kind != "dingbats":
+    if not numbered and not blank_space and not symbol_coded and not bare_symbol and kind != "dingbats":
         return None
 
     # The number is a character code unless it cannot be one: control codes
@@ -167,7 +177,9 @@ def font_map(font, ignore_existing: bool = False) -> dict[int, str] | None:
         text = None
         name = names.get(code)
         match = _NUMBERED.match(name) if name else None
-        if match:
+        if code in symbol_coded:
+            text = _from_code(symbol_coded[code], "symbol")
+        elif match:
             n = int(match.group(2))
             if by_glyph_index:
                 glyph = _glyph_name_at(n, family)
