@@ -316,3 +316,54 @@ def test_memory_maps_are_kept():
     out, n = drop_figure_tables(md)
 
     assert n == 0
+
+
+# -- drawing numbers, captions, pin lists ------------------------------------------ #
+
+def test_a_numbered_drawing_goes_but_its_captions_and_notes_stay():
+    # Nexperia's waveform page: drawing numbers, labels, a note, captions.
+    cell = "<br><br>".join([
+        "mna557", "SHCP input", "Q7S output", "tPLH tPHL", "tW", "1/fmax", "VM", "VOH", "GND",
+        "Measurement points are given in Table 8. VOL and VOH are typical output voltage levels.",
+        "Fig. 6. Shift clock pulse, maximum frequency and input to output propagation delays",
+        "mna558", "STCP input", "Qn output", "tsu", "VM", "VI",
+        "Fig. 7. Storage clock to output propagation delays",
+    ])
+    md = f"<table>\n  <tr>\n    <th>{cell}</th>\n  </tr>\n</table>"
+
+    out, n = drop_figure_tables("---- page 11 ----\n\n" + md)
+
+    assert n == 1 and "mna557" not in out and "tPLH" not in out
+    assert "Fig. 6. Shift clock pulse" in out and "Fig. 7. Storage clock" in out
+    assert "Measurement points are given in Table 8." in out
+
+
+def test_a_numbered_drawing_keeps_its_dimension_table():
+    dims = ("<table><tr><td>UNIT</td><td>A</td><td>A1</td><td>bp</td></tr>"
+            "<tr><td>mm</td><td>1.1 0.9</td><td>0.1</td><td>0.48 0.38</td></tr></table>")
+    labels = "<br><br>".join(["sot023_po", "bp", "D", "e1", "detail X", "HE", "w M", "0 1 2 mm scale"])
+    md = f"<table>\n  <tr>\n    <th>{labels}{dims}</th>\n  </tr>\n</table>"
+
+    out, n = drop_figure_tables(md)
+
+    assert n == 1 and "detail X" not in out
+    assert "<td>0.48 0.38</td>" in out
+
+
+def test_a_small_table_by_a_figure_caption_is_the_figure():
+    cell = "<br><br>".join(["50 150", "0", "25", "1 ~ 3 ℃/s", "200", "250", "Cooling zone", "217", "100 250"])
+    md = f"<table>\n  <tr>\n    <th>{cell}</th>\n  </tr>\n</table>\n\n###### Figure 9: Reflow Profile"
+
+    out, n = drop_figure_tables(md)
+
+    assert n == 1 and "Cooling zone" not in out and "Figure 9: Reflow Profile" in out
+
+
+def test_a_table_set_as_lines_without_a_caption_stays():
+    # DS18B20's DC characteristics: short lines, but data.
+    md = "\n".join(["Parasite power", "+3.0 +5.5", "V Local power +3.0 VDD", "(Notes 1, 2)",
+                    "Pullup Supply Voltage VPU", "-10°C to +85°C", "±0.5", "Thermometer Error tERR"])
+
+    out, n = drop_figure_tables("Some text.\n\n" + md + "\n\nMore text follows here, as a sentence.")
+
+    assert n == 0 and "±0.5" in out

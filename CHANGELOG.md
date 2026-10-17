@@ -17,6 +17,12 @@
   "[Figure omitted, page N]" as well, with their caption and any real
   sentence kept. Rows of a table set as text, ordering examples and notes stay.
   1.3% of the text over 53 datasheets, up to 12% in single files.
+  Drawings stamped with their makers' drawing numbers ("mna554",
+  "003aab351", "MSv41659V2", "4214862/A 04/2023") go as well - pinning
+  drawings and timing diagrams nested in tables included - keeping every
+  caption, note and the dimension table of a package. Memory maps stay.
+  Checked against a hand-cleaned 74HC595: 84% of what was cut by hand, and
+  nothing that was kept.
 - **The figure note is always English**, "[Figure omitted, page N]",
   whatever the interface language: the datasheets are English, and the same
   PDF now gives the same Markdown for everyone.

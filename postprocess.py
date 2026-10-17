@@ -150,16 +150,25 @@ def _is_label_bag(cells: list[str]) -> bool:
 
 
 def _describe(table: str) -> tuple[str, list[str]]:
-    """(caption found inside the table, sentences worth keeping)."""
-    caption, phrases = "", []
-    for cell in _cell_texts(table):
+    """(first caption inside the table, the lines worth keeping after it).
+
+    One table can hold several drawings (Nexperia's waveform pages): every
+    caption stays, and so does each sentence, in order, even when the same
+    note comes with each drawing.
+    """
+    caption, kept = "", []
+    # All of the table's text, nested tables and what follows them included.
+    text = _TAG.sub("\n", table.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&"))
+    for cell in [text]:
         for fragment in _fragments(cell):
             found = _CAPTION.search(fragment)
             if found and not caption:
                 caption = found.group(1).strip()
-            elif _is_phrase(fragment) and fragment not in phrases:
-                phrases.append(fragment)
-    return caption, phrases
+            elif found or _is_phrase(fragment) or _KEEP_LINE.match(fragment):
+                text = found.group(1).strip() if found else fragment
+                if not kept or kept[-1] != text:
+                    kept.append(text)
+    return caption, kept
 
 
 # Lines a plot leaves around its table: tick values and axis titles that the
@@ -274,14 +283,192 @@ def _drop_label_runs(md: str) -> tuple[str, int]:
     return "\n\n".join(out), dropped
 
 
+# -- drawings set as blocks of short lines -------------------------------------- #
+#
+# The same clutter also comes as one block of short lines with single line
+# breaks: Nexperia's pinning drawings ("Q1 VCC", "1\t16"), timing diagrams
+# and test circuits ("tPLH tPHL", "VM", "GND"), package outlines ("0 2.5 5 mm
+# scale", "detail X"). The document is cut at headings, tables, page breaks,
+# figure captions and list items; a stretch between two such boundaries made
+# mostly of short labels loses them. Sentences ("Measurement points are given
+# in Table 8."), captions, headings in capitals ("MECHANICAL DATA") and
+# numbered titles ("6.1. Pinning") stay.
+
+LABEL_LINES = 6
+LABEL_LINE_SHARE = 0.6
+_SECTION_TITLE = re.compile(r"^\d+(?:\.\d+)*\.?\s+[A-Z][a-z]")
+_CAPS_TITLE = re.compile(r"^(?=(?:.*[A-Z]){8})[A-Z][A-Z &/,()'-]+$")
+
+
+def _line_kind(line: str) -> str:
+    """'blank', 'label' (drawing text) or 'text' (anything worth keeping)."""
+    text = line.strip()
+    if not text:
+        return "blank"
+    if _PIN_ITEM.match(text):
+        return "label"
+    if _CAPTION.match(text) or _KEEP_LINE.match(text) or _SECTION_TITLE.match(text):
+        return "text"
+    if _CAPS_TITLE.match(text) and len(text.split()) >= 2:
+        return "text"
+    if text[0] in "•·▪◦" or re.match(r"^(?:\d+|[a-z])[.)]\s+\S", text):
+        return "text"  # list items
+    tokens = text.split()
+    sentence = len(tokens) >= 4 and len(_LOWER_WORD.findall(text)) >= 2 and text[-1] in ".:;?!"
+    if sentence or len(text) > 40 or len(tokens) > 5:
+        return "text"
+    return "label"
+
+
+_PIN_ITEM = re.compile(r"^[-*]\s+[A-Z0-9_/+.]{1,10}$")
+
+
+def _is_boundary(line: str) -> bool:
+    text = line.strip()
+    if _PIN_ITEM.match(text):
+        return False  # "- 1", "- IO34": a pin drawing set as a list
+    return bool(
+        text.startswith(("#", "<", "- ", "* ", "|", "!["))
+        or _PAGE.fullmatch(text)
+        or _NOTE_LINE.match(text)
+        or _CAPTION.match(text)
+    )
+
+
+def _drop_label_lines(md: str) -> tuple[str, int]:
+    lines = md.split("\n")
+    pages = [None] * len(lines)
+    page = None
+    depth = 0
+    inside_table = [False] * len(lines)
+    for n, line in enumerate(lines):
+        found = _PAGE.fullmatch(line.strip())
+        if found:
+            page = found.group(1)
+        pages[n] = page
+        opened, closed = line.count("<table"), line.count("</table>")
+        inside_table[n] = depth > 0 or opened > 0
+        depth = max(0, depth + opened - closed)
+
+    doomed: dict[int, str | None] = {}  # first line of a removed stretch -> page
+    gone: set[int] = set()
+    start = 0
+    for n in range(len(lines) + 1):
+        if n < len(lines) and not inside_table[n] and not _is_boundary(lines[n]):
+            continue
+        stretch = range(start, n)
+        kinds = [_line_kind(lines[i]) for i in stretch]
+        labels = kinds.count("label")
+        texts = kinds.count("text")
+        numbered = any(_FIGURE_ID.search(lines[i]) for i in stretch)
+        # Tables set as text look the same ("Parasite power", "+3.0 +5.5",
+        # "±0.5" - DS18B20's DC characteristics), so a block of labels only
+        # counts as a drawing with a figure caption or note right at its edge.
+        edges = [lines[i] for i in (start - 1, n) if 0 <= i < len(lines)]
+        captioned = any(_CAPTION.match(e.strip().lstrip("#* ").strip()) or _NOTE_LINE.match(e.strip()) for e in edges)
+        enough = labels >= (3 if numbered else LABEL_LINES)
+        share = 0.5 if numbered else LABEL_LINE_SHARE
+        if (numbered or captioned) and enough and labels >= share * (labels + texts):
+            removed = [i for i, kind in zip(stretch, kinds) if kind == "label"]
+            gone.update(removed)
+            doomed[removed[0]] = pages[removed[0]]
+        start = n + 1
+    if not gone:
+        return md, 0
+    out = []
+    for n, line in enumerate(lines):
+        if n in doomed:
+            out.append(f"*{_figure_note(doomed[n])}*")
+        elif n not in gone:
+            out.append(line)
+    return re.sub(r"\n{4,}", "\n\n\n", "\n".join(out)), len(doomed)
+
+
+# -- drawing numbers --------------------------------------------------------- #
+#
+# Makers stamp each drawing with its own number, and the converter keeps it
+# with the labels: NXP / Nexperia "mna554", "003aab351", "aaa-035349",
+# "sot023_fr"; ST "MSv41659V2", "ai14125d"; TI "4214862/A 04/2023". Over 56
+# datasheets these never stood in running text or in a table of data, so
+# together with hardly any sentences they mark a drawing for sure - a
+# pinning drawing or a timing diagram the other tests miss (a hand-cleaned
+# 74HC595 lost 727 words of them, the program 263).
+
+_FIGURE_ID = re.compile(
+    r"\b(?:\d{3}aa[a-z]\d{3}|m[nsb][a-z]\d{3}|aaa-\d{6}|sot\d{3,4}(?:-\d+)?_[a-z]{2,3}"
+    r"|MSv\d{5}V\d+|ai\d{5}[a-z]?|\d{7}/[A-Z] \d{2}/\d{4})\b"
+)
+
+
+def _numbered_drawing(table: str) -> bool:
+    text = _TAG.sub("\n", table.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&"))
+    if not _FIGURE_ID.search(text):
+        return False
+    fragments = _fragments(text)
+    phrases = sum(_is_phrase(f) for f in fragments)
+    addresses = sum(bool(_ADDRESS.search(f)) for f in fragments)
+    if addresses >= 0.1 * len(fragments):
+        return False  # a memory map: drawn, but its addresses are worth keeping
+    return len(fragments) >= 6 and phrases <= 0.25 * len(fragments)
+
+
+_NEAR_CAPTION = re.compile(r"^\s*(?:#+\s*)?(?:Figure|FIGURE|Fig\.?)\s*\d")
+
+
+def _captioned_drawing(md: str, start: int, end: int, table: str) -> bool:
+    """A table of one to three cells right before or after a figure caption,
+    mostly labels (ESP32's reflow profile): the drawing the caption names."""
+    if len(_CELL.findall(table)) > 3:
+        return False
+    after = [l for l in md[end:end + 400].split("\n") if l.strip()][:2]
+    before = [l for l in md[max(0, start - 400):start].split("\n") if l.strip()][-2:]
+    if not any(_NEAR_CAPTION.match(l) for l in after + before):
+        return False
+    text = _TAG.sub("\n", table.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&"))
+    fragments = [f for f in _fragments(text) if not _CAPTION.search(f)]
+    phrases = sum(_is_phrase(f) for f in fragments)
+    return len(fragments) >= 8 and phrases <= 0.25 * len(fragments)
+
+
+def _subtables(table: str) -> list[str]:
+    """Every table nested in this one, innermost first."""
+    out, stack = [], []
+    for m in _TABLE_TAG.finditer(table):
+        if m.group() == "<table>":
+            stack.append(m.start())
+        elif stack:
+            start = stack.pop()
+            if stack:  # not the outer table itself
+                out.append(table[start:m.end()])
+    return out
+
+
+def _data_tables(table: str) -> list[str]:
+    """Tables of data a drawing carries along (a package's dimension table):
+    rows of several filled cells, no drawing number of their own."""
+    kept = []
+    for sub in _subtables(table):
+        if "<table>" in sub[7:] or _FIGURE_ID.search(sub) or is_figure_table(sub):
+            continue
+        rows = re.findall(r"<tr>(.*?)</tr>", sub, re.S)
+        cells = [_CELL.findall(r) for r in rows]
+        full = [c for c in cells if len(c) >= 3 and sum(bool(_TAG.sub("", x).strip()) for x in c) >= 0.7 * len(c)]
+        if len(full) >= 2:
+            kept.append(sub)
+    return kept
+
+
 def drop_figure_tables(md: str) -> tuple[str, int]:
     """Replace tables that are really drawings; return the text and how many."""
     out, last, dropped = [], 0, 0
     pages = [(m.start(), m.group(1)) for m in _PAGE.finditer(md)]
     for start, end in _top_level_tables(md):
         table = md[start:end]
+        numbered = False
         if not is_figure_table(table):
-            continue
+            numbered = _numbered_drawing(table) or _captioned_drawing(md, start, end, table)
+            if not numbered:
+                continue
         page = next((n for pos, n in reversed(pages) if pos < start), None)
         caption, phrases = _describe(table)
         note = _figure_note(page)
@@ -289,6 +476,8 @@ def drop_figure_tables(md: str) -> tuple[str, int]:
             note += ": " + caption
         lines = [f"*{note}*"]
         lines += [f"- {p}" for p in phrases]
+        if numbered:
+            lines += _data_tables(table)
         out.append(md[last:start])
         out.append("\n".join(lines))
         last = end
@@ -297,6 +486,8 @@ def drop_figure_tables(md: str) -> tuple[str, int]:
     result = "".join(out)
     result, runs = _drop_label_runs(result)
     dropped += runs
+    result, blocks = _drop_label_lines(result)
+    dropped += blocks
     if dropped:
         result = _drop_stray_labels(result)
     return result, dropped
