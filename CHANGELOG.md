@@ -1,6 +1,10 @@
 # Changes
 
-## Unreleased
+## 2.1.0
+
+Datasheets come out shorter and cleaner for a language model: plain
+Markdown tables by default, figure clutter replaced with a short note,
+fewer unreadable characters and no lost pages.
 
 - **MIN / TYP / MAX split more often.** Two numbers close together ("3 7"
   under MIN TYP MAX in LM358) were kept in one cell; a footnote mark written

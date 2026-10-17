@@ -118,6 +118,7 @@
   "page_sep.tooltip": "Wstawia między stronami wiersz w rodzaju „---- page 3 ----” w Markdown, tekście i HTML — widać, z której strony pochodzi fragment.\n\nBez zaznaczenia strony idą jednym ciągłym tekstem.",
 
   "plain_md.label": "Tabele w czystym Markdown",
+  "plain_md.tooltip": "Zapisuje tabele we własnej formie Markdown, z | kreskami |, zamiast HTML: o mniej więcej jedną czwartą krócej, o jedną trzecią mniej tokenów dla modelu językowego. Wszystko inne dzieje się wcześniej — MIN, TYP i MAX we własnych kolumnach, śmieci po wykresach usunięte.\n\nMarkdown nie umie scalać komórek, więc pozostałe miejsca scalonej komórki zostają puste; niektóre edytory wyrównują takie tabele mniej starannie. Domyślnie włączone. Dotyczy tylko Markdown.",
 
   "clean_figures.label": "Usuwaj śmieci po wykresach",
   "clean_figures.tooltip": "Wykresy, rysunki obudów i schematy blokowe często zamieniają się w ogromne tabele z pustych komórek z porozrzucanymi liczbami skal — w karcie katalogowej nawet trzy czwarte pliku. Każda taka tabela jest zastępowana jednym wierszem: był tu rysunek, jego podpis i strona. Prawdziwe zdania w środku, np. kroki schematu blokowego, zostają.\n\nSam rysunek i tak nie trafia do Markdown — zobacz stronę w PDF. Dotyczy Markdown z tabelami HTML.",
@@ -158,6 +159,7 @@
   "strikethrough.tooltip": "Oznacza przekreślony tekst: ~~w ten sposób~~ w Markdown, <del> w HTML. Funkcja eksperymentalna.",
 
   "hidden_text.label": "Odrzucaj ukryty tekst",
+  "hidden_text.tooltip": "Dla wyników, które trafiają do AI. PDF może zawierać tekst, którego czytelnik nigdy nie widzi — niewidoczny, biały na białym, mikroskopijny, poza stroną, w ukrytych warstwach — czasem z instrukcjami przeznaczonymi dla AI. Ta opcja odrzuca to wszystko.\n\nCena: mniej więcej dwa razy wolniej, a razem z nim znikają cienkie znaki — plus, minus, równa się. We wzorach i kodzie zmienia to sens: w karcie katalogowej Boscha „var1 + var2” zmieniło się w „var1 var2”. Nie używaj jej do dokumentów ze wzorami lub kodem. Domyślnie wyłączone.",
 
   "hybrid.label": "Tryb AI:",
   "hybrid.off": "Wyłączony",
@@ -206,6 +208,7 @@
   "summary.degraded": "bez obrazów (zabrakło czasu): {files}",
   "summary.timed_out": "przerwane przez limit czasu: {files}",
   "summary.failed": "z błędem: {files}",
+  "summary.no_text": "bez tekstu, prawdopodobnie skany: {files}",
   "summary.cancelled": "Anulowano · gotowe {ok} z {total}",
   "summary.done": "Gotowe w {seconds} s",
   "summary.partial": "Skonwertowano {ok} z {total} w {seconds} s",
@@ -226,6 +229,8 @@
   "run.retry_no_images": "  przekroczono limit czasu — ponowna próba bez obrazów",
   "run.font_cache": "  budowanie pamięci podręcznej czcionek — raz na komputer, może potrwać kilka minut; limit czasu na to czeka",
   "run.fonts_fixed": "  czcionek bez tablicy znaków, poprawiono: {count}",
+  "run.inline_images": "  strony z obrazami wewnątrz tekstu, wyjętymi, by tekst nie przepadł: {count}",
+  "run.no_text": "  nie znaleziono tekstu — PDF to najpewniej skan (obrazy stron); nie ma w nim tekstu do konwersji",
   "run.figures_dropped": "  rysunków odczytanych jako tabele, zastąpiono notatką: {count}",
   "run.limits_split": "  kolumny MIN/TYP/MAX rozdzielone, tabel: {count}",
   "run.images_tidied": "  obrazy: usunięto powtarzające się ozdobniki {links}, usunięto zbędne pliki {files}",

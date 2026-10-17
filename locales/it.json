@@ -118,6 +118,7 @@
   "page_sep.tooltip": "Inserisce tra le pagine una riga come «---- page 3 ----» in Markdown, testo e HTML, così si vede da quale pagina viene un passo.\n\nSe disattivato, le pagine proseguono come un unico testo continuo.",
 
   "plain_md.label": "Tabelle in Markdown puro",
+  "plain_md.tooltip": "Scrive le tabelle nella forma propria del Markdown, con | barre |, invece che in HTML: circa un quarto più corte, un terzo di token in meno per un modello linguistico. Tutto il resto viene fatto prima: MIN, TYP e MAX nelle proprie colonne, disordine dei grafici tolto.\n\nIl Markdown non sa unire le celle, quindi gli altri posti di una cella unita restano vuoti; alcuni editor allineano queste tabelle in modo meno ordinato. Attivo per impostazione predefinita. Riguarda solo il Markdown.",
 
   "clean_figures.label": "Togli il disordine dei grafici",
   "clean_figures.tooltip": "Grafici, disegni dei package e diagrammi di flusso spesso escono come enormi tabelle di celle vuote con numeri di scala sparsi: fino a tre quarti di un datasheet. Ognuna viene sostituita da una riga: qui c’era una figura, la sua didascalia e la pagina. Le frasi vere al suo interno, come i passi di un diagramma di flusso, restano.\n\nLa figura in sé comunque non è nel Markdown; guarda la pagina nel PDF. Riguarda il Markdown con tabelle HTML.",
@@ -158,6 +159,7 @@
   "strikethrough.tooltip": "Segna il testo barrato: ~~così~~ in Markdown, <del> in HTML. Sperimentale.",
 
   "hidden_text.label": "Scarta il testo nascosto",
+  "hidden_text.tooltip": "Per i risultati destinati a un’IA. Un PDF può contenere testo che il lettore non vede mai — invisibile, bianco su bianco, microscopico, fuori dalla pagina, in livelli nascosti — a volte con istruzioni rivolte all’IA. Questa opzione lo scarta tutto.\n\nIl prezzo: circa il doppio più lento, e se ne vanno anche i segni sottili — più, meno, uguale. In formule e codice questo cambia il significato: in un datasheet Bosch «var1 + var2» è diventato «var1 var2». Non usarla per documenti con formule o codice. Disattivato per impostazione predefinita.",
 
   "hybrid.label": "Modalità IA:",
   "hybrid.off": "Disattivata",
@@ -206,6 +208,7 @@
   "summary.degraded": "senza immagini (tempo esaurito): {files}",
   "summary.timed_out": "interrotti dal timeout: {files}",
   "summary.failed": "con errori: {files}",
+  "summary.no_text": "senza testo, probabilmente scansioni: {files}",
   "summary.cancelled": "Annullato · {ok} di {total} completati",
   "summary.done": "Fatto in {seconds} s",
   "summary.partial": "Convertiti {ok} di {total} in {seconds} s",
@@ -226,6 +229,8 @@
   "run.retry_no_images": "  timeout superato — nuovo tentativo senza immagini",
   "run.font_cache": "  creazione della cache dei font — una volta per computer, può richiedere qualche minuto; il timeout la aspetta",
   "run.fonts_fixed": "  font senza tabella dei caratteri, corretti: {count}",
+  "run.inline_images": "  pagine con immagini dentro il testo, spostate fuori perché il testo non vada perso: {count}",
+  "run.no_text": "  nessun testo trovato — il PDF è molto probabilmente una scansione (immagini delle pagine); non contiene testo da convertire",
   "run.figures_dropped": "  figure lette come tabelle, sostituite da una nota: {count}",
   "run.limits_split": "  colonne MIN/TYP/MAX separate, tabelle: {count}",
   "run.images_tidied": "  immagini: decorazioni ripetute tolte {links}, file inutili eliminati {files}",

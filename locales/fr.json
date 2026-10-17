@@ -118,6 +118,7 @@
   "page_sep.tooltip": "Insère entre les pages une ligne du type « ---- page 3 ---- » en Markdown, texte et HTML, pour savoir de quelle page vient un passage.\n\nDésactivé, les pages se suivent en un seul texte continu.",
 
   "plain_md.label": "Tableaux en Markdown pur",
+  "plain_md.tooltip": "Écrit les tableaux sous la forme propre au Markdown, avec des | barres |, au lieu du HTML : environ un quart plus court, un tiers de tokens en moins pour un modèle de langage. Tout le reste est fait avant — MIN, TYP et MAX dans leurs propres colonnes, fouillis des figures retiré.\n\nLe Markdown ne sait pas fusionner les cellules : les autres places d’une cellule fusionnée restent vides ; certains éditeurs alignent ces tableaux moins proprement. Activé par défaut. Concerne uniquement le Markdown.",
 
   "clean_figures.label": "Retirer le fouillis des figures",
   "clean_figures.tooltip": "Les courbes, dessins de boîtiers et organigrammes sortent souvent en énormes tableaux de cellules vides parsemées de graduations — jusqu’aux trois quarts d’une fiche technique. Chacun est remplacé par une ligne : une figure était là, sa légende et sa page. Les vraies phrases à l’intérieur, comme les étapes d’un organigramme, sont gardées.\n\nLa figure elle-même n’est de toute façon pas dans le Markdown ; voyez la page dans le PDF. Concerne le Markdown à tableaux HTML.",
@@ -158,6 +159,7 @@
   "strikethrough.tooltip": "Signale le texte barré : ~~comme ceci~~ en Markdown, <del> en HTML. Expérimental.",
 
   "hidden_text.label": "Écarter le texte caché",
+  "hidden_text.tooltip": "Pour les résultats destinés à une IA. Un PDF peut contenir du texte que le lecteur ne voit jamais — invisible, blanc sur blanc, microscopique, hors de la page, dans des calques masqués — parfois avec des instructions destinées à l’IA. Cette option écarte tout cela.\n\nLe prix : environ deux fois plus lent, et les signes fins partent avec — plus, moins, égal. Dans les formules et le code, cela change le sens : dans une fiche technique Bosch, « var1 + var2 » est devenu « var1 var2 ». Ne l’utilisez pas pour des documents avec des formules ou du code. Désactivé par défaut.",
 
   "hybrid.label": "Mode IA :",
   "hybrid.off": "Désactivé",
@@ -206,6 +208,7 @@
   "summary.degraded": "sans images (temps dépassé) : {files}",
   "summary.timed_out": "arrêtés par le délai : {files}",
   "summary.failed": "en erreur : {files}",
+  "summary.no_text": "sans texte, probablement des scans : {files}",
   "summary.cancelled": "Annulé · {ok} sur {total} terminés",
   "summary.done": "Terminé en {seconds} s",
   "summary.partial": "{ok} sur {total} convertis en {seconds} s",
@@ -226,6 +229,8 @@
   "run.retry_no_images": "  délai dépassé — nouvel essai sans images",
   "run.font_cache": "  construction du cache des polices — une fois par ordinateur, peut prendre quelques minutes ; le délai l’attend",
   "run.fonts_fixed": "  polices sans table de caractères, corrigées : {count}",
+  "run.inline_images": "  pages avec des images dans le texte, sorties pour que le texte ne soit pas perdu : {count}",
+  "run.no_text": "  aucun texte trouvé — le PDF est très probablement un scan (des images de pages) ; il n’y a pas de texte à convertir",
   "run.figures_dropped": "  figures lues comme des tableaux, remplacées par une note : {count}",
   "run.limits_split": "  colonnes MIN/TYP/MAX séparées, tableaux : {count}",
   "run.images_tidied": "  images : décorations répétées retirées {links}, fichiers inutiles supprimés {files}",

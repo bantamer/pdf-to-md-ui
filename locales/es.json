@@ -118,6 +118,7 @@
   "page_sep.tooltip": "Pone entre las páginas una línea como «---- page 3 ----» en Markdown, texto y HTML, para saber de qué página viene cada fragmento.\n\nSin marcar, las páginas siguen como un único texto continuo.",
 
   "plain_md.label": "Tablas en Markdown puro",
+  "plain_md.tooltip": "Escribe las tablas en la forma propia de Markdown, con | barras |, en lugar de HTML: alrededor de una cuarta parte más cortas, un tercio menos de tokens para un modelo de lenguaje. Todo lo demás se hace antes: MIN, TYP y MAX en sus propias columnas, desorden de figuras quitado.\n\nMarkdown no puede combinar celdas, así que los demás lugares de una celda combinada quedan vacíos; algunos editores alinean esas tablas con menos cuidado. Activado por defecto. Solo afecta al Markdown.",
 
   "clean_figures.label": "Quitar el desorden de figuras",
   "clean_figures.tooltip": "Las gráficas, los dibujos de encapsulados y los diagramas de flujo suelen salir como enormes tablas de celdas vacías con cifras de escala sueltas: hasta tres cuartas partes de una hoja de datos. Cada una se sustituye por una línea: aquí había una figura, su título y su página. Las frases reales de dentro, como los pasos de un diagrama de flujo, se conservan.\n\nLa figura en sí no está en el Markdown de todos modos; consulte la página en el PDF. Afecta al Markdown con tablas HTML.",
@@ -158,6 +159,7 @@
   "strikethrough.tooltip": "Marca el texto tachado: ~~así~~ en Markdown, <del> en HTML. Experimental.",
 
   "hidden_text.label": "Descartar texto oculto",
+  "hidden_text.tooltip": "Para resultados que van a una IA. Un PDF puede llevar texto que el lector nunca ve —invisible, blanco sobre blanco, microscópico, fuera de la página, en capas ocultas—, a veces con instrucciones dirigidas a la IA. Esto lo descarta todo.\n\nEl precio: aproximadamente el doble de lento, y con él se van los signos finos: más, menos, igual. En fórmulas y código eso cambia el sentido: en una hoja de datos de Bosch, «var1 + var2» se convirtió en «var1 var2». No lo use para documentos con fórmulas o código. Desactivado por defecto.",
 
   "hybrid.label": "Modo IA:",
   "hybrid.off": "Desactivado",
@@ -206,6 +208,7 @@
   "summary.degraded": "sin imágenes (se agotó el tiempo): {files}",
   "summary.timed_out": "detenidos por el tiempo límite: {files}",
   "summary.failed": "con errores: {files}",
+  "summary.no_text": "sin texto, probablemente escaneos: {files}",
   "summary.cancelled": "Cancelado · {ok} de {total} listos",
   "summary.done": "Listo en {seconds} s",
   "summary.partial": "Convertidos {ok} de {total} en {seconds} s",
@@ -226,6 +229,8 @@
   "run.retry_no_images": "  superó el tiempo límite — reintentando sin imágenes",
   "run.font_cache": "  construyendo la caché de fuentes: una vez por equipo, puede tardar unos minutos; el tiempo límite la espera",
   "run.fonts_fixed": "  fuentes sin tabla de caracteres, corregidas: {count}",
+  "run.inline_images": "  páginas con imágenes dentro del texto, sacadas para que no se pierda el texto: {count}",
+  "run.no_text": "  no se encontró texto: lo más probable es que el PDF sea un escaneo (imágenes de páginas); no tiene texto que convertir",
   "run.figures_dropped": "  figuras leídas como tablas, sustituidas por una nota: {count}",
   "run.limits_split": "  columnas MIN/TYP/MAX separadas, tablas: {count}",
   "run.images_tidied": "  imágenes: adornos repetidos quitados {links}, archivos sobrantes borrados {files}",
