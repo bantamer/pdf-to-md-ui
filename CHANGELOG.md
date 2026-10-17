@@ -23,6 +23,9 @@
   caption, note and the dimension table of a package. Memory maps stay.
   Checked against a hand-cleaned 74HC595: 84% of what was cut by hand, and
   nothing that was kept.
+- **A hint for the language model** on top of a file with figures left out:
+  it may ask the user for a screenshot of the page it needs (a schematic, a
+  design equation) instead of filling the gap from memory.
 - **The figure note is always English**, "[Figure omitted, page N]",
   whatever the interface language: the datasheets are English, and the same
   PDF now gives the same Markdown for everyone.

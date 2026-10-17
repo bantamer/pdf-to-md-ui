@@ -493,6 +493,23 @@ def drop_figure_tables(md: str) -> tuple[str, int]:
     return result, dropped
 
 
+# A note for whoever reads the result - usually a language model: drawings
+# are gone, and it can ask for the one it needs. Tried on LM2907: with the
+# schematic and equation pages as screenshots a model designs from the
+# datasheet itself instead of filling the gaps from memory.
+FIGURE_HINT = (
+    "> Figures, schematics and graphs are omitted and marked \"[Figure omitted, page N]\". "
+    "If one is needed to answer, ask the user for a screenshot of that page."
+)
+
+
+def add_figure_hint(md: str) -> str:
+    """Put FIGURE_HINT on top when the text has figure notes and no hint yet."""
+    if "[Figure omitted" not in md or md.lstrip().startswith(FIGURE_HINT):
+        return md
+    return FIGURE_HINT + "\n\n" + md
+
+
 # -- MIN / TYP / MAX in one cell ------------------------------------------------ #
 #
 # Datasheet tables that draw no lines between MIN, TYP and MAX (TI, ADI) come

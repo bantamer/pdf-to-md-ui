@@ -367,3 +367,14 @@ def test_a_table_set_as_lines_without_a_caption_stays():
     out, n = drop_figure_tables("Some text.\n\n" + md + "\n\nMore text follows here, as a sentence.")
 
     assert n == 0 and "±0.5" in out
+
+
+def test_figure_hint_only_when_figures_were_dropped():
+    from postprocess import FIGURE_HINT, add_figure_hint
+
+    with_figure = "Text.\n\n*[Figure omitted, page 3]: Fig 1. Pinout*"
+    out = add_figure_hint(with_figure)
+
+    assert out.startswith(FIGURE_HINT) and out.endswith(with_figure)
+    assert add_figure_hint(out) == out, "added once"
+    assert add_figure_hint("Text without drawings.") == "Text without drawings."

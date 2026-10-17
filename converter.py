@@ -39,7 +39,7 @@ from PySide6.QtCore import QObject, Signal
 from i18n import tr
 import pikepdf
 from fontfix import prepare_copy
-from postprocess import drop_figure_tables, looks_scanned, split_limit_columns, tidy_images, unescape_signs
+from postprocess import add_figure_hint, drop_figure_tables, looks_scanned, split_limit_columns, tidy_images, unescape_signs
 
 JAR_NAME = "opendataloader-pdf-cli.jar"
 
@@ -694,6 +694,7 @@ class ConvertWorker(QObject):
                     new, dropped = drop_figure_tables(new)
                     if dropped:
                         self._emit(tr("run.figures_dropped", count=dropped))
+                    new = add_figure_hint(new)
                 if self.options.get("image_output") == "external":
                     new = self._tidy_images(stem, new)
             new, _ = unescape_signs(new)
