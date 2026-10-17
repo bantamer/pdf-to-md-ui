@@ -128,6 +128,9 @@ TIMEOUT_CHOICES = [15, 30, 60, 120, 300, 600, 1800, 0]
 TIMEOUT_DEFAULT = 30
 # Saved destinations under "Where to save".
 FAVORITES_MAX = 5
+# AI mode (the converter's hybrid backend) is hidden until it works again:
+# its two settings are not shown and a saved choice is ignored.
+AI_MODE = False
 
 
 def resource(name: str) -> Path:
@@ -1142,9 +1145,12 @@ class MainWindow(QWidget):
                 (("image_format.label", self.image_format, "image_format.tooltip"),
                  ("threads.label", self.threads_spin, "threads.tooltip")),
                 (("password.label", self.password_edit, "password.tooltip"),
-                 ("hybrid.label", self.hybrid, "hybrid.tooltip")),
-                (("space_ratio.label", self.space_ratio, "space_ratio.tooltip"),
-                 ("hybrid_url.label", self.hybrid_url, "hybrid_url.tooltip")),
+                 ("space_ratio.label", self.space_ratio, "space_ratio.tooltip")),
+                *(
+                    [(("hybrid.label", self.hybrid, "hybrid.tooltip"),
+                      ("hybrid_url.label", self.hybrid_url, "hybrid_url.tooltip"))]
+                    if AI_MODE else []
+                ),
             ],
             [
                 (self.opt_line_breaks, "line_breaks.tooltip"),
@@ -1851,7 +1857,7 @@ class MainWindow(QWidget):
         if self.password_edit.text():
             options["password"] = self.password_edit.text()
 
-        hybrid = self.hybrid.currentData()
+        hybrid = self.hybrid.currentData() if AI_MODE else None
         if hybrid:
             options["hybrid"] = hybrid
             # Never again without these two: no timeout means an unanswered

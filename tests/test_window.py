@@ -28,7 +28,8 @@ def test_annotated_pdf_alone_is_a_valid_run(window):
     assert "markdown_with_html" not in opts
 
 
-def test_ai_mode_always_carries_timeout_and_fallback(window):
+def test_ai_mode_always_carries_timeout_and_fallback(window, monkeypatch):
+    monkeypatch.setattr(gui, "AI_MODE", True)
     window.hybrid.setCurrentIndex(window.hybrid.findData("docling-fast"))
 
     opts = window._collect_options()
@@ -36,6 +37,16 @@ def test_ai_mode_always_carries_timeout_and_fallback(window):
     assert opts["hybrid"] == "docling-fast"
     assert opts["hybrid_timeout"] == gui.HYBRID_TIMEOUT_MS
     assert opts["hybrid_fallback"] is True
+
+
+def test_ai_mode_hidden_means_off(window):
+    """While AI mode is hidden a saved choice of it must not switch it on."""
+    window.hybrid.setCurrentIndex(window.hybrid.findData("docling-fast"))
+
+    opts = window._collect_options()
+
+    assert "hybrid" not in opts
+    assert not window.advanced.isAncestorOf(window.hybrid)
 
 
 def test_hancom_ai_is_gone(window):

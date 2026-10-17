@@ -22,7 +22,9 @@
   PDF now gives the same Markdown for everyone.
 - **Scans are named.** A PDF with no text (pictures of pages) used to give an
   empty file without a word; the log and the summary now say it looks like a
-  scan and that AI mode can read it.
+  scan.
+- **AI mode is hidden** for now: the hybrid backend does not work at the
+  moment, so its two settings are not shown and a saved choice is ignored.
 - **Even more fonts read.** Figure labels in ST's LIS3DH ("CHARGE AMPLIFIER"
   instead of a row of "?"), Ω and – in TI's DRV8825, θ and ≤ in STM32,
   μ for "m" and Δ for "D" in Symbol fonts (AP2112: "1μF", not "1mF"). A font

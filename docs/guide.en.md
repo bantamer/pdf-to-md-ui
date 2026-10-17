@@ -69,7 +69,7 @@ and options, another inside **More options**.
 ## More options
 
 Press **More options** for the settings you rarely need: reading order, table
-detection, image format, PDF password, AI mode and others. Usually there is
+detection, image format, PDF password and others. Usually there is
 no need to touch them — each is explained under its **?**.
 
 **Drop hidden text** — for results that go to an AI: drops text you cannot

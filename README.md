@@ -153,18 +153,6 @@ is no longer needed. Reported upstream as
 The version in use, and whether the patch is active, are printed at the top of
 the log.
 
-### AI mode
-
-The optional hybrid mode needs a separately running backend:
-
-```
-pip install "opendataloader-pdf[hybrid]"
-opendataloader-pdf-hybrid --port 5002
-```
-
-The app checks the server before starting and offers to convert without it if
-nothing answers.
-
 ### Translations
 
 Every string the user sees lives in `locales/<code>.json`; English (`en.json`)

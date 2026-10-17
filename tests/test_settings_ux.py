@@ -102,8 +102,8 @@ HELP_KEYS = [
     "struct.tooltip", "sanitize.tooltip", "page_sep.tooltip", "plain_md.tooltip",
     "clean_figures.tooltip",
     "reading_order.tooltip", "tables.tooltip", "image_format.tooltip",
-    "threads.tooltip", "password.tooltip", "hybrid.tooltip",
-    "space_ratio.tooltip", "hybrid_url.tooltip",
+    "threads.tooltip", "password.tooltip", "space_ratio.tooltip",
+    *(["hybrid.tooltip", "hybrid_url.tooltip"] if gui.AI_MODE else []),
     "line_breaks.tooltip", "header_footer.tooltip", "strikethrough.tooltip",
     "hidden_text.tooltip",
 ]
@@ -122,7 +122,7 @@ def test_every_setting_has_its_question_mark(window):
 def test_every_advanced_setting_is_explained(window):
     advanced = [m for m in marks(window) if window.advanced.isAncestorOf(m)]
 
-    assert len(advanced) == 12
+    assert len(advanced) == (12 if gui.AI_MODE else 10)
 
 
 def test_help_text_wraps_and_keeps_its_paragraphs(window):
@@ -485,8 +485,9 @@ def test_options_and_more_options_line_up(window, width):
     assert starts[0] == starts[1]
     boxes = [window.image_mode, window.image_dpi, window.pages_edit, window.timeout_box,
              window.reading_order, window.table_method, window.image_format,
-             window.threads_spin, window.password_edit, window.hybrid,
-             window.space_ratio, window.hybrid_url]
+             window.threads_spin, window.password_edit, window.space_ratio]
+    if gui.AI_MODE:
+        boxes += [window.hybrid, window.hybrid_url]
     assert {b.width() for b in boxes} == {gui.FIELD_WIDTH}
     # The second half sits right after the first: spare width goes to the right.
     assert starts[0][4] - (starts[0][2] + 18) <= 40
