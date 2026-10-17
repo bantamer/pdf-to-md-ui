@@ -161,7 +161,6 @@
   "strikethrough.tooltip": "Signale le texte barré : ~~comme ceci~~ en Markdown, <del> en HTML. Expérimental.",
 
   "hidden_text.label": "Écarter le texte caché",
-  "hidden_text.tooltip": "Pour des résultats destinés à une IA. Un PDF peut contenir du texte que le lecteur ne voit pas — invisible, blanc sur blanc, microscopique, hors de la page, dans des calques masqués — parfois avec des instructions pour l’IA. Cette option l’écarte.\n\nLe prix : environ deux fois plus lent, et certains signes fins disparaissent aussi — dans une fiche Microchip, les signes moins et égal ont disparu des formules. D’où la désactivation par défaut.",
 
   "hybrid.label": "Mode IA :",
   "hybrid.off": "Désactivé",

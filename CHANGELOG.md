@@ -1,5 +1,14 @@
 # Changes
 
+## Unreleased
+
+- **MIN / TYP / MAX split more often.** Two numbers close together ("3 7"
+  under MIN TYP MAX in LM358) were kept in one cell; a footnote mark written
+  apart ("TYP (2)") added an empty column; "GND – 0.3" and "(V+) – 1.5" were
+  cut at the minus. All three now land in their columns.
+- **Drop hidden text** explains that it also takes thin signs (+, −, =) out
+  of formulas and code — not for such documents.
+
 ## 2.0.0
 
 A ground-up rework since 1.0.0: results you can hand to a person or a

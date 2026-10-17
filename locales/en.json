@@ -161,7 +161,7 @@
   "strikethrough.tooltip": "Marks crossed-out text: ~~like this~~ in Markdown, <del> in HTML. Experimental.",
 
   "hidden_text.label": "Drop hidden text",
-  "hidden_text.tooltip": "For results that go to an AI. A PDF can carry text the reader never sees — invisible, white on white, microscopic, outside the page, in hidden layers — sometimes with instructions meant for the AI. This drops all of it.\n\nThe price: about twice as slow, and some thin symbols go too — on a Microchip datasheet the minus and equals signs vanished from formulas. That is why it is off by default.",
+  "hidden_text.tooltip": "For results that go to an AI. A PDF can carry text the reader never sees — invisible, white on white, microscopic, outside the page, in hidden layers — sometimes with instructions meant for the AI. This drops all of it.\n\nThe price: about twice as slow, and thin signs go with it — plus, minus, equals. In formulas and code that changes the meaning: on a Bosch datasheet \"var1 + var2\" became \"var1 var2\". Do not use it for documents with formulas or code. Off by default.",
 
   "hybrid.label": "AI mode:",
   "hybrid.off": "Off",

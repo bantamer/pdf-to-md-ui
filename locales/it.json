@@ -161,7 +161,6 @@
   "strikethrough.tooltip": "Segna il testo barrato: ~~così~~ in Markdown, <del> in HTML. Sperimentale.",
 
   "hidden_text.label": "Scarta il testo nascosto",
-  "hidden_text.tooltip": "Per risultati destinati a un’IA. Un PDF può contenere testo che il lettore non vede — invisibile, bianco su bianco, microscopico, fuori pagina, in livelli nascosti — a volte con istruzioni per l’IA. Questa opzione lo scarta.\n\nIl prezzo: circa il doppio del tempo, e spariscono anche alcuni segni sottili — in un datasheet Microchip dalle formule sono spariti i segni meno e uguale. Per questo è disattivata in partenza.",
 
   "hybrid.label": "Modalità IA:",
   "hybrid.off": "Disattivata",

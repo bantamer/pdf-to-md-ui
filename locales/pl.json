@@ -161,7 +161,6 @@
   "strikethrough.tooltip": "Oznacza przekreślony tekst: ~~w ten sposób~~ w Markdown, <del> w HTML. Funkcja eksperymentalna.",
 
   "hidden_text.label": "Odrzucaj ukryty tekst",
-  "hidden_text.tooltip": "Dla wyników przekazywanych AI. PDF może zawierać tekst, którego czytelnik nie widzi — niewidoczny, biały na białym, mikroskopijny, poza stroną, w ukrytych warstwach — czasem z poleceniami dla AI. Ta opcja go odrzuca.\n\nCena: mniej więcej dwa razy wolniej, a czasem znikają cienkie znaki — w karcie Microchip z wzorów zniknęły minusy i znaki równości. Dlatego domyślnie jest wyłączona.",
 
   "hybrid.label": "Tryb AI:",
   "hybrid.off": "Wyłączony",

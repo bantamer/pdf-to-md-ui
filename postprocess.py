@@ -172,6 +172,8 @@ _LIMIT_WORDS = {"MIN", "TYP", "NOM", "MAX"}
 # A word may carry a footnote mark: "MIN TYP(1) MAX".
 _LIMIT_WORD = r"(?:MIN|TYP|NOM|MAX)\.?(?:\s*\(\d+\))?"
 _LIMIT_HEADER = re.compile(rf"^\s*{_LIMIT_WORD}(?:\s+{_LIMIT_WORD}){{1,2}}\s*$", re.I)
+_NUMBER = re.compile(r"^[-–−+±]?\d+(?:[.,]\d+)?$")
+_SIGN = re.compile(r"^[-–−+×/]$")
 _CHAR_WIDTH = 0.55  # of the font size, for an average digit
 _LINE_HEIGHT = 1.25  # of the font size
 
@@ -204,15 +206,15 @@ def _paragraphs(cell: dict) -> list[dict]:
     return out
 
 
-def _word_centres(text: str, box, size: float) -> list[tuple[str, float]]:
+def _word_centres(text: str, box, size: float, words: list[str] | None = None) -> list[tuple[str, float]]:
     """Words of a one-line text and the x each is centred on.
 
     The first word starts at the left edge and the last ends at the right;
     words between are placed by their position in the text. The gaps in a
     table row are much wider than a space, so this is close enough to tell
-    columns apart.
+    columns apart. `words` may group the text differently ("GND – 0.3").
     """
-    words = text.split()
+    words = words or text.split()
     left, right = box[0], box[2]
     if len(words) == 1:
         return [(words[0], (left + right) / 2)]
@@ -225,6 +227,25 @@ def _word_centres(text: str, box, size: float) -> list[tuple[str, float]]:
         pos += len(word)
     span = (starts[-1] - starts[0]) or 1
     return [(w, first + (s - starts[0]) / span * (last - first)) for w, s in zip(words, starts)]
+
+
+def _operands(text: str) -> list[str]:
+    """The words of a cell, with "GND – 0.3" and "(V+) – 1.5" kept as one.
+
+    A sign standing alone between two words joins them: it is one limit,
+    not two.
+    """
+    out: list[str] = []
+    words = text.split()
+    i = 0
+    while i < len(words):
+        if _SIGN.match(words[i]) and out and i + 1 < len(words):
+            out[-1] = f"{out[-1]} {words[i]} {words[i + 1]}"
+            i += 2
+            continue
+        out.append(words[i])
+        i += 1
+    return out
 
 
 def _lines(paragraph: dict) -> int:
@@ -246,15 +267,20 @@ def _split_cell(cell: dict, centres: list[float]) -> list[list[str]] | None:
         box = paragraph["bounding box"]
         size = float(paragraph.get("font size") or 8)
         lines = _lines(paragraph)
-        narrow = box[2] - box[0] < pitch * 0.8
+        words = text.split()
+        # Only numbers on one line ("3 7") are values side by side, however
+        # close together: the header estimate can make the columns look wider
+        # than they are (LM358's "TYP(2)"). "VDD - 1" is one value.
+        numbers = lines == 1 and len(words) > 1 and all(_NUMBER.match(w) for w in words)
+        narrow = box[2] - box[0] < pitch * 0.8 and not numbers
         if narrow:
             column = columns[nearest((box[0] + box[2]) / 2)]
-            words = text.split()
             # A column of values, one per line - or a value with a space in it.
             column.extend(words if lines > 1 and len(words) == lines else [text])
         elif lines == 1:
             placed: list[tuple[int, str]] = []
-            for word, x in _word_centres(text, box, size):
+            line = " ".join(text.split())
+            for word, x in _word_centres(line, box, size, _operands(line)):
                 index = nearest(x)
                 if placed and placed[-1][0] == index:
                     placed[-1] = (index, placed[-1][1] + " " + word)
@@ -275,7 +301,11 @@ def _header_centres(cell: dict) -> tuple[list[str], list[float]] | None:
     if not _LIMIT_HEADER.match(text):
         return None
     size = float(paragraphs[0].get("font size") or 8)
-    placed = _word_centres(text, paragraphs[0]["bounding box"], size)
+    placed: list[tuple[str, float]] = []
+    for word, x in _word_centres(text, paragraphs[0]["bounding box"], size):
+        if placed and re.fullmatch(r"\(\d+\)", word):
+            continue  # "TYP (2)": the mark belongs to the word, not a column
+        placed.append((word, x))
     return [re.sub(r"\.?(\s*\(\d+\))?$", "", w).upper() for w, _ in placed], [x for _, x in placed]
 
 

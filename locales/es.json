@@ -161,7 +161,6 @@
   "strikethrough.tooltip": "Marca el texto tachado: ~~así~~ en Markdown, <del> en HTML. Experimental.",
 
   "hidden_text.label": "Descartar texto oculto",
-  "hidden_text.tooltip": "Para resultados que van a una IA. Un PDF puede llevar texto que el lector nunca ve —invisible, blanco sobre blanco, microscópico, fuera de la página, en capas ocultas—, a veces con instrucciones para la IA. Esto lo descarta.\n\nEl precio: unas dos veces más lento, y algunos signos finos también desaparecen: en una hoja de datos de Microchip desaparecieron los signos menos e igual de las fórmulas. Por eso viene desactivado.",
 
   "hybrid.label": "Modo IA:",
   "hybrid.off": "Desactivado",

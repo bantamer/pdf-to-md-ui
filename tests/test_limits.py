@@ -113,6 +113,45 @@ def test_footnote_mark_in_the_header():
     assert cells_of(out) == ["MIN", "TYP", "MAX", "1.8", " ", " "]
 
 
+def test_footnote_mark_after_a_space_is_no_column():
+    # LM2904: "MIN TYP (2) MAX" used to grow a fourth, empty column.
+    head = cell(1, 1, para("MIN TYP (2) MAX", 435, 522, 678))
+    doc = json_table([[head], [cell(2, 1, para("3 7", 472, 520, 660))]])
+    md = md_table([["<th>MIN TYP (2) MAX</th>"], ["<td>3 7</td>"]])
+
+    out, _ = split_limit_columns(md, doc)
+
+    assert cells_of(out) == ["MIN", "TYP", "MAX", " ", "3", "7"]
+
+
+def test_numbers_close_together_still_split():
+    # LM358: "TYP(2)" stretches the header, so the columns look wider than
+    # "3 7" - still TYP 3 and MAX 7. A value with a space in it stays whole.
+    head = cell(1, 1, para("MIN TYP(2) MAX", 400, 520, 678))
+    doc = json_table([
+        [head],
+        [cell(2, 1, para("3 7", 474, 511, 660))],
+        [cell(3, 1, para("VDD - 1", 474, 511, 640))],
+    ])
+    md = md_table([["<th>MIN TYP(2) MAX</th>"], ["<td>3 7</td>"], ["<td>VDD - 1</td>"]])
+
+    out, _ = split_limit_columns(md, doc)
+
+    assert cells_of(out)[:6] == ["MIN", "TYP", "MAX", " ", "3", "7"]
+    assert "VDD - 1" in cells_of(out)[6:]
+
+
+def test_a_sign_keeps_an_expression_whole():
+    # INA219 "GND – 0.3 6" is MIN "GND – 0.3", MAX "6" - not "GND –" and "0.3 6".
+    head = cell(1, 1, para("MIN MAX", 450, 520, 678))
+    doc = json_table([[head], [cell(2, 1, para("GND – 0.3 6", 440, 522, 660))]])
+    md = md_table([["<th>MIN MAX</th>"], ["<td>GND – 0.3 6</td>"]])
+
+    out, _ = split_limit_columns(md, doc)
+
+    assert cells_of(out) == ["MIN", "MAX", "GND – 0.3", "6"]
+
+
 def test_two_word_header():
     head = cell(1, 1, para("MIN MAX", 450, 500, 678))
     doc = json_table([[head], [cell(2, 1, para("5.5", 488, 499, 660))]])

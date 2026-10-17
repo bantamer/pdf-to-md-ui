@@ -61,7 +61,8 @@ walks through everything — [English](docs/guide.en.md),
 - Up to five favourite folders for the results, one click apart.
 - **Drop hidden text** for results that go to an AI: invisible, white-on-white,
   microscopic and off-page text — a way of slipping instructions to a model —
-  is left out ([how](patches/README.md#hidden-text-switch)).
+  is left out ([how](patches/README.md#hidden-text-switch)). Not for documents
+  with formulas or code: thin signs such as + and − can go with it.
 - Six languages — English, Русский, Polski, Français, Español, Italiano. The
   app follows the Windows language; switch it in **Settings → Language**.
 - A standard Windows menu — **File**, **Settings**, **Help** — with the usual
