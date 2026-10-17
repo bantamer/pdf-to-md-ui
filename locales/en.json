@@ -42,6 +42,11 @@
   "update.ask": "Version {version} is available — you have {current}. Open the download page?",
   "update.latest": "You have the latest version ({version}).",
   "update.failed": "Could not check for updates. Check the internet connection and try again.",
+  "update.install_tooltip": "Download and install the update",
+  "update.ask_install": "Version {version} is available — you have {current}. Download and install it now? The program will close and open again when the update is done.",
+  "update.downloading": "Downloading version {version}…",
+  "update.busy": "A conversion is running. Wait until it is done, then install the update.",
+  "update.install_failed": "Could not update automatically. The download page will open — download the installer there and run it.",
 
   "files.section": "Source files",
   "files.drop_hint": "Drop PDFs or a folder here — or click to choose",

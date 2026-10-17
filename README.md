@@ -71,8 +71,10 @@ walks through everything — [English](docs/guide.en.md),
 - Light and dark theme, or follow Windows — title bars included.
 - Tells you when a new version is out: at startup it asks GitHub for the
   latest release and shows a link in the corner of the window. That one
-  request is all it sends — no data about you or your files. Turn it off in
-  **Settings**, or check by hand in **Help → Check for updates**.
+  request is all it sends — no data about you or your files. Click the link
+  and the installed program updates itself: it downloads the new installer,
+  checks it, closes, installs it over itself and opens again. Turn the check
+  off in **Settings**, or check by hand in **Help → Check for updates**.
 - One window: files sent from Explorer while the program is open join the
   list there instead of opening a second copy. The window comes back where
   you left it, at the same size.
@@ -176,7 +178,7 @@ open — longer languages must not push the cards past the edge.
 | `fontfix.py` | Character maps for fonts the converter cannot read, added to a temporary copy of the PDF |
 | `postprocess.py` | Markdown clean-up: figure clutter out, MIN/TYP/MAX columns split using the JSON |
 | `single_instance.py` | One window: a second launch hands its files to the first |
-| `updates.py` | Asks GitHub whether a newer release is out |
+| `updates.py` | Asks GitHub whether a newer release is out; downloads and starts its installer |
 | `i18n.py`, `locales/` | Interface languages |
 | `theme.py` | Colour palettes and generated stylesheet |
 | `patches/` | Classes loaded ahead of the jar: the veraPDF memory fix and the hidden-text switch |

@@ -64,6 +64,7 @@ def offline(monkeypatch):
 
     monkeypatch.setattr(updates, "fetch_latest", lambda: None)
     monkeypatch.setattr(gui, "_latest_release", None)
+    monkeypatch.setattr(gui, "_downloads", [])
 
 
 @pytest.fixture(autouse=True)

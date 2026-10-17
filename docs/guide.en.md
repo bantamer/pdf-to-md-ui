@@ -140,7 +140,10 @@ the favourites (the folder itself stays on the disk).
 - **Settings → Theme** — light, dark, or as in Windows.
 - **Settings → Check for updates at startup** — at startup the program asks
   GitHub whether there is a newer version and shows a link in the corner of
-  the window. To check by hand: **Help → Check for updates**.
+  the window. Click it to update: the program downloads the new version,
+  closes, installs it and opens again — your settings stay. If something
+  goes wrong, the download page opens instead. To check by hand: **Help →
+  Check for updates**.
 - **Settings → Reset settings** — everything back as after installing.
 
 ## Keyboard shortcuts

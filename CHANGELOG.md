@@ -1,5 +1,20 @@
 # Changes
 
+## Unreleased
+
+- **The program updates itself.** Clicking "↑ Version X is available" (or
+  Yes in Help → Check for updates) in the installed program downloads the
+  new installer with a progress bar and a Cancel button, checks its size
+  and checksum against GitHub's, closes the program, installs over it
+  without asking anything and opens it again. The install folder, language,
+  shortcuts and context menu entry stay as they were. If the download or
+  the installer fails, the release page opens as before. A copy run from
+  source or from a build folder still just opens the page. Version 2.1.0
+  and earlier only know how to open the page: the version after it has to
+  be installed by hand once, and the updates after that install themselves.
+- The installer names its AppId explicitly (the same value it had
+  implicitly), so a new version always finds the installed one.
+
 ## 2.1.0
 
 Datasheets come out shorter and cleaner for a language model: plain

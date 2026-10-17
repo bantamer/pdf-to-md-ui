@@ -67,6 +67,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QProgressBar,
+    QProgressDialog,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -80,6 +81,7 @@ import shiboken6
 
 import i18n
 import theme
+import updates
 from converter import (
     CONTENT_SAFETY_OFF,
     HYBRID_DEFAULT_URL,
@@ -947,8 +949,9 @@ class MainWindow(QWidget):
         self.update_link = QLabel()
         self.update_link.setObjectName("UpdateLink")
         self.update_link.setTextFormat(Qt.TextFormat.RichText)
-        self.update_link.setOpenExternalLinks(True)
-        self.update_link.setToolTip(tr("update.link_tooltip"))
+        # A click installs the update where this copy can be updated in
+        # place, and opens the download page otherwise.
+        self.update_link.linkActivated.connect(lambda _: offer_update(self.update_release))
         self.update_link.hide()
         bar.setCornerWidget(self.update_link, Qt.Corner.TopRightCorner)
         return bar
@@ -1330,8 +1333,11 @@ class MainWindow(QWidget):
     # -- updates ----------------------------------------------------------- #
 
     def show_update(self, release: dict) -> None:
-        """The link in the header to a newer release's download page."""
+        """The link in the header to a newer release."""
         self.update_release = release
+        self.update_link.setToolTip(
+            tr("update.install_tooltip" if updates.can_install(release) else "update.link_tooltip")
+        )
         accent = (theme.DARK if self.dark else theme.LIGHT)["accent"]
         self.update_link.setText(
             f"<a style='color:{accent}; text-decoration:none' href='{release['url']}'>"
@@ -2214,15 +2220,111 @@ def _update_checked(check: UpdateCheck, release: dict | None, manual: bool) -> N
     if release is None:
         QMessageBox.warning(window, APP_NAME, tr("update.failed"))
     elif newer:
-        answer = QMessageBox.question(
-            window,
-            APP_NAME,
-            tr("update.ask", version=release["version"], current=__version__),
-        )
-        if answer == QMessageBox.StandardButton.Yes:
-            QDesktopServices.openUrl(QUrl(release["url"]))
+        offer_update(release, ask=True)
     else:
         QMessageBox.information(window, APP_NAME, tr("update.latest", version=__version__))
+
+
+def offer_update(release: dict | None, ask: bool = False) -> None:
+    """The user wants the newer release: install it, or open its page.
+
+    An installed copy downloads the installer and lets it replace the
+    program - after a yes, since the program closes for it. Any other copy
+    opens the download page: straight away from the link in the header,
+    after a question from Help -> Check for updates (`ask`).
+    """
+    window = _windows[-1] if _windows else None
+    if window is None or release is None:
+        return
+    if not updates.can_install(release):
+        if ask:
+            answer = QMessageBox.question(
+                window,
+                APP_NAME,
+                tr("update.ask", version=release["version"], current=__version__),
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+        QDesktopServices.openUrl(QUrl(release["url"]))
+        return
+    if _downloads:
+        return  # already on its way
+    answer = QMessageBox.question(
+        window,
+        APP_NAME,
+        tr("update.ask_install", version=release["version"], current=__version__),
+    )
+    if answer != QMessageBox.StandardButton.Yes:
+        return
+    if window._busy():
+        # The installer replaces the Java runtime the conversion is using.
+        QMessageBox.information(window, APP_NAME, tr("update.busy"))
+        return
+    _download_update(window, release)
+
+
+# A download in progress, with its progress window; held so neither is
+# collected meanwhile.
+_downloads: list = []
+
+
+def _download_update(window: MainWindow, release: dict) -> None:
+    download = updates.UpdateDownload(release)
+    dialog = QProgressDialog(
+        tr("update.downloading", version=release["version"]),
+        tr("action.cancel"),
+        0,
+        100,
+        window,
+    )
+    dialog.setWindowTitle(APP_NAME)
+    dialog.setWindowModality(Qt.WindowModality.WindowModal)
+    dialog.setMinimumDuration(0)
+    dialog.setAutoClose(False)
+    dialog.setAutoReset(False)
+    dialog.setValue(0)
+    dialog.canceled.connect(download.cancel)
+    download.progress.connect(
+        lambda done, total: dialog.setValue(min(100, done * 100 // max(total, 1)))
+    )
+    download.finished.connect(
+        lambda path, error: _update_downloaded(download, dialog, release, path, error)
+    )
+    _downloads.append((download, dialog))
+    dialog.show()
+    download.start()
+
+
+def _update_downloaded(download, dialog, release: dict, path, error: str) -> None:
+    if (download, dialog) in _downloads:
+        _downloads.remove((download, dialog))
+    if shiboken6.isValid(dialog):
+        dialog.canceled.disconnect()  # closing it is not a cancel
+        dialog.close()
+        dialog.deleteLater()
+    download.deleteLater()
+    window = _windows[-1] if _windows else None
+    if path is None and not error:
+        return  # cancelled
+    if path is not None:
+        try:
+            updates.start_installer(path)
+        except OSError:
+            pass  # on to the page
+        else:
+            _quit_for_update()
+            return
+    # Whatever went wrong, the page has the installer to download by hand.
+    if window is not None:
+        QMessageBox.warning(window, APP_NAME, tr("update.install_failed"))
+    QDesktopServices.openUrl(QUrl(release["url"]))
+
+
+def _quit_for_update() -> None:
+    """Close so the installer can replace the program's files."""
+    for window in list(_windows):
+        window.close()
+    QApplication.quit()
 
 
 # The window on screen. Switching the language replaces it, and a reference has

@@ -19,6 +19,11 @@
 #endif
 
 [Setup]
+; Spelled out, so it never changes with the name: it is how a new version's
+; Setup finds the copy already installed (its folder, language and tasks)
+; and installs over it. Left out, Inno Setup took AppName - the same value,
+; so copies installed before it was written down are found too.
+AppId=PDF to Markdown
 AppName={#AppName}
 AppVersion={#AppVersion}
 DefaultDirName={autopf}\{#AppName}
@@ -41,6 +46,10 @@ SetupIconFile=icon.ico
 UninstallDisplayIcon={app}\{#AppExe}
 ; Tells Explorer to pick up the context menu entries without a restart.
 ChangesAssociations=yes
+; A running copy holds its files; Setup closes it before replacing them. The
+; program's own updater starts Setup and quits by itself (updates.py), so this
+; only matters for a copy still on its way out, or one opened twice.
+CloseApplications=yes
 
 [Languages]
 ; Same languages as the app. The task and run captions below use Inno Setup's
@@ -93,3 +102,12 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; Updating from within the program (updates.py) runs Setup with /SILENT
+; /RELAUNCH=1: the program closed for the update, so it opens again after.
+Filename: "{app}\{#AppExe}"; Flags: nowait skipifnotsilent; Check: RelaunchRequested
+
+[Code]
+function RelaunchRequested: Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
+end;
