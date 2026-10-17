@@ -228,3 +228,59 @@ def test_a_scan_has_no_text():
 
     assert looks_scanned(scan, 2)
     assert not looks_scanned(real, 2)
+
+
+# -- drawings that are not grids: label bags and label runs -------------------------- #
+
+def test_a_cell_stuffed_with_labels_is_a_drawing():
+    # ESP32's peripheral schematic: one cell, dozens of net names.
+    labels = "<br><br>".join(["EN", "TXD RXD", "IO0", "IO21 IO19 IO18 IO5", "GND", "R2 100R", "C1 10uF"] * 5)
+    md = ("<table>\n  <tr>\n    <th>MTDI should be kept at a low electric level when powering up the module."
+          f"<br><br>{labels}</th>\n  </tr>\n</table>")
+
+    out, n = drop_figure_tables("\n\n---- page 35 ----\n\n" + md)
+
+    assert n == 1
+    assert "IO21" not in out
+    assert "MTDI should be kept at a low electric level" in out
+
+
+def test_a_cell_of_examples_is_kept():
+    # MCP73831's ordering examples look like labels but are content.
+    lines = ["a) MCP73831-2ACI/OT: 4.20V VREG, Options AC, 5LD SOT23 package",
+             "b) MCP73831T-2ACI/OT: Tape and Reel, 4.20V VREG",
+             "c) MCP73831-3ACI/MC: 4.35V VREG, Options AC, 8LD DFN package"] + ["X"] * 25
+    md = "<table>\n  <tr>\n    <td>" + "<br><br>".join(lines) + "</td>\n  </tr>\n</table>"
+
+    out, n = drop_figure_tables(md)
+
+    assert n == 0 and out == md
+
+
+def test_a_run_of_tick_labels_is_a_drawing():
+    ticks = "\n\n".join(["100", "0.7", "0.6", "2nd line", "0.5", "0.4", "10", "0.3", "0.2", "0.1",
+                         "0", "Axis Title", "1st line", "1000"])
+    md = ("Some text before the plot that is a real sentence of the datasheet.\n\n"
+          "---- page 4 ----\n\n" + ticks + "\n\nFig. 2 - Pulse Length and Sensitivity\n\n"
+          "The next real paragraph, written as a sentence for the reader.")
+
+    out, n = drop_figure_tables(md)
+
+    assert n == 1
+    assert "Axis Title" not in out
+    assert "*[" in out and "Fig. 2 - Pulse Length and Sensitivity" in out
+    assert "---- page 4 ----" in out
+    assert out.startswith("Some text before") and out.endswith("for the reader.")
+
+
+def test_table_rows_set_as_text_are_kept():
+    # NEO-6: a table that came out as short paragraphs - rows, not ticks.
+    rows = "\n\n".join(["VCC = 3.6 V16 / 1.95 V17", "Max. supply current 15 Iccp All 67 mA",
+                        "Icc Acquisition All 47 mA", "NEO-6G/Q/T 40 mA NEO-6M/P/V 39 mA",
+                        "Icc Tracking", "(Max Performance mode)", "VCC = 3.0 V16 / 1.8 V17",
+                        "Average supply current18", "NEO-6G/Q/T 38 mA NEO-6M/P/V 37 mA",
+                        "Icc Tracking", "(Eco mode)", "VCC = 3.0 V16 / 1.8 V17", "Backup current 22 µA"])
+
+    out, n = drop_figure_tables(rows)
+
+    assert n == 0 and out == rows

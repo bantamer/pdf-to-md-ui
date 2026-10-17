@@ -68,15 +68,42 @@ def _is_phrase(fragment: str) -> bool:
     """Real words, not tick labels or scattered syllables."""
     words = _WORD.findall(fragment)
     letters = sum(len(w) for w in words)
-    return len(words) >= 3 and letters >= 0.5 * len(fragment.replace(" ", ""))
+    # Net and pin names ("IO21 IO19 IO18 IO5", "STAGE 0 STAGES 1 TO 6") are
+    # words too; a sentence has some in lower case.
+    lower = sum(1 for w in words if len(w) >= 3 and w.islower())
+    return len(words) >= 3 and lower >= 2 and letters >= 0.5 * len(fragment.replace(" ", ""))
 
 
 def is_figure_table(table: str) -> bool:
     cells = _cell_texts(table)
+    if _is_label_bag(cells):
+        return True
     if len(cells) < MIN_CELLS:
         return False
     empty = sum(1 for c in cells if not c.strip())
     return empty / len(cells) >= EMPTY_SHARE
+
+
+# A drawing can also come out as one cell stuffed with its labels: ESP32's
+# peripheral schematic ("EN", "TXD RXD", "IO21 IO19 IO18 IO5"...), W25Q128's
+# timing diagrams, TI's land patterns. A cell of that many fragments with
+# hardly a sentence among them is no table. Lines like "a) MCP73831-2ACI/OT:
+# 4.20V VREG..." or "Example 1: ..." are content set the same way, so a cell
+# with a few of those stays.
+BAG_FRAGMENTS = 25
+_KEEP_LINE = re.compile(r"^(?:[a-z]\)\s|\(?\d+\)\s+\S.{8,}|Examples?\b|Note\b|NOTE\b|Remark\b)")
+
+
+def _is_label_bag(cells: list[str]) -> bool:
+    for cell in cells:
+        fragments = _fragments(cell)
+        if len(fragments) < BAG_FRAGMENTS:
+            continue
+        phrases = sum(_is_phrase(f) for f in fragments)
+        kept = sum(bool(_KEEP_LINE.match(f)) for f in fragments)
+        if phrases <= 0.2 * len(fragments) and kept < 2:
+            return True
+    return False
 
 
 def _describe(table: str) -> tuple[str, list[str]]:
@@ -135,6 +162,75 @@ def _drop_stray_labels(md: str) -> str:
     return re.sub(r"\n{4,}", "\n\n\n", "\n".join(kept))
 
 
+# Plots and schematics that never became tables come out as paragraphs of a
+# few labels each - tick values, net names, part values - one after another
+# (TSOP382 plots, LT3045's typical application). A long enough run of them,
+# page breaks aside, is a drawing as well.
+LABEL_RUN = 12
+SHORT_SHARE = 0.6
+_LOWER_WORD = re.compile(r"\b[a-z]{3,}\b")
+
+
+def _is_label_paragraph(par: str) -> bool:
+    text = par.strip()
+    if not text or _PAGE.fullmatch(text) or _CAPTION.match(text) or _KEEP_LINE.match(text):
+        return False
+    if text[0] in "#<|!*" or text.startswith("- ") or "<t" in text or len(text) > 60:
+        return False
+    return len(_LOWER_WORD.findall(text)) < 3
+
+
+def _drop_label_runs(md: str) -> tuple[str, int]:
+    pars = re.split(r"\n\s*\n", md)
+    out: list[str] = []
+    dropped = 0
+    page = None
+    i = 0
+    while i < len(pars):
+        # A run: label paragraphs, with page breaks, captions and kept lines
+        # between them as long as more labels follow.
+        labels, k, last = 0, i, i
+        while k < len(pars):
+            text = pars[k].strip()
+            if _is_label_paragraph(text):
+                labels += 1
+                last = k + 1
+            elif text and not (_PAGE.fullmatch(text) or _CAPTION.match(text) or _KEEP_LINE.match(text)):
+                break
+            k += 1
+        run = [p.strip() for p in pars[i:last] if p.strip()]
+        label_pars = [t for t in run if _is_label_paragraph(t)]
+        # Tick values and net names are one or two words; the rows of a table
+        # set as text are longer ("Max. supply current 15 Iccp All 67 mA",
+        # NEO-6) and stay.
+        short = sum(len(t.split()) <= 2 for t in label_pars)
+        if labels >= LABEL_RUN and short >= SHORT_SHARE * len(label_pars):
+            start_page = page
+            for text in run:
+                found = _PAGE.fullmatch(text)
+                if found and start_page is None:
+                    start_page = found.group(1)
+            captions = [t for t in run if _CAPTION.match(t)]
+            note = tr("figure.omitted_page", page=start_page) if start_page else tr("figure.omitted")
+            if captions:
+                note += ": " + captions[0]
+            kept = [t for t in run if _PAGE.fullmatch(t) or _KEEP_LINE.match(t)] + captions[1:]
+            out.append("\n\n".join([f"*{note}*", *kept]))
+            for text in run:
+                found = _PAGE.fullmatch(text)
+                if found:
+                    page = found.group(1)
+            dropped += 1
+            i = last
+            continue
+        found = _PAGE.search(pars[i])
+        if found:
+            page = found.group(1)
+        out.append(pars[i])
+        i += 1
+    return "\n\n".join(out), dropped
+
+
 def drop_figure_tables(md: str) -> tuple[str, int]:
     """Replace tables that are really drawings; return the text and how many."""
     out, last, dropped = [], 0, 0
@@ -156,6 +252,8 @@ def drop_figure_tables(md: str) -> tuple[str, int]:
         dropped += 1
     out.append(md[last:])
     result = "".join(out)
+    result, runs = _drop_label_runs(result)
+    dropped += runs
     if dropped:
         result = _drop_stray_labels(result)
     return result, dropped

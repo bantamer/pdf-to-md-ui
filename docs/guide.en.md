@@ -55,7 +55,9 @@ You can tick several formats at once.
 - **Drop figure clutter** — plots, drawings and flow charts often come out
   as huge tables of empty cells. Each is replaced by a line
   "[Figure omitted, page N]" with its caption; see the figure itself in the
-  PDF. On by default.
+  PDF. The same goes for schematics and timing diagrams that come out as a
+  long run of loose labels ("IO21", "GND", "R2 100R", tick values). On by
+  default.
 - **Plain Markdown tables** — tables in Markdown's own markup instead of
   HTML, for editors and sites that don't show HTML. Merged cells fall apart
   that way, which is why it is off by default.

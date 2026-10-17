@@ -11,6 +11,12 @@
   "10 k?". They are now read from the glyph's own name, from its number in
   the installed Arial or Times, or for Symbol from its exact shape. Question
   marks: LM358 38 → 3, MAX232 44 → 0.
+- **More drawing clutter removed.** Schematics, timing diagrams, block
+  diagrams and plots that came out as runs of loose labels ("IO21 IO19 IO18
+  IO5", tick values) or as one table cell stuffed with them now become
+  "[Figure omitted, page N]" as well, with their caption and any real
+  sentence kept. Rows of a table set as text, ordering examples and notes stay.
+  1.3% of the text over 53 datasheets, up to 12% in single files.
 - **Scans are named.** A PDF with no text (pictures of pages) used to give an
   empty file without a word; the log and the summary now say it looks like a
   scan and that AI mode can read it.
