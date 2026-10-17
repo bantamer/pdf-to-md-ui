@@ -284,3 +284,35 @@ def test_table_rows_set_as_text_are_kept():
     out, n = drop_figure_tables(rows)
 
     assert n == 0 and out == rows
+
+
+def test_labels_around_nested_tables_are_a_drawing():
+    # ESP32's module dimensions: labels in the outer cell, around nested tables.
+    before = "<br><br>".join(["18.00±0.15", "0.85", "0.90", "9.68", "ESP32-WROOM-32 Dimensions", "3.10±0.15"] * 3)
+    after = "<br><br>".join(["0.1", "Unit: mm", "4.10", "25.50±0.15", "11.43", "8.89"] * 3)
+    nested = "<table>\n  <tr>\n    <td>0.1</td>\n  </tr>\n</table>"
+    md = f"<table>\n  <tr>\n    <th>{before}{nested}{after}</th>\n  </tr>\n</table>"
+
+    out, n = drop_figure_tables("---- page 36 ----\n\n" + md)
+
+    assert n == 1 and "25.50" not in out
+
+
+def test_real_table_wrapped_in_an_outer_cell_stays():
+    # Data a converter nested in one outer cell: the cells are inside.
+    rows = "".join(f"<tr><td>Param {i}</td><td>{i}.5</td><td>V</td></tr>" for i in range(30))
+    md = f"<table>\n  <tr>\n    <td><table>{rows}</table></td>\n  </tr>\n</table>"
+
+    out, n = drop_figure_tables(md)
+
+    assert n == 0 and out == md
+
+
+def test_memory_maps_are_kept():
+    # PIC's register file map: a drawing, but the addresses matter.
+    labels = "<br><br>".join(f"{a:02X}h<br><br>REG{a}" for a in range(20))
+    md = f"<table>\n  <tr>\n    <td>{labels}</td>\n  </tr>\n</table>"
+
+    out, n = drop_figure_tables(md)
+
+    assert n == 0

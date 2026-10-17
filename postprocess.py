@@ -64,6 +64,30 @@ def _cell_texts(table: str) -> list[str]:
     return texts
 
 
+def _without_nested(html: str) -> str:
+    """The text of a cell with any tables inside it cut out."""
+    out, depth, last = [], 0, 0
+    for m in _TABLE_TAG.finditer(html):
+        if m.group() == "<table>":
+            if depth == 0:
+                out.append(html[last:m.start()])
+            depth += 1
+        elif depth:
+            depth -= 1
+            if depth == 0:
+                last = m.end()
+    if depth == 0:
+        out.append(html[last:])
+    return "".join(out)
+
+
+def _own_texts(table: str) -> list[str]:
+    """Each outer cell's own text: everything in it but nested tables."""
+    inner = table[table.index(">") + 1: table.rindex("</table>")]
+    cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", _without_nested(inner), re.S)
+    return [_TAG.sub("\n", c.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")) for c in cells]
+
+
 def _fragments(text: str) -> list[str]:
     """A cell's text split where the converter glued separate labels."""
     parts = re.split(r"\n+|\s{2,}", text)
@@ -84,6 +108,12 @@ def is_figure_table(table: str) -> bool:
     cells = _cell_texts(table)
     if _is_label_bag(cells):
         return True
+    # A drawing's labels can sit around tables nested in its cell (ESP32's
+    # module dimensions); count all of a cell's own text, not only what comes
+    # before the first nested table. Nested tables' own cells - real data a
+    # converter sometimes wraps in an outer cell - are not counted here.
+    if "<table>" in table[7:] and _is_label_bag(_own_texts(table)):
+        return True
     if len(cells) < MIN_CELLS:
         return False
     empty = sum(1 for c in cells if not c.strip())
@@ -97,6 +127,7 @@ def is_figure_table(table: str) -> bool:
 # 4.20V VREG..." or "Example 1: ..." are content set the same way, so a cell
 # with a few of those stays.
 BAG_FRAGMENTS = 25
+_ADDRESS = re.compile(r"\b0x[0-9A-Fa-f]{2,}|\b[0-9A-F]{2,4}h\b")
 _KEEP_LINE = re.compile(r"^(?:[a-z]\)\s|\(?\d+\)\s+\S.{8,}|Examples?\b|Note\b|NOTE\b|Remark\b)")
 
 
@@ -107,6 +138,12 @@ def _is_label_bag(cells: list[str]) -> bool:
             continue
         phrases = sum(_is_phrase(f) for f in fragments)
         kept = sum(bool(_KEEP_LINE.match(f)) for f in fragments)
+        # Memory and register maps are drawn too (PIC's register file map,
+        # STM32's and LPC17xx's memory maps), but their addresses are worth
+        # keeping, however scattered.
+        addresses = sum(bool(_ADDRESS.search(f)) for f in fragments)
+        if addresses >= 0.2 * len(fragments):
+            continue
         if phrases <= 0.2 * len(fragments) and kept < 2:
             return True
     return False
