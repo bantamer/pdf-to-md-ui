@@ -1041,6 +1041,9 @@ class MainWindow(QWidget):
         self.opt_page_sep = QCheckBox(tr("page_sep.label"))
         self.opt_page_sep.setChecked(True)
         self.opt_plain_md = QCheckBox(tr("plain_md.label"))
+        # On by default: a third fewer tokens for a language model, nothing
+        # lost (the clean-ups run on HTML tables first).
+        self.opt_plain_md.setChecked(True)
         self.opt_clean_figures = QCheckBox(tr("clean_figures.label"))
         self.opt_clean_figures.setChecked(True)
         self.opt_plain_md.toggled.connect(self._sync_format_options)

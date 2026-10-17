@@ -63,7 +63,7 @@ You can tick several formats at once.
 - **Plain Markdown tables** — tables in Markdown's own | pipe | markup
   instead of HTML: about a quarter shorter, a third fewer tokens for a
   language model. All the clean-ups are done first, so MIN, TYP and MAX keep
-  their own columns. A merged cell's other places are left empty. Off by
+  their own columns. A merged cell's other places are left empty. On by
   default.
 
 Next to every setting there is a **?** — point at it for a detailed

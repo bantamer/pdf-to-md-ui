@@ -457,15 +457,16 @@ def test_options_grey_out_when_their_formats_are_off(window):
 
 def test_both_are_remembered_and_reset(qapp, settings_file):
     w = gui.MainWindow()
+    assert w.opt_plain_md.isChecked(), "plain tables are the default"
     w.opt_page_sep.setChecked(False)
-    w.opt_plain_md.setChecked(True)
+    w.opt_plain_md.setChecked(False)
     w._save_settings()
 
     again = gui.MainWindow()
-    assert not again.opt_page_sep.isChecked() and again.opt_plain_md.isChecked()
+    assert not again.opt_page_sep.isChecked() and not again.opt_plain_md.isChecked()
 
     again.reset_main_btn.click()
-    assert again.opt_page_sep.isChecked() and not again.opt_plain_md.isChecked()
+    assert again.opt_page_sep.isChecked() and again.opt_plain_md.isChecked()
 
 
 # -- two even columns ----------------------------------------------------------------------- #

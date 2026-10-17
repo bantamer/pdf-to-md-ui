@@ -27,7 +27,8 @@
   converter used to write pipe tables itself: MIN, TYP and MAX stayed in one
   column and no figure clutter was removed. Now the HTML tables are cleaned
   first and turned into pipe tables at the end - a quarter shorter than
-  HTML, about a third fewer tokens over 57 datasheets, no word lost.
+  HTML, about a third fewer tokens over 57 datasheets, no word lost. Now
+  on by default.
 - **A hint for the language model** on top of a file with figures left out:
   it may ask the user for a screenshot of the page it needs (a schematic, a
   design equation) instead of filling the gap from memory.
