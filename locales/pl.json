@@ -61,8 +61,6 @@
   "list.partial": "Skonwertowano {ok} z {total}",
   "list.open_hint": "Kliknij dwukrotnie, aby otworzyć wynik",
 
-  "figure.omitted": "[Pominięto rysunek]",
-  "figure.omitted_page": "[Pominięto rysunek, str. {page}]",
 
   "output.section": "Gdzie zapisać",
   "output.placeholder": "Folder obok plików źródłowych",

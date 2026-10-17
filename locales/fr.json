@@ -61,8 +61,6 @@
   "list.partial": "{ok} sur {total} convertis",
   "list.open_hint": "Double-cliquez pour ouvrir le résultat",
 
-  "figure.omitted": "[Figure omise]",
-  "figure.omitted_page": "[Figure omise, page {page}]",
 
   "output.section": "Où enregistrer",
   "output.placeholder": "Dossier à côté des fichiers source",

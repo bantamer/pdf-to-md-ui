@@ -61,8 +61,6 @@
   "list.partial": "Сконвертировано {ok} из {total}",
   "list.open_hint": "Двойной клик — открыть результат",
 
-  "figure.omitted": "[Рисунок опущен]",
-  "figure.omitted_page": "[Рисунок опущен, стр. {page}]",
 
   "output.section": "Куда сохранить",
   "output.placeholder": "Папка рядом с исходными файлами",

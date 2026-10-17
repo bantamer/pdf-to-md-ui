@@ -39,7 +39,7 @@ def test_plot_becomes_a_note_with_its_page():
 
     assert dropped == 1
     assert "<td>0</td>" not in out and "25°C" not in out
-    assert "*" + i18n.tr("figure.omitted_page", page="7") + "*" in out
+    assert "*" + "[Figure omitted, page 7]" + "*" in out
     assert "Figure 6-3. Dropout Voltage vs Output Current" in out, "the caption stays"
     assert REAL in out and "Text before." in out
 
@@ -47,7 +47,7 @@ def test_plot_becomes_a_note_with_its_page():
 def test_note_without_page_separators():
     out, _ = drop_figure_tables(f"{PLOT}\n")
 
-    assert "*" + i18n.tr("figure.omitted") + "*" in out
+    assert "*" + "[Figure omitted]" + "*" in out
 
 
 def test_caption_inside_the_table_is_kept_in_the_note():
@@ -55,7 +55,7 @@ def test_caption_inside_the_table_is_kept_in_the_note():
 
     out, _ = drop_figure_tables(plot)
 
-    assert out.startswith("*" + i18n.tr("figure.omitted") + ": Figure 28. Dropout voltage vs junction temperature")
+    assert out.startswith("*" + "[Figure omitted]" + ": Figure 28. Dropout voltage vs junction temperature")
 
 
 def test_sentences_in_a_flow_chart_survive():

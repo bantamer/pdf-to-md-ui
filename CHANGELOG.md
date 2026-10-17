@@ -17,6 +17,9 @@
   "[Figure omitted, page N]" as well, with their caption and any real
   sentence kept. Rows of a table set as text, ordering examples and notes stay.
   1.3% of the text over 53 datasheets, up to 12% in single files.
+- **The figure note is always English**, "[Figure omitted, page N]",
+  whatever the interface language: the datasheets are English, and the same
+  PDF now gives the same Markdown for everyone.
 - **Scans are named.** A PDF with no text (pictures of pages) used to give an
   empty file without a word; the log and the summary now say it looks like a
   scan and that AI mode can read it.

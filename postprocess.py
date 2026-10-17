@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import re
 
-from i18n import tr
 
 # A table is taken for a drawing when at least this share of its cells is
 # empty and it has enough cells for that to mean something. Tuned on 23
@@ -31,6 +30,13 @@ _CAPTION = re.compile(
     r"((?:Figure|FIGURE|Fig\.?|Рисунок|Рис\.|図)\s*\d[\w\-–.]*[.:]?\s+\S.*)"
 )
 _WORD = re.compile(r"[^\W\d_]{2,}")
+
+
+def _figure_note(page) -> str:
+    """The note left where a drawing was. Always English, whatever the
+    interface language: the datasheets are English, and a Russian or Polish
+    phrase in the middle reads as noise and costs more tokens."""
+    return f"[Figure omitted, page {page}]" if page else "[Figure omitted]"
 
 
 def _top_level_tables(md: str) -> list[tuple[int, int]]:
@@ -211,7 +217,7 @@ def _drop_label_runs(md: str) -> tuple[str, int]:
                 if found and start_page is None:
                     start_page = found.group(1)
             captions = [t for t in run if _CAPTION.match(t)]
-            note = tr("figure.omitted_page", page=start_page) if start_page else tr("figure.omitted")
+            note = _figure_note(start_page)
             if captions:
                 note += ": " + captions[0]
             kept = [t for t in run if _PAGE.fullmatch(t) or _KEEP_LINE.match(t)] + captions[1:]
@@ -241,7 +247,7 @@ def drop_figure_tables(md: str) -> tuple[str, int]:
             continue
         page = next((n for pos, n in reversed(pages) if pos < start), None)
         caption, phrases = _describe(table)
-        note = tr("figure.omitted_page", page=page) if page else tr("figure.omitted")
+        note = _figure_note(page)
         if caption:
             note += ": " + caption
         lines = [f"*{note}*"]
