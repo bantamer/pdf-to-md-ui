@@ -118,7 +118,7 @@
   "page_sep.tooltip": "Puts a line such as “---- page 3 ----” between the pages in Markdown, text and HTML, so you can tell which page a passage came from.\n\nOff — the pages run on as one continuous text.",
 
   "plain_md.label": "Plain Markdown tables",
-  "plain_md.tooltip": "Writes tables in Markdown's own | pipe | form instead of HTML. Some editors and sites show only that kind.\n\nMarkdown cannot merge cells, so tables with merged cells — a datasheet's Electrical Characteristics, for one — come out broken or shifted. That is why it is off by default. Affects Markdown only.",
+  "plain_md.tooltip": "Writes tables in Markdown's own | pipe | form instead of HTML: about a quarter shorter, a third fewer tokens for a language model. Everything else is done first - MIN, TYP and MAX in their own columns, figure clutter removed.\n\nMarkdown cannot merge cells, so a merged cell's other places stay empty; some editors line such tables up less neatly. Affects Markdown only.",
 
   "clean_figures.label": "Drop figure clutter",
   "clean_figures.tooltip": "Plots, package drawings and flow charts often come out as huge tables of empty cells with scattered tick labels — in a datasheet up to three quarters of the file. This replaces each with one line: a figure was here, its caption and page. Real sentences inside, such as the steps of a flow chart, are kept.\n\nThe figure itself is not in the Markdown either way; look at the page in the PDF. Affects Markdown with HTML tables.",

@@ -437,8 +437,11 @@ def test_plain_markdown_tables(window):
 
     opts = window._collect_options()
 
-    assert "markdown_with_html" not in opts
+    # The converter still writes HTML tables: the clean-ups need them, and
+    # the worker turns them into pipe tables at the end.
+    assert opts["markdown_with_html"] is True
     assert opts["markdown_page_separator"] == gui.PAGE_SEPARATOR
+    assert window.opt_clean_figures.isEnabled(), "figure clean-up works for plain tables too"
 
 
 def test_options_grey_out_when_their_formats_are_off(window):

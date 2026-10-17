@@ -1773,10 +1773,7 @@ class MainWindow(QWidget):
         ticked = {key for key, box in self.format_boxes.items() if box.isChecked()}
         self.opt_page_sep.setEnabled(bool(ticked & {"markdown", "text", "html"}))
         self.opt_plain_md.setEnabled("markdown" in ticked)
-        # Works on the HTML tables in Markdown; plain tables cannot tell.
-        self.opt_clean_figures.setEnabled(
-            "markdown" in ticked and not self.opt_plain_md.isChecked()
-        )
+        self.opt_clean_figures.setEnabled("markdown" in ticked)
 
     def _toggle_image_dpi(self) -> None:
         self.image_dpi.setEnabled(self.image_mode.currentData() != "off")
@@ -1832,10 +1829,10 @@ class MainWindow(QWidget):
 
         separators = self.opt_page_sep.isChecked()
         if "markdown" in formats:
-            # HTML unless asked otherwise: Electrical Characteristics tables
-            # are built on merged cells and fall apart in plain Markdown.
-            if not self.opt_plain_md.isChecked():
-                options["markdown_with_html"] = True
+            # Always HTML from the converter: the clean-ups read HTML tables
+            # (merged cells, MIN/TYP/MAX). Plain tables are made from them at
+            # the end (ConvertWorker plain_tables).
+            options["markdown_with_html"] = True
             if separators:
                 options["markdown_page_separator"] = PAGE_SEPARATOR
         if "text" in formats and separators:
@@ -1961,6 +1958,7 @@ class MainWindow(QWidget):
             jobs, output_dir, options, int(self.timeout_box.currentData()), supported,
             filter_hidden=self.opt_hidden.isChecked(),
             clean_figures=self.opt_clean_figures.isChecked(),
+            plain_tables=self.opt_plain_md.isChecked(),
         )
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)

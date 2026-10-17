@@ -941,6 +941,81 @@ def unescape_signs(md: str) -> tuple[str, int]:
     return _ESCAPED.sub(put_back, md), count
 
 
+# -- plain Markdown tables -------------------------------------------------- #
+#
+# Markdown's own | pipe | tables are a quarter shorter than HTML ones - about
+# a third fewer tokens over 57 datasheets - but have no merged cells. Asking
+# the converter for them directly left MIN, TYP and MAX in one column and
+# every drawing in place, since the clean-ups here read HTML tables. So the
+# converter always writes HTML; once everything else is done, the tables are
+# turned into pipe tables: a merged cell's other places stay empty, a nested
+# table's text goes into its cell, columns empty all the way down go.
+
+_TABLE_PIECE = re.compile(r"<(/?)(table|tr|td|th)\b([^>]*)>", re.I)
+
+
+def _pipe_cell(raw: str) -> str:
+    raw = re.sub(r"(?:\s*<br\s*/?>\s*)+", "<br>", raw)
+    raw = re.sub(r"</?(?:table|tr|td|th)\b[^>]*>", " ", raw)  # nested tables
+    raw = re.sub(r"\s+", " ", raw).strip()
+    raw = re.sub(r"^(?:<br>\s*)+|(?:\s*<br>)+$", "", raw)
+    return raw.replace("|", "\\|")
+
+
+def _pipe_table(table: str) -> str:
+    rows: list[list[tuple[str, str]]] = []
+    depth, start = 0, None
+    for m in _TABLE_PIECE.finditer(table):
+        closing, tag, attrs = m.group(1) == "/", m.group(2).lower(), m.group(3)
+        if tag == "table":
+            depth += -1 if closing else 1
+            continue
+        if depth != 1:
+            continue
+        if tag == "tr" and not closing:
+            rows.append([])
+        elif tag in ("td", "th") and not closing:
+            start = (m.end(), attrs)
+        elif tag in ("td", "th") and closing and start and rows:
+            rows[-1].append((_pipe_cell(table[start[0]:m.start()]), start[1]))
+            start = None
+    grid: list[list[str]] = []
+    covered: set[tuple[int, int]] = set()
+    for r, row in enumerate(rows):
+        out: list[str] = []
+        for text, attrs in row:
+            while (r, len(out)) in covered:
+                out.append("")
+            across, down = _colspan(attrs), _rowspan(attrs)
+            for k in range(across):
+                for d in range(1, down):
+                    covered.add((r + d, len(out) + k))
+            out += [text] + [""] * (across - 1)
+        while (r, len(out)) in covered:
+            out.append("")
+        grid.append(out)
+    if not grid:
+        return ""
+    width = max(len(r) for r in grid)
+    grid = [r + [""] * (width - len(r)) for r in grid]
+    used = [i for i in range(width) if any(r[i] for r in grid)] or list(range(width))
+    grid = [[r[i] for i in used] for r in grid]
+    lines = ["|" + "|".join(grid[0]) + "|", "|" + "|".join(["---"] * len(used)) + "|"]
+    lines += ["|" + "|".join(r) + "|" for r in grid[1:]]
+    return "\n".join(lines)
+
+
+def tables_to_markdown(md: str) -> str:
+    """Every HTML table of the text as a Markdown pipe table."""
+    out, last = [], 0
+    for start, end in _top_level_tables(md):
+        out.append(md[last:start])
+        out.append(_pipe_table(md[start:end]))
+        last = end
+    out.append(md[last:])
+    return "".join(out)
+
+
 # -- images ---------------------------------------------------------------------- #
 #
 # With images saved as files the converter writes one file per picture it

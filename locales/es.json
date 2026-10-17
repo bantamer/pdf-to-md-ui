@@ -118,7 +118,6 @@
   "page_sep.tooltip": "Pone entre las páginas una línea como «---- page 3 ----» en Markdown, texto y HTML, para saber de qué página viene cada fragmento.\n\nSin marcar, las páginas siguen como un único texto continuo.",
 
   "plain_md.label": "Tablas en Markdown puro",
-  "plain_md.tooltip": "Escribe las tablas con la sintaxis propia de Markdown | con | barras | en lugar de HTML. Algunos editores y sitios solo muestran esas.\n\nMarkdown no puede combinar celdas, así que las tablas con celdas combinadas —como las características eléctricas de una hoja de datos— salen rotas o desplazadas. Por eso viene desactivado. Solo afecta a Markdown.",
 
   "clean_figures.label": "Quitar el desorden de figuras",
   "clean_figures.tooltip": "Las gráficas, los dibujos de encapsulados y los diagramas de flujo suelen salir como enormes tablas de celdas vacías con cifras de escala sueltas: hasta tres cuartas partes de una hoja de datos. Cada una se sustituye por una línea: aquí había una figura, su título y su página. Las frases reales de dentro, como los pasos de un diagrama de flujo, se conservan.\n\nLa figura en sí no está en el Markdown de todos modos; consulte la página en el PDF. Afecta al Markdown con tablas HTML.",

@@ -118,7 +118,6 @@
   "page_sep.tooltip": "Inserisce tra le pagine una riga come «---- page 3 ----» in Markdown, testo e HTML, così si vede da quale pagina viene un passo.\n\nSe disattivato, le pagine proseguono come un unico testo continuo.",
 
   "plain_md.label": "Tabelle in Markdown puro",
-  "plain_md.tooltip": "Scrive le tabelle con la sintassi propria del Markdown | con | barre | invece dell’HTML. Alcuni editor e siti mostrano solo quella.\n\nIl Markdown non sa unire le celle, quindi le tabelle con celle unite — come le caratteristiche elettriche di un datasheet — escono rotte o spostate. Per questo è disattivato in partenza. Riguarda solo il Markdown.",
 
   "clean_figures.label": "Togli il disordine dei grafici",
   "clean_figures.tooltip": "Grafici, disegni dei package e diagrammi di flusso spesso escono come enormi tabelle di celle vuote con numeri di scala sparsi: fino a tre quarti di un datasheet. Ognuna viene sostituita da una riga: qui c’era una figura, la sua didascalia e la pagina. Le frasi vere al suo interno, come i passi di un diagramma di flusso, restano.\n\nLa figura in sé comunque non è nel Markdown; guarda la pagina nel PDF. Riguarda il Markdown con tabelle HTML.",

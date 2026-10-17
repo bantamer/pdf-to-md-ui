@@ -118,7 +118,6 @@
   "page_sep.tooltip": "Insère entre les pages une ligne du type « ---- page 3 ---- » en Markdown, texte et HTML, pour savoir de quelle page vient un passage.\n\nDésactivé, les pages se suivent en un seul texte continu.",
 
   "plain_md.label": "Tableaux en Markdown pur",
-  "plain_md.tooltip": "Écrit les tableaux dans la syntaxe propre au Markdown | avec | barres | au lieu du HTML. Certains éditeurs et sites n’affichent que celle-là.\n\nLe Markdown ne sait pas fusionner les cellules : les tableaux à cellules fusionnées — les caractéristiques électriques d’une fiche technique, par exemple — sortent cassés ou décalés. C’est pourquoi l’option est désactivée par défaut. Ne concerne que le Markdown.",
 
   "clean_figures.label": "Retirer le fouillis des figures",
   "clean_figures.tooltip": "Les courbes, dessins de boîtiers et organigrammes sortent souvent en énormes tableaux de cellules vides parsemées de graduations — jusqu’aux trois quarts d’une fiche technique. Chacun est remplacé par une ligne : une figure était là, sa légende et sa page. Les vraies phrases à l’intérieur, comme les étapes d’un organigramme, sont gardées.\n\nLa figure elle-même n’est de toute façon pas dans le Markdown ; voyez la page dans le PDF. Concerne le Markdown à tableaux HTML.",

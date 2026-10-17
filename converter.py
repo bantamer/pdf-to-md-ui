@@ -39,7 +39,15 @@ from PySide6.QtCore import QObject, Signal
 from i18n import tr
 import pikepdf
 from fontfix import prepare_copy
-from postprocess import add_figure_hint, drop_figure_tables, looks_scanned, split_limit_columns, tidy_images, unescape_signs
+from postprocess import (
+    add_figure_hint,
+    drop_figure_tables,
+    looks_scanned,
+    split_limit_columns,
+    tables_to_markdown,
+    tidy_images,
+    unescape_signs,
+)
 
 JAR_NAME = "opendataloader-pdf-cli.jar"
 
@@ -505,6 +513,7 @@ class ConvertWorker(QObject):
         supported: set[str] | None,
         filter_hidden: bool = False,
         clean_figures: bool = False,
+        plain_tables: bool = False,
     ):
         super().__init__()
         self.jobs = jobs
@@ -514,6 +523,8 @@ class ConvertWorker(QObject):
         self.supported = supported
         self.filter_hidden = filter_hidden
         self.clean_figures = clean_figures
+        # Markdown tables as | pipes |, made from the HTML ones at the very end.
+        self.plain_tables = plain_tables
 
         self._lock = threading.Lock()
         self._process: subprocess.Popen | None = None
@@ -698,6 +709,8 @@ class ConvertWorker(QObject):
                 if self.options.get("image_output") == "external":
                     new = self._tidy_images(stem, new)
             new, _ = unescape_signs(new)
+            if self.plain_tables:
+                new = tables_to_markdown(new)
             if new != text:
                 md_path.write_text(new, encoding="utf-8")
         except (OSError, UnicodeError, ValueError):

@@ -60,9 +60,11 @@ You can tick several formats at once.
   on top of the file then tells a language model that figures are left out
   and that it can ask you for a screenshot of the page it needs. On by
   default.
-- **Plain Markdown tables** — tables in Markdown's own markup instead of
-  HTML, for editors and sites that don't show HTML. Merged cells fall apart
-  that way, which is why it is off by default.
+- **Plain Markdown tables** — tables in Markdown's own | pipe | markup
+  instead of HTML: about a quarter shorter, a third fewer tokens for a
+  language model. All the clean-ups are done first, so MIN, TYP and MAX keep
+  their own columns. A merged cell's other places are left empty. Off by
+  default.
 
 Next to every setting there is a **?** — point at it for a detailed
 explanation. **Reset** puts the defaults back: one button for the formats

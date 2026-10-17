@@ -23,6 +23,11 @@
   caption, note and the dimension table of a package. Memory maps stay.
   Checked against a hand-cleaned 74HC595: 84% of what was cut by hand, and
   nothing that was kept.
+- **Plain Markdown tables that keep everything.** With the option on, the
+  converter used to write pipe tables itself: MIN, TYP and MAX stayed in one
+  column and no figure clutter was removed. Now the HTML tables are cleaned
+  first and turned into pipe tables at the end - a quarter shorter than
+  HTML, about a third fewer tokens over 57 datasheets, no word lost.
 - **A hint for the language model** on top of a file with figures left out:
   it may ask the user for a screenshot of the page it needs (a schematic, a
   design equation) instead of filling the gap from memory.

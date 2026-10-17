@@ -378,3 +378,25 @@ def test_figure_hint_only_when_figures_were_dropped():
     assert out.startswith(FIGURE_HINT) and out.endswith(with_figure)
     assert add_figure_hint(out) == out, "added once"
     assert add_figure_hint("Text without drawings.") == "Text without drawings."
+
+
+# -- plain Markdown tables ------------------------------------------------------------ #
+
+def test_html_tables_become_pipe_tables_with_split_limits():
+    from postprocess import tables_to_markdown
+
+    md = ("Text.\n\n<table>\n  <tr>\n    <th>PARAMETER</th>\n    <th colspan=\"2\">CONDITIONS</th>\n"
+          "    <th>MIN</th><th>TYP</th><th>MAX</th>\n  </tr>\n  <tr>\n"
+          "    <td rowspan=\"2\">VOS<br><br></td>\n    <td>VS = 5 V</td>\n    <td>LM358</td>\n"
+          "    <td> </td><td>3</td><td>7</td>\n  </tr>\n  <tr>\n    <td>TA = 0°C to 70°C</td>\n"
+          "    <td>a|b</td>\n    <td> </td><td> </td><td>9</td>\n  </tr>\n</table>\n\nMore.")
+
+    out = tables_to_markdown(md)
+
+    assert "<table" not in out and "<td" not in out
+    assert out.startswith("Text.") and out.endswith("More.")
+    lines = [l for l in out.split("\n") if l.startswith("|")]
+    assert lines[0] == "|PARAMETER|CONDITIONS||MIN|TYP|MAX|"
+    assert lines[1] == "|---|---|---|---|---|---|"
+    assert lines[2] == "|VOS|VS = 5 V|LM358||3|7|"
+    assert lines[3] == "||TA = 0°C to 70°C|a\\|b|||9|", "rowspan leaves its place empty"

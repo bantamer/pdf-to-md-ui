@@ -118,7 +118,6 @@
   "page_sep.tooltip": "Wstawia między stronami wiersz w rodzaju „---- page 3 ----” w Markdown, tekście i HTML — widać, z której strony pochodzi fragment.\n\nBez zaznaczenia strony idą jednym ciągłym tekstem.",
 
   "plain_md.label": "Tabele w czystym Markdown",
-  "plain_md.tooltip": "Zapisuje tabele własną składnią Markdown | z | kreskami | zamiast HTML. Niektóre edytory i strony pokazują tylko takie.\n\nMarkdown nie umie scalać komórek, więc tabele ze scalonymi komórkami — np. charakterystyki elektryczne w kartach katalogowych — wychodzą rozbite lub przesunięte. Dlatego domyślnie jest wyłączone. Dotyczy tylko Markdown.",
 
   "clean_figures.label": "Usuwaj śmieci po wykresach",
   "clean_figures.tooltip": "Wykresy, rysunki obudów i schematy blokowe często zamieniają się w ogromne tabele z pustych komórek z porozrzucanymi liczbami skal — w karcie katalogowej nawet trzy czwarte pliku. Każda taka tabela jest zastępowana jednym wierszem: był tu rysunek, jego podpis i strona. Prawdziwe zdania w środku, np. kroki schematu blokowego, zostają.\n\nSam rysunek i tak nie trafia do Markdown — zobacz stronę w PDF. Dotyczy Markdown z tabelami HTML.",
