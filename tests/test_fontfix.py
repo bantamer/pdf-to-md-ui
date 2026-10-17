@@ -299,3 +299,43 @@ def test_renumbered_symbol_subset_matched_by_shape(tmp_path):
     cmap = kept_map(tmp_path, "symbol.ttf", "uniF0B0", 1, keep_numbers=False)
 
     assert "<01> <00B0>" in cmap
+
+
+# -- inline images (CH340: PDFBox lost the text after them) ------------------------- #
+
+def inline_image_pdf(path):
+    pdf = pikepdf.new()
+    helv = pdf.make_indirect(pikepdf.Dictionary(
+        Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type1, BaseFont=pikepdf.Name.Helvetica))
+    content = (b"q 10 0 0 10 50 700 cm BI /W 2 /H 2 /CS /G /BPC 8 ID \x00\xff\xff\x00 EI Q\n"
+               b"BT /F1 12 Tf 50 650 Td (Text after the picture) Tj ET")
+    pdf.pages.append(pikepdf.Page(pikepdf.Dictionary(
+        Type=pikepdf.Name.Page, MediaBox=[0, 0, 595, 842],
+        Resources=pikepdf.Dictionary(Font=pikepdf.Dictionary(F1=helv)),
+        Contents=pdf.make_stream(content))))
+    pdf.save(path)
+    return path
+
+
+def test_inline_images_move_out_and_the_text_stays(tmp_path):
+    src = inline_image_pdf(tmp_path / "a.pdf")
+    out = tmp_path / "b.pdf"
+
+    fonts, pages = fontfix.prepare_copy(str(src), str(out))
+
+    assert (fonts, pages) == (0, 1)
+    with pikepdf.open(out) as pdf:
+        page = pdf.pages[0]
+        assert not fontfix._has_inline_images(page)
+        assert len(page.Resources.XObject) == 1
+        text = b"".join(bytes(op.operands[0]) for op in pikepdf.parse_content_stream(page, "Tj")
+                        if op.operator == pikepdf.Operator("Tj"))
+        assert text == b"Text after the picture"
+
+
+def test_nothing_to_repair_writes_nothing(tmp_path):
+    src = make_pdf(tmp_path / "a.pdf", [(lambda pdf: font(pdf, "/Helvetica", []), "x")])
+    out = tmp_path / "b.pdf"
+
+    assert fontfix.prepare_copy(str(src), str(out)) == (0, 0)
+    assert not out.exists()

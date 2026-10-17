@@ -11,6 +11,10 @@
   "10 k?". They are now read from the glyph's own name, from its number in
   the installed Arial or Times, or for Symbol from its exact shape. Question
   marks: LM358 38 → 3, MAX232 44 → 0.
+- **Pages no longer go missing after an inline picture.** A small picture
+  set right inside a page's text could make the converter's PDF parser skip
+  the rest of the page - WCH's CH340 datasheet lost 9 pages of 16. Such
+  pictures are now moved out first; the page looks the same.
 - **`<`, `>` and `&` read plainly.** The converter writes them as `&lt;`,
   `&gt;` and `&amp;`; they are put back wherever no tag or entity could start there
   (BME280 code: `adc_T >> 4`, not `adc_T &gt;&gt; 4`).

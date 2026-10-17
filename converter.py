@@ -37,7 +37,7 @@ from urllib.parse import urlparse
 from PySide6.QtCore import QObject, Signal
 
 from i18n import tr
-from fontfix import fix_fonts
+from fontfix import prepare_copy
 from postprocess import drop_figure_tables, split_limit_columns, tidy_images, unescape_signs
 
 JAR_NAME = "opendataloader-pdf-cli.jar"
@@ -645,20 +645,23 @@ class ConvertWorker(QObject):
         self.finished.emit(summary)
 
     def _readable_copy(self, job: Job, work_dir: str) -> str:
-        """The PDF to hand the converter: a font-fixed copy, or the original.
+        """The PDF to hand the converter: a repaired copy, or the original.
 
-        The copy keeps the file name - the converter names its output after
-        it - and is written unencrypted, so it needs no password.
+        Fonts get the character maps they lack and inline images move out of
+        the page text (fontfix.py). The copy keeps the file name - the
+        converter names its output after it - and is written unencrypted, so
+        it needs no password.
         """
         target = os.path.join(work_dir, os.path.basename(job.pdf))
         try:
-            fixed = fix_fonts(job.pdf, target, self.options.get("password") or "")
+            fonts, pages = prepare_copy(job.pdf, target, self.options.get("password") or "")
         except Exception:  # noqa: BLE001 - any trouble: convert the original
             return job.pdf
-        if not fixed:
-            return job.pdf
-        self._emit(tr("run.fonts_fixed", count=fixed))
-        return target
+        if fonts:
+            self._emit(tr("run.fonts_fixed", count=fonts))
+        if pages:
+            self._emit(tr("run.inline_images", count=pages))
+        return target if fonts or pages else job.pdf
 
     def _postprocess(self, job: Job) -> None:
         """Tidy the Markdown the converter wrote (postprocess.py).

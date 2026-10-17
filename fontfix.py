@@ -494,39 +494,91 @@ def _unmapped_symbolic(font) -> bytes | None:
     return _cmap(mapping) if mapping else None
 
 
-def fix_fonts(source: str, target: str, password: str = "") -> int:
-    """Write `target` with maps for the fonts that need them; return how many.
+# -- inline images ---------------------------------------------------------- #
+#
+# A picture can sit right inside a page's drawing instructions instead of in
+# a resource of its own. The parser inside the converter (PDFBox) sometimes
+# misjudges where such a picture ends - "ignoring 'EI' assumed to be in the
+# middle of inline image" - and takes the rest of the page with it: WCH's
+# CH340 datasheet lost the text of 9 pages out of 16. Moving the pictures out
+# into resources draws the same page and leaves nothing to misjudge.
 
-    Nothing is written when no font needs a map. Raises pikepdf.PdfError
-    (and the like) when the file cannot be read - the caller converts the
-    original then.
+
+def _has_inline_images(page) -> bool:
+    try:
+        return any(
+            isinstance(item, pikepdf.ContentStreamInlineImage)
+            for item in pikepdf.parse_content_stream(page)
+        )
+    except Exception:  # noqa: BLE001 - an unreadable stream: leave it alone
+        return False
+
+
+def _externalize_inline_images(pdf) -> int:
+    """Move inline images into XObjects; return how many pages changed."""
+    changed = 0
+    for page in pdf.pages:
+        if _has_inline_images(page):
+            try:
+                page.externalize_inline_images(min_size=0)
+                changed += 1
+            except Exception:  # noqa: BLE001 - keep the page as it was
+                pass
+    return changed
+
+
+def prepare_copy(source: str, target: str, password: str = "") -> tuple[int, int]:
+    """Write `target` for the converter; return (fonts fixed, pages with
+    inline images moved out). Nothing is written when neither is needed.
+
+    Raises pikepdf.PdfError (and the like) when the file cannot be read -
+    the caller converts the original then.
     """
-    fixed = 0
     with pikepdf.open(source, password=password or "") as pdf:
-        seen: set = set()
-        for page in pdf.pages:
-            for font in _fonts(page.obj.get("/Resources"), seen):
-                mapping = font_map(font)
-                if mapping:
-                    font["/ToUnicode"] = pdf.make_stream(_cmap(mapping))
-                    fixed += 1
-                    continue
-                completed = _completed(font)
-                if completed:
-                    font["/ToUnicode"] = pdf.make_stream(completed)
-                    fixed += 1
-                    continue
-                remapped = _private_use_fixed(font, _kind(str(font.get("/BaseFont", ""))))
-                if remapped:
-                    font["/ToUnicode"] = pdf.make_stream(remapped)
-                    fixed += 1
-                    continue
-                kept = _unmapped_symbolic(font)
-                if kept:
-                    font["/ToUnicode"] = pdf.make_stream(kept)
-                    fixed += 1
-        if fixed:
+        fonts = _fix_fonts_in(pdf)
+        pages = _externalize_inline_images(pdf)
+        if fonts or pages:
             # Saved without encryption: the copy only lives in a temp folder
             # for the converter, which then needs no password for it.
             pdf.save(target, encryption=False)
+    return fonts, pages
+
+
+def fix_fonts(source: str, target: str, password: str = "") -> int:
+    """Write `target` with maps for the fonts that need them; return how many.
+
+    Nothing is written when no font needs a map.
+    """
+    fixed = 0
+    with pikepdf.open(source, password=password or "") as pdf:
+        fixed = _fix_fonts_in(pdf)
+        if fixed:
+            pdf.save(target, encryption=False)
+    return fixed
+
+
+def _fix_fonts_in(pdf) -> int:
+    fixed = 0
+    seen: set = set()
+    for page in pdf.pages:
+        for font in _fonts(page.obj.get("/Resources"), seen):
+            mapping = font_map(font)
+            if mapping:
+                font["/ToUnicode"] = pdf.make_stream(_cmap(mapping))
+                fixed += 1
+                continue
+            completed = _completed(font)
+            if completed:
+                font["/ToUnicode"] = pdf.make_stream(completed)
+                fixed += 1
+                continue
+            remapped = _private_use_fixed(font, _kind(str(font.get("/BaseFont", ""))))
+            if remapped:
+                font["/ToUnicode"] = pdf.make_stream(remapped)
+                fixed += 1
+                continue
+            kept = _unmapped_symbolic(font)
+            if kept:
+                font["/ToUnicode"] = pdf.make_stream(kept)
+                fixed += 1
     return fixed

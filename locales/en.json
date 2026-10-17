@@ -230,6 +230,7 @@
   "run.retry_no_images": "  ran past the timeout — retrying without images",
   "run.font_cache": "  building the font cache - once per computer, can take a few minutes; the timeout waits for it",
   "run.fonts_fixed": "  fonts the converter could not read, given a character map: {count}",
+  "run.inline_images": "  pages with pictures inside the text, moved out so the text is not lost: {count}",
   "run.figures_dropped": "  figures read as tables, replaced by a note: {count}",
   "run.limits_split": "  MIN/TYP/MAX columns put back apart, tables: {count}",
   "run.images_tidied": "  images: repeated decorations removed {links}, unused files deleted {files}",

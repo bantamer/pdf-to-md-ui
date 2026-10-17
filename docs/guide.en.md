@@ -106,6 +106,9 @@ the favourites (the folder itself stays on the disk).
   came out as "?".
   The program restores them before converting — the original file is not
   changed.
+- **Pages lost after a picture.** A small picture set inside a page's text
+  could make the converter skip the rest of the page. Such pictures are
+  moved out of the text first; the page looks the same.
 - **Merged MIN/TYP/MAX.** In TI and ADI tables with no lines between the MIN,
   TYP and MAX columns, the numbers are put back under their words. Where the
   page does not make clear which number belongs where, the cell is left as it
