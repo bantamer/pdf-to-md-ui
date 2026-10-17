@@ -71,6 +71,18 @@ _SYSTEM_FONTS = {
 _FONTS_DIR = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts")
 
 
+def _base_name(font) -> str:
+    """/BaseFont as text. Some producers write it in a legacy code page
+    (Diodes' AP2112), which str() of a pikepdf name cannot decode."""
+    name = font.get("/BaseFont")
+    if name is None:
+        return ""
+    try:
+        return bytes(name.unparse()).decode("latin-1")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _family(base_font: str) -> str:
     name = base_font.split("+", 1)[-1]
     name = re.split(r"[,\-]", name, maxsplit=1)[0]
@@ -145,7 +157,7 @@ def font_map(font, ignore_existing: bool = False) -> dict[int, str] | None:
     """
     if font.get("/Subtype") not in ("/Type1", "/TrueType", "/MMType1"):
         return None
-    base = str(font.get("/BaseFont", ""))
+    base = _base_name(font)
     kind = _kind(base)
     pairs = _differences(font)
     numbered = [(c, _NUMBERED.match(n)) for c, n in pairs]
@@ -240,7 +252,8 @@ def _parse_cmap(data: str) -> dict[tuple[int, int], str] | None:
 
 
 def _private_use_fixed(font, kind: str) -> bytes | None:
-    """A new map for one whose characters sit in U+F000-U+F0FF, else None.
+    """A new map for one whose characters sit in U+F000-U+F0FF (or, for
+    Symbol, on Latin letters), else None.
 
     Symbol-style fonts map their glyphs there (U+F020 is the space, U+F06D
     Symbol's mu); the converter has no idea what those are.
@@ -255,10 +268,17 @@ def _private_use_fixed(font, kind: str) -> bytes | None:
     if not mapping:
         return None
     changed = False
+    symbol = kind == "symbol" or "symbol" in _base_name(font).lower()
     for key, text in mapping.items():
+        # Symbol has Greek where other fonts have Latin letters; a map that
+        # still says "m" means mu (Diodes' AP2112: "1mF" for 1 µF).
+        if symbol and len(text) == 1 and text.isascii() and text.isalpha():
+            mapping[key] = SYMBOL[ord(text)]
+            changed = True
+            continue
         if len(text) == 1 and 0xF000 <= ord(text) <= 0xF0FF:
             low = ord(text) - 0xF000
-            new = _from_code(low, "symbol" if kind == "text" and "symbol" in str(font.get("/BaseFont", "")).lower() else kind)
+            new = _from_code(low, "symbol" if kind == "text" and "symbol" in _base_name(font).lower() else kind)
             if new:
                 mapping[key] = new
                 changed = True
@@ -372,6 +392,7 @@ def _fonts(resources, seen: set, depth: int = 0):
 _SYMBOLIC = 4  # /Flags bit 3
 _GENERIC_NAME = re.compile(r"^(\.notdef|glyph\d+|uni[Ff]0[0-9A-Fa-f]{2}|g\d+|G\d+|c\d+)$")
 _SYMBOL_FONT = "symbol.ttf"
+_GENERIC_DIFF = re.compile(r"^(\.notdef|c[0-9A-Fa-f]{2}|g\d+|G\d+|glyph\d+|uni[Ff]0[0-9A-Fa-f]{2})$")
 
 
 @lru_cache(maxsize=16)
@@ -449,7 +470,13 @@ def _by_shape(metrics) -> str | None:
 
 
 def _unmapped_symbolic(font) -> bytes | None:
-    if font.get("/Subtype") != "/TrueType" or "/ToUnicode" in font or "/Encoding" in font:
+    if font.get("/Subtype") != "/TrueType" or "/ToUnicode" in font:
+        return None
+    # An encoding that only renames codes ("/c9f", TI's DRV8825) says nothing
+    # either; one with real names is read by font_map().
+    if "/Encoding" in font and not all(_GENERIC_DIFF.match(name) for _, name in _differences(font)):
+        return None
+    if "/Encoding" in font and not isinstance(font.get("/Encoding"), pikepdf.Dictionary):
         return None
     descriptor = font.get("/FontDescriptor")
     if not isinstance(descriptor, pikepdf.Dictionary) or not int(descriptor.get("/Flags", 0)) & _SYMBOLIC:
@@ -457,7 +484,7 @@ def _unmapped_symbolic(font) -> bytes | None:
     program = descriptor.get("/FontFile2")
     if program is None:
         return None
-    base = str(font.get("/BaseFont", ""))
+    base = _base_name(font)
     filename = _SYSTEM_FONTS.get(_family(base))
     system = _system_font(filename) if filename else None
     try:
@@ -492,6 +519,83 @@ def _unmapped_symbolic(font) -> bytes | None:
     except Exception:  # noqa: BLE001 - a font program we cannot read
         return None
     return _cmap(mapping) if mapping else None
+
+
+# -- composite fonts numbered like the installed one --------------------------- #
+#
+# ST's LIS3DH draws its figure labels in "ArialMT-Identity-H": a composite
+# font with no map whose character numbers are Arial's own glyph numbers -
+# the converter prints "?" and other readers "&+$5*(" for "CHARGE" (Arial
+# keeps "A" as glyph 36). The widths the PDF lists for those numbers must
+# match the installed font's glyphs with the same numbers before the glyph
+# names are taken as the characters.
+
+_STYLE_FILES = {
+    ("arial", ""): "arial.ttf", ("arial", "bold"): "arialbd.ttf",
+    ("arial", "italic"): "ariali.ttf", ("arial", "bolditalic"): "arialbi.ttf",
+    ("timesnewroman", ""): "times.ttf", ("timesnewroman", "bold"): "timesbd.ttf",
+    ("timesnewroman", "italic"): "timesi.ttf", ("timesnewroman", "bolditalic"): "timesbi.ttf",
+}
+
+
+def _style_file(base: str) -> str | None:
+    name = base.split("+", 1)[-1].lower()
+    name = re.sub(r"-identity-[hv]$", "", name)
+    style = ("bold" if "bold" in name else "") + ("italic" if "italic" in name or "oblique" in name else "")
+    return _STYLE_FILES.get((_family(base), style))
+
+
+def _cid_widths(cid_font) -> dict[int, float]:
+    widths: dict[int, float] = {}
+    items = list(cid_font.get("/W", []))
+    i = 0
+    while i < len(items) - 1:
+        first, second = items[i], items[i + 1]
+        if isinstance(second, pikepdf.Array):
+            for k, w in enumerate(second):
+                widths[int(first) + k] = float(w)
+            i += 2
+        elif i + 2 < len(items):
+            for cid in range(int(first), int(second) + 1):
+                widths[cid] = float(items[i + 2])
+            i += 3
+        else:
+            break
+    return widths
+
+
+def _cid_as_gid(font) -> bytes | None:
+    if font.get("/Subtype") != "/Type0" or "/ToUnicode" in font:
+        return None
+    if str(font.get("/Encoding", "")) not in ("/Identity-H", "/Identity-V"):
+        return None
+    try:
+        cid_font = font["/DescendantFonts"][0]
+    except (KeyError, IndexError, TypeError):
+        return None
+    filename = _style_file(_base_name(font))
+    system = _system_font(filename) if filename else None
+    if system is None:
+        return None
+    try:
+        widths = _cid_widths(cid_font)
+        order = system.getGlyphOrder()
+        upm = system["head"].unitsPerEm
+        hmtx = system["hmtx"]
+        used = {cid: w for cid, w in widths.items() if 0 < cid < len(order)}
+        if len(used) < 3:
+            return None
+        same = sum(abs(w - hmtx[order[cid]][0] * 1000 / upm) <= 1 for cid, w in used.items())
+        if same < 0.9 * len(used):
+            return None  # numbered some other way
+        entries = []
+        for cid in sorted(used):
+            text = agl.toUnicode(order[cid])
+            if text and not any(0xE000 <= ord(ch) <= 0xF8FF for ch in text):
+                entries.append(f"<{cid:04X}> <{text.encode('utf-16-be').hex().upper()}>")
+    except Exception:  # noqa: BLE001 - anything odd: leave the font alone
+        return None
+    return _cmap_text(entries, "<0000> <FFFF>") if entries else None
 
 
 # -- inline images ---------------------------------------------------------- #
@@ -572,7 +676,7 @@ def _fix_fonts_in(pdf) -> int:
                 font["/ToUnicode"] = pdf.make_stream(completed)
                 fixed += 1
                 continue
-            remapped = _private_use_fixed(font, _kind(str(font.get("/BaseFont", ""))))
+            remapped = _private_use_fixed(font, _kind(_base_name(font)))
             if remapped:
                 font["/ToUnicode"] = pdf.make_stream(remapped)
                 fixed += 1
@@ -580,5 +684,10 @@ def _fix_fonts_in(pdf) -> int:
             kept = _unmapped_symbolic(font)
             if kept:
                 font["/ToUnicode"] = pdf.make_stream(kept)
+                fixed += 1
+                continue
+            numbered = _cid_as_gid(font)
+            if numbered:
+                font["/ToUnicode"] = pdf.make_stream(numbered)
                 fixed += 1
     return fixed

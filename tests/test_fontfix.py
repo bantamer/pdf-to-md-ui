@@ -339,3 +339,66 @@ def test_nothing_to_repair_writes_nothing(tmp_path):
 
     assert fontfix.prepare_copy(str(src), str(out)) == (0, 0)
     assert not out.exists()
+
+
+# -- maps that are wrong or missing in other ways ------------------------------------ #
+
+def test_symbol_map_that_says_latin_means_greek(tmp_path):
+    # Diodes' AP2112: Symbol's mu mapped to "m" - "1mF" for 1 µF.
+    def symbol(pdf):
+        cmap = fontfix._cmap({0x6D: "m", 0x44: "D", 0x2B: "+"})
+        return font(pdf, "/ABC+SymbolMT", [], tounicode=cmap)
+
+    pdf = make_pdf(tmp_path / "a.pdf", [(symbol, "m")])
+    with pikepdf.open(pdf) as doc:
+        f = next(iter(doc.pages[0].Resources.Font.values()))
+        cmap = fontfix._private_use_fixed(f, "symbol").decode()
+
+    assert "<6D> <03BC>" in cmap and "<44> <0394>" in cmap
+    assert "<2B> <002B>" in cmap, "only letters are Greek in Symbol"
+
+
+@pytest.mark.skipif(not has_font("arial.ttf"), reason="needs the installed Arial")
+def test_composite_font_numbered_like_arial(tmp_path):
+    # ST's LIS3DH: "ArialMT-Identity-H", character numbers = Arial glyph
+    # numbers, no map. Checked by the widths before it is trusted.
+    import os
+
+    from fontTools.ttLib import TTFont
+
+    arial = TTFont(os.path.join(FONTS, "arial.ttf"), lazy=True)
+    order, upm = arial.getGlyphOrder(), arial["head"].unitsPerEm
+    gids = [order.index(n) for n in ("C", "H", "A", "R", "G", "E")]
+    widths = pikepdf.Array()
+    for g in gids:
+        widths.extend([g, pikepdf.Array([round(arial["hmtx"][order[g]][0] * 1000 / upm)])])
+
+    def composite(pdf, w=widths):
+        cid = pikepdf.Dictionary(Type=pikepdf.Name.Font, Subtype=pikepdf.Name.CIDFontType0,
+                                 BaseFont=pikepdf.Name("/ArialMT-Identity-H"), W=w)
+        return pdf.make_indirect(pikepdf.Dictionary(
+            Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type0,
+            BaseFont=pikepdf.Name("/ArialMT-Identity-H"), Encoding=pikepdf.Name("/Identity-H"),
+            DescendantFonts=[pdf.make_indirect(cid)]))
+
+    path = make_pdf(tmp_path / "a.pdf", [(composite, "x")])
+    with pikepdf.open(path) as doc:
+        cmap = fontfix._cid_as_gid(next(iter(doc.pages[0].Resources.Font.values()))).decode()
+    assert f"<{gids[0]:04X}> <0043>" in cmap  # C
+
+    wrong = pikepdf.Array([gids[0], pikepdf.Array([999, 999, 999, 999, 999, 999])])
+    path = make_pdf(tmp_path / "b.pdf", [(lambda pdf: composite(pdf, wrong), "x")])
+    with pikepdf.open(path) as doc:
+        assert fontfix._cid_as_gid(next(iter(doc.pages[0].Resources.Font.values()))) is None
+
+
+def test_font_name_in_a_legacy_code_page(tmp_path):
+    # Diodes' AP2112 names a font in GBK; the whole repair used to stop there.
+    def odd(pdf):
+        f = font(pdf, "/Helvetica", [])
+        f["/BaseFont"] = pikepdf.Name("/#CB#CE#CC#E5")
+        return f
+
+    pdf = make_pdf(tmp_path / "a.pdf", [(odd, "x"), (lambda pdf: font(pdf, "/ABC+Infineon", INFINEON), "\x01\x02")])
+
+    assert fontfix.fix_fonts(str(pdf), str(tmp_path / "b.pdf")) == 1

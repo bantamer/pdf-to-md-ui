@@ -1994,7 +1994,8 @@ class MainWindow(QWidget):
 
         problems = bool(
             summary["error"] or summary["degraded"] or summary["timed_out"]
-            or summary["failed"] or (ok == 0 and not summary["cancelled"])
+            or summary["failed"] or summary.get("no_text")
+            or (ok == 0 and not summary["cancelled"])
         )
         self.details_link.setVisible(problems)
 
@@ -2012,6 +2013,8 @@ class MainWindow(QWidget):
             notes.append(tr("summary.timed_out", files=", ".join(summary["timed_out"])))
         if summary["failed"]:
             notes.append(tr("summary.failed", files=", ".join(summary["failed"])))
+        if summary.get("no_text"):
+            notes.append(tr("summary.no_text", files=", ".join(summary["no_text"])))
 
         elapsed = f"{seconds:.1f}"
         if summary["cancelled"]:

@@ -535,6 +535,24 @@ _LIMIT_TEXT = re.compile(
 )
 
 
+# -- no text at all ---------------------------------------------------------- #
+#
+# A scanned PDF is pictures of pages: the converter finds no text and writes
+# page separators and nothing else, without a word of warning.
+
+_NOT_TEXT = re.compile(r"---- page \d+ ----|!\[[^\]]*\]\([^)]*\)|<[^>]+>|\*\[[^\]]*\]\*|\s")
+SCAN_CHARS_PER_PAGE = 15
+
+
+def text_chars(md: str) -> int:
+    """Characters of real text: no separators, image links, tags or blanks."""
+    return len(_NOT_TEXT.sub("", md))
+
+
+def looks_scanned(md: str, pages: int) -> bool:
+    return pages > 0 and text_chars(md) < SCAN_CHARS_PER_PAGE * pages
+
+
 # -- escaped signs ----------------------------------------------------------- #
 #
 # The converter writes every <, > and & of the text as &lt;, &gt; and &amp;:

@@ -11,6 +11,14 @@
   "10 k?". They are now read from the glyph's own name, from its number in
   the installed Arial or Times, or for Symbol from its exact shape. Question
   marks: LM358 38 → 3, MAX232 44 → 0.
+- **Scans are named.** A PDF with no text (pictures of pages) used to give an
+  empty file without a word; the log and the summary now say it looks like a
+  scan and that AI mode can read it.
+- **Even more fonts read.** Figure labels in ST's LIS3DH ("CHARGE AMPLIFIER"
+  instead of a row of "?"), Ω and – in TI's DRV8825, θ and ≤ in STM32,
+  μ for "m" and Δ for "D" in Symbol fonts (AP2112: "1μF", not "1mF"). A font
+  name in a legacy code page no longer stops the font repair for the whole
+  file.
 - **Pages no longer go missing after an inline picture.** A small picture
   set right inside a page's text could make the converter's PDF parser skip
   the rest of the page - WCH's CH340 datasheet lost 9 pages of 16. Such

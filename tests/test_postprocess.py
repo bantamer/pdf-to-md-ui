@@ -216,3 +216,15 @@ def test_signs_that_could_be_markup_stay_escaped():
     out, _ = unescape_signs(md)
 
     assert out == "jump to &lt;instr> here; &lt;/td> (1&lt;&lt;EEMPE); &amp;lt; is how < is written"
+
+
+# -- scans --------------------------------------------------------------------------- #
+
+def test_a_scan_has_no_text():
+    from postprocess import looks_scanned
+
+    scan = "\n\n---- page 1 ----\n\n![image 1](a_images/imageFile1.png)\n\n---- page 2 ----\n\n"
+    real = scan + "VRRM Repetitive peak reverse voltage 100 V " * 2
+
+    assert looks_scanned(scan, 2)
+    assert not looks_scanned(real, 2)

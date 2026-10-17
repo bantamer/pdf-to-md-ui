@@ -37,8 +37,9 @@ from urllib.parse import urlparse
 from PySide6.QtCore import QObject, Signal
 
 from i18n import tr
+import pikepdf
 from fontfix import prepare_copy
-from postprocess import drop_figure_tables, split_limit_columns, tidy_images, unescape_signs
+from postprocess import drop_figure_tables, looks_scanned, split_limit_columns, tidy_images, unescape_signs
 
 JAR_NAME = "opendataloader-pdf-cli.jar"
 
@@ -538,6 +539,8 @@ class ConvertWorker(QObject):
             "failed": [],
             "timed_out": [],
             "degraded": [],
+            # Converted, but no text came out: most likely a scan.
+            "no_text": [],
             "cancelled": False,
             "error": "",
             # One entry per file that ran: what the file list shows next to it.
@@ -619,6 +622,7 @@ class ConvertWorker(QObject):
 
             if outcome == "degraded":
                 self._postprocess(job)
+                self._check_text(job, summary)
                 summary["degraded"].append(job.label)
                 summary["ok"] += 1
                 record(job, "degraded")
@@ -630,6 +634,7 @@ class ConvertWorker(QObject):
 
             if outcome == "ok":
                 self._postprocess(job)
+                self._check_text(job, summary)
                 summary["ok"] += 1
                 record(job, "ok")
             elif outcome == "timeout":
@@ -700,6 +705,22 @@ class ConvertWorker(QObject):
             if getattr(self, "_extra_json", False):
                 with contextlib.suppress(OSError):
                     json_path.unlink()
+
+    def _check_text(self, job: Job, summary: dict) -> None:
+        """Say so when the result has no text: the PDF is likely a scan."""
+        stem = Path(job.output_dir) / Path(job.pdf).stem
+        result = next((p for p in (stem.with_suffix(".md"), stem.with_suffix(".txt")) if p.exists()), None)
+        if result is None:
+            return
+        try:
+            with pikepdf.open(job.pdf, password=self.options.get("password") or "") as pdf:
+                pages = len(pdf.pages)
+            text = result.read_text(encoding="utf-8")
+        except Exception:  # noqa: BLE001 - cannot tell: say nothing
+            return
+        if looks_scanned(text, pages):
+            self._emit(tr("run.no_text"))
+            summary["no_text"].append(job.label)
 
     def _tidy_images(self, stem: Path, md: str) -> str:
         """Merge duplicate image files, drop logos, delete unlinked files."""
