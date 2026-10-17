@@ -101,8 +101,9 @@ the favourites (the folder itself stays on the disk).
 
 ## What the program fixes by itself
 
-- **Unreadable fonts.** In some PDFs (Infineon, TI plot labels, Microchip
-  drawings) the font's letters are not named and the text came out as "?".
+- **Unreadable fonts.** In some PDFs (Infineon, TI pin drawings and plot
+  labels, Microchip drawings) the font's letters are not named and the text
+  came out as "?".
   The program restores them before converting — the original file is not
   changed.
 - **Merged MIN/TYP/MAX.** In TI and ADI tables with no lines between the MIN,
@@ -112,6 +113,9 @@ the favourites (the folder itself stays on the disk).
 - **Surplus images.** Identical pictures become one file; a picture repeated
   on many pages (a logo, a bit of a frame) is left out of the text; files
   nothing links to are deleted.
+- **Escaped signs.** The converter writes `<`, `>` and `&` as `&lt;`, `&gt;`
+  and `&amp;`. They are put back wherever they cannot be taken for markup, so
+  code reads `x >> 3`, not `x &gt;&gt; 3`.
 
 ## Tips for datasheets
 

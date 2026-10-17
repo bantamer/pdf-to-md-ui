@@ -219,3 +219,83 @@ def test_symbol_font_with_winansi_keeps_it(tmp_path):
     pdf = make_pdf(tmp_path / "a.pdf", [(winansi, "\xb5")])
 
     assert mapping_of(pdf)[0] is None
+
+
+# -- symbolic TrueType subsets with no map (TI pin drawings and plots) --------------- #
+
+FONTS = fontfix._FONTS_DIR
+
+
+def subset_font(pdf, source, glyph, code, keep_numbers):
+    """A one-glyph subset of an installed font the way TI embeds them: no
+    /Encoding, no map, no glyph names, the glyph at (3,0) U+F000+code."""
+    import io
+
+    from fontTools import subset
+    from fontTools.ttLib import TTFont
+    from fontTools.ttLib.tables._c_m_a_p import cmap_format_4
+
+    import os
+
+    tt = TTFont(os.path.join(FONTS, source))
+    # TI's subsets keep every number of the font: one far glyph keeps them here.
+    glyphs = [glyph, tt.getGlyphOrder()[400]] if keep_numbers else [glyph]
+    options = subset.Options()
+    options.retain_gids = keep_numbers
+    options.notdef_outline = True
+    sub = subset.Subsetter(options)
+    sub.populate(glyphs=glyphs)
+    sub.subset(tt)
+    table = cmap_format_4(4)
+    table.platformID, table.platEncID, table.language = 3, 0, 0
+    table.cmap = {0xF000 + code: glyph}
+    tt["cmap"].tables = [table]
+    tt["post"].formatType = 3.0  # no glyph names, as in the PDFs
+    data = io.BytesIO()
+    tt.save(data)
+    width = round(tt["hmtx"][glyph][0] * 1000 / tt["head"].unitsPerEm)
+    descriptor = pikepdf.Dictionary(
+        Type=pikepdf.Name.FontDescriptor, FontName=pikepdf.Name("/ABC+X"), Flags=4,
+        FontFile2=pdf.make_stream(data.getvalue()),
+    )
+    return pdf.make_indirect(pikepdf.Dictionary(
+        Type=pikepdf.Name.Font, Subtype=pikepdf.Name.TrueType,
+        BaseFont=pikepdf.Name("/ABC+" + ("Arial_00" if source == "arial.ttf" else "SymbolMT")),
+        FirstChar=code, LastChar=code, Widths=[width],
+        FontDescriptor=pdf.make_indirect(descriptor),
+    ))
+
+
+def has_font(name):
+    import os
+
+    return os.path.exists(os.path.join(FONTS, name))
+
+
+def kept_map(tmp_path, source, glyph, code, keep_numbers):
+    path = make_pdf(tmp_path / "a.pdf", [(lambda pdf: subset_font(pdf, source, glyph, code, keep_numbers), "x")])
+    with pikepdf.open(path) as pdf:
+        cmap = fontfix._unmapped_symbolic(next(iter(pdf.pages[0].Resources.Font.values())))
+    return cmap.decode() if cmap else ""
+
+
+@pytest.mark.skipif(not has_font("arial.ttf"), reason="needs the installed Arial")
+def test_subset_that_kept_arial_numbers(tmp_path):
+    # TI pin drawings: "IN1-" - the minus is glyph 177 of Arial at code 177.
+    cmap = kept_map(tmp_path, "arial.ttf", "endash", 177, keep_numbers=True)
+
+    assert "<B1> <2013>" in cmap
+
+
+@pytest.mark.skipif(not has_font("arial.ttf"), reason="needs the installed Arial")
+def test_renumbered_subset_of_a_text_font_stays_unread(tmp_path):
+    # Glyph 1 of a renumbered subset could be anything: no guessing.
+    assert kept_map(tmp_path, "arial.ttf", "endash", 1, keep_numbers=False) == ""
+
+
+@pytest.mark.skipif(not has_font("symbol.ttf"), reason="needs the installed Symbol")
+def test_renumbered_symbol_subset_matched_by_shape(tmp_path):
+    # TI plots: "-40 °C" with the degree sign as glyph 1 of a SymbolMT subset.
+    cmap = kept_map(tmp_path, "symbol.ttf", "uniF0B0", 1, keep_numbers=False)
+
+    assert "<01> <00B0>" in cmap

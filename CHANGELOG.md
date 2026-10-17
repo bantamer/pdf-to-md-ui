@@ -6,6 +6,14 @@
   under MIN TYP MAX in LM358) were kept in one cell; a footnote mark written
   apart ("TYP (2)") added an empty column; "GND – 0.3" and "(V+) – 1.5" were
   cut at the minus. All three now land in their columns.
+- **More unreadable fonts fixed.** TI pin drawings and plots set single
+  characters in tiny fonts with no character map: "IN1?" for IN1–, "–40?C",
+  "10 k?". They are now read from the glyph's own name, from its number in
+  the installed Arial or Times, or for Symbol from its exact shape. Question
+  marks: LM358 38 → 3, MAX232 44 → 0.
+- **`<`, `>` and `&` read plainly.** The converter writes them as `&lt;`,
+  `&gt;` and `&amp;`; they are put back wherever no tag or entity could start there
+  (BME280 code: `adc_T >> 4`, not `adc_T &gt;&gt; 4`).
 - **Drop hidden text** explains that it also takes thin signs (+, −, =) out
   of formulas and code — not for such documents.
 

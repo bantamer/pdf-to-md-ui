@@ -535,6 +535,45 @@ _LIMIT_TEXT = re.compile(
 )
 
 
+# -- escaped signs ----------------------------------------------------------- #
+#
+# The converter writes every <, > and & of the text as &lt;, &gt; and &amp;:
+# BME280's "(var1 >> 3)" comes out as "(var1 &gt;&gt; 3)", "VDD < 3.6 V" as
+# "VDD &lt; 3.6 V" - harder to read and three tokens instead of one. Put back
+# wherever the sign cannot be taken for markup. A "<" right before a letter,
+# "/", "!" or "?" opens a tag for any HTML reader, so it stays - and so do
+# the "<" in front of it: ATmega's "(1&lt;&lt;EEMPE)" stays whole rather than
+# "(1<&lt;EEMPE)". An "&" stays where an entity could start.
+
+_ESCAPED = re.compile(r"(?:&lt;)+|&gt;|&amp;")
+_TAG_START = re.compile(r"[A-Za-z/!?]")
+_ENTITY_START = re.compile(r"(?:[A-Za-z][A-Za-z0-9]*|#\d+|#[xX][0-9A-Fa-f]+);")
+
+
+def unescape_signs(md: str) -> tuple[str, int]:
+    """Turn &gt; &lt; &amp; back into > < & where that is safe; return count."""
+    count = 0
+
+    def put_back(m: re.Match) -> str:
+        nonlocal count
+        found = m.group(0)
+        rest = md[m.end():m.end() + 16]
+        if found == "&gt;":
+            count += 1
+            return ">"
+        if found == "&amp;":
+            if _ENTITY_START.match(rest):
+                return found
+            count += 1
+            return "&"
+        if _TAG_START.match(rest):
+            return found
+        count += found.count("&lt;")
+        return "<" * found.count("&lt;")
+
+    return _ESCAPED.sub(put_back, md), count
+
+
 # -- images ---------------------------------------------------------------------- #
 #
 # With images saved as files the converter writes one file per picture it

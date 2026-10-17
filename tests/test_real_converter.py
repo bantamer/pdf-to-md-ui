@@ -63,9 +63,24 @@ def test_merged_cells_survive(converted):
     assert re.search(r'<td[^>]*rowspan="2"[^>]*>\s*Accuracy', md)
 
 
-def test_comparison_in_a_cell_stays_escaped(converted):
-    """A real "<" in cell text must stay &lt;, or the table markup breaks."""
-    assert "VOUT &lt; 1.5 V" in converted["md"]
+def test_comparison_in_a_cell_reads_plainly(converted):
+    """The converter writes "<" as &lt;; it comes back where no tag can start,
+    and the table still parses to the same cells."""
+    from html.parser import HTMLParser
+
+    md = converted["md"]
+    assert "VOUT < 1.5 V" in md
+
+    class Cells(HTMLParser):
+        count = 0
+
+        def handle_starttag(self, tag, attrs):
+            if tag in ("td", "th"):
+                self.count += 1
+
+    parser = Cells()
+    parser.feed(md)
+    assert parser.count == 37
 
 
 def test_every_cell_is_accounted_for(converted):

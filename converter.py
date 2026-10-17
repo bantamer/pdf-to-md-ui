@@ -38,7 +38,7 @@ from PySide6.QtCore import QObject, Signal
 
 from i18n import tr
 from fontfix import fix_fonts
-from postprocess import drop_figure_tables, split_limit_columns, tidy_images
+from postprocess import drop_figure_tables, split_limit_columns, tidy_images, unescape_signs
 
 JAR_NAME = "opendataloader-pdf-cli.jar"
 
@@ -663,29 +663,32 @@ class ConvertWorker(QObject):
     def _postprocess(self, job: Job) -> None:
         """Tidy the Markdown the converter wrote (postprocess.py).
 
-        Only the HTML-table form: plain Markdown tables keep neither the
-        merged cells to split nor the empty ones a drawing is told by. Never
-        fatal - the untouched file is still a result.
+        Tables and images only in the HTML-table form: plain Markdown tables
+        keep neither the merged cells to split nor the empty ones a drawing
+        is told by. Escaped signs in either. Never fatal - the untouched file
+        is still a result.
         """
         stem = Path(job.output_dir) / Path(job.pdf).stem
         json_path = stem.with_suffix(".json")
         try:
-            if not self.options.get("markdown_with_html"):
-                return
             md_path = stem.with_suffix(".md")
+            if not md_path.exists():
+                return
             text = md_path.read_text(encoding="utf-8")
             new = text
-            if json_path.exists():
-                doc = json.loads(json_path.read_text(encoding="utf-8"))
-                new, split = split_limit_columns(new, doc)
-                if split:
-                    self._emit(tr("run.limits_split", count=split))
-            if self.clean_figures:
-                new, dropped = drop_figure_tables(new)
-                if dropped:
-                    self._emit(tr("run.figures_dropped", count=dropped))
-            if self.options.get("image_output") == "external":
-                new = self._tidy_images(stem, new)
+            if self.options.get("markdown_with_html"):
+                if json_path.exists():
+                    doc = json.loads(json_path.read_text(encoding="utf-8"))
+                    new, split = split_limit_columns(new, doc)
+                    if split:
+                        self._emit(tr("run.limits_split", count=split))
+                if self.clean_figures:
+                    new, dropped = drop_figure_tables(new)
+                    if dropped:
+                        self._emit(tr("run.figures_dropped", count=dropped))
+                if self.options.get("image_output") == "external":
+                    new = self._tidy_images(stem, new)
+            new, _ = unescape_signs(new)
             if new != text:
                 md_path.write_text(new, encoding="utf-8")
         except (OSError, UnicodeError, ValueError):

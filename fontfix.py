@@ -351,6 +351,149 @@ def _fonts(resources, seen: set, depth: int = 0):
                 yield from _fonts(xobject.get("/Resources"), seen, depth + 1)
 
 
+# -- symbolic TrueType subsets with no map at all ---------------------------- #
+#
+# TI's pin drawings and plots set single characters in small symbolic
+# TrueType subsets with no encoding and no map - the converter prints "?":
+#
+#   Arial_00     code 177, the minus of "IN1-": reads as "±" in every
+#                encoding, but the subset still numbers its glyphs as Arial
+#                does (4453 of them, all empty but one), and glyph 177 of
+#                Arial is "endash".
+#   SymbolMT     codes 1 and 2 of a renumbered subset: only the outline says
+#                they are the degree sign and mu of the Symbol font.
+#   FF10 Symbol  the font program still names its glyphs: "mu", "equal".
+#
+# Each character is taken from the glyph's own name when it has a real one;
+# else from the installed font when the subset kept its numbering and the
+# outline and width match; else, for Symbol, from the one glyph of the
+# installed Symbol font with the very same width and outline box.
+
+_SYMBOLIC = 4  # /Flags bit 3
+_GENERIC_NAME = re.compile(r"^(\.notdef|glyph\d+|uni[Ff]0[0-9A-Fa-f]{2}|g\d+|G\d+|c\d+)$")
+_SYMBOL_FONT = "symbol.ttf"
+
+
+@lru_cache(maxsize=16)
+def _system_font(filename: str):
+    try:
+        from fontTools.ttLib import TTFont
+
+        return TTFont(os.path.join(_FONTS_DIR, filename), lazy=True)
+    except Exception:  # noqa: BLE001 - no such font here
+        return None
+
+
+def _code_glyphs(tt) -> dict[int, str]:
+    """Code -> glyph name from a symbolic TrueType font's own cmap."""
+    out: dict[int, str] = {}
+    for table in tt["cmap"].tables:
+        if (table.platformID, table.platEncID) == (3, 0):
+            for uni, name in table.cmap.items():
+                if 0xF000 <= uni <= 0xF0FF:
+                    out.setdefault(uni - 0xF000, name)
+                elif uni < 0x100:
+                    out.setdefault(uni, name)
+        elif (table.platformID, table.platEncID) == (1, 0):
+            for code, name in table.cmap.items():
+                out.setdefault(code, name)
+    return out
+
+
+def _metrics(tt, name: str, width: float | None = None) -> tuple[float, ...] | None:
+    """Width and outline box of a glyph, in ems; None for an empty glyph.
+
+    width: the PDF's own, for subsets whose hmtx table was cut short.
+    """
+    glyph = tt["glyf"][name]
+    if not glyph.numberOfContours:
+        return None
+    upm = tt["head"].unitsPerEm
+    box = (glyph.xMin, glyph.yMin, glyph.xMax, glyph.yMax)
+    if width is None:
+        width = tt["hmtx"][name][0] / upm
+    return (width, *(v / upm for v in box))
+
+
+def _pdf_width(font, code: int) -> float | None:
+    widths = font.get("/Widths")
+    first = int(font.get("/FirstChar", 0))
+    try:
+        return float(widths[code - first]) / 1000 if widths is not None and code >= first else None
+    except (IndexError, TypeError, ValueError):
+        return None
+
+
+def _same(a, b, tolerance: float) -> bool:
+    return a is not None and b is not None and all(abs(x - y) <= tolerance for x, y in zip(a, b))
+
+
+@lru_cache(maxsize=1)
+def _symbol_shapes() -> list[tuple[tuple[float, ...], str]]:
+    """(metrics, text) of every glyph of the installed Symbol font."""
+    font = _system_font(_SYMBOL_FONT)
+    if font is None:
+        return []
+    out = []
+    for code, name in _code_glyphs(font).items():
+        metrics = _metrics(font, name)
+        text = _from_code(code, "symbol")
+        if metrics and text:
+            out.append((metrics, text))
+    return out
+
+
+def _by_shape(metrics) -> str | None:
+    found = {text for shape, text in _symbol_shapes() if _same(shape, metrics, 0.005)}
+    return found.pop() if len(found) == 1 else None
+
+
+def _unmapped_symbolic(font) -> bytes | None:
+    if font.get("/Subtype") != "/TrueType" or "/ToUnicode" in font or "/Encoding" in font:
+        return None
+    descriptor = font.get("/FontDescriptor")
+    if not isinstance(descriptor, pikepdf.Dictionary) or not int(descriptor.get("/Flags", 0)) & _SYMBOLIC:
+        return None
+    program = descriptor.get("/FontFile2")
+    if program is None:
+        return None
+    base = str(font.get("/BaseFont", ""))
+    filename = _SYSTEM_FONTS.get(_family(base))
+    system = _system_font(filename) if filename else None
+    try:
+        import io
+
+        from fontTools.ttLib import TTFont
+
+        tt = TTFont(io.BytesIO(program.read_bytes()))
+        order = tt.getGlyphOrder()
+        index = {name: i for i, name in enumerate(order)}
+        mapping: dict[int, str] = {}
+        for code, name in _code_glyphs(tt).items():
+            text = None
+            metrics = _metrics(tt, name, _pdf_width(font, code))
+            if not _GENERIC_NAME.match(name):
+                text = agl.toUnicode(name)
+                if text and any(0xE000 <= ord(ch) <= 0xF8FF for ch in text):
+                    text = None
+            elif system is not None and len(order) >= 258:
+                gid = index.get(name)
+                system_order = system.getGlyphOrder()
+                if not gid or gid >= len(system_order):
+                    continue
+                system_name = system_order[gid]
+                if not _same(metrics, _metrics(system, system_name), 0.02):
+                    return None  # another version of the font, or another font
+                text = agl.toUnicode(system_name)
+            elif _kind(base) == "symbol":
+                text = _by_shape(metrics)
+            if text:
+                mapping[code] = text
+    except Exception:  # noqa: BLE001 - a font program we cannot read
+        return None
+    return _cmap(mapping) if mapping else None
+
+
 def fix_fonts(source: str, target: str, password: str = "") -> int:
     """Write `target` with maps for the fonts that need them; return how many.
 
@@ -376,6 +519,11 @@ def fix_fonts(source: str, target: str, password: str = "") -> int:
                 remapped = _private_use_fixed(font, _kind(str(font.get("/BaseFont", ""))))
                 if remapped:
                     font["/ToUnicode"] = pdf.make_stream(remapped)
+                    fixed += 1
+                    continue
+                kept = _unmapped_symbolic(font)
+                if kept:
+                    font["/ToUnicode"] = pdf.make_stream(kept)
                     fixed += 1
         if fixed:
             # Saved without encryption: the copy only lives in a temp folder

@@ -191,3 +191,28 @@ def test_an_emptied_folder_goes(tmp_path):
     tidy_images("no pictures left\n", folder)
 
     assert not folder.exists()
+
+
+# -- escaped signs ------------------------------------------------------------------ #
+
+def test_escaped_signs_come_back():
+    from postprocess import unescape_signs
+
+    md = "t = (adc_T &gt;&gt; 4); VDD &lt; 3.6 V; R &amp; D; x &lt;&lt; 2"
+
+    out, n = unescape_signs(md)
+
+    assert out == "t = (adc_T >> 4); VDD < 3.6 V; R & D; x << 2"
+    assert n == 6
+
+
+def test_signs_that_could_be_markup_stay_escaped():
+    from postprocess import unescape_signs
+
+    # Any "<" before a letter opens a tag in HTML - inside a table it would
+    # swallow cells. A run of them stays whole.
+    md = "jump to &lt;instr&gt; here; &lt;/td&gt; (1&lt;&lt;EEMPE); &amp;lt; is how &lt; is written"
+
+    out, _ = unescape_signs(md)
+
+    assert out == "jump to &lt;instr> here; &lt;/td> (1&lt;&lt;EEMPE); &amp;lt; is how < is written"
